@@ -1,0 +1,5 @@
+BEGIN;
+SELECT set_config('app.user_id', (SELECT user_id::text FROM bench.users WHERE grp='mgr_big' AND n=1), true);
+SELECT status, count(*) FROM readiness_snapshot GROUP BY status;
+SELECT site_id, count(*) FILTER (WHERE status='READY') AS ready, count(*) AS total FROM readiness_snapshot GROUP BY site_id;
+END;

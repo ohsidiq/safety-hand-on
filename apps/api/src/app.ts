@@ -1,0 +1,124 @@
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
+import type { Db } from "@soh/db";
+import { checkDatabase } from "@soh/db";
+import { cors } from "hono/cors";
+import { secureHeaders } from "hono/secure-headers";
+import { type ErrorCode, errorBody, errorStatus } from "./errors.js";
+
+/**
+ * Core API Safety On Hand (ADR-001 Opsi B).
+ * Konvensi mengikuti API-000: basis /api/v1, amplop respons, X-Request-Id, katalog galat,
+ * health tanpa autentikasi dan tanpa detail internal.
+ */
+
+export const API_VERSION = "0.1.0";
+
+export interface AppDeps {
+  /** Pool database. Boleh kosong saat uji unit; /health/ready lalu melapor tidak siap. */
+  db?: Db;
+  allowedOrigins?: string[];
+}
+
+type Env = { Variables: { requestId: string } };
+
+const REQUEST_ID_RE = /^[A-Za-z0-9._-]{1,128}$/;
+
+const HealthData = z
+  .object({
+    status: z.enum(["UP", "DOWN"]).openapi({ example: "UP" }),
+  })
+  .openapi("HealthStatus");
+
+const HealthResponse = z
+  .object({
+    success: z.boolean(),
+    data: HealthData,
+    request_id: z.string(),
+  })
+  .openapi("HealthResponse");
+
+const liveRoute = createRoute({
+  method: "get",
+  path: "/health/live",
+  tags: ["Health"],
+  summary: "Liveness: proses Core API berjalan",
+  responses: {
+    200: { content: { "application/json": { schema: HealthResponse } }, description: "Proses hidup" },
+  },
+});
+
+const readyRoute = createRoute({
+  method: "get",
+  path: "/health/ready",
+  tags: ["Health"],
+  summary: "Readiness: dependensi (database) siap",
+  responses: {
+    200: { content: { "application/json": { schema: HealthResponse } }, description: "Siap melayani" },
+    503: { content: { "application/json": { schema: HealthResponse } }, description: "Belum siap" },
+  },
+});
+
+export function createApp(deps: AppDeps = {}) {
+  const app = new OpenAPIHono<Env>({
+    defaultHook: (result, c) => {
+      if (!result.success) {
+        return c.json(errorBody("VALIDATION_ERROR", c.get("requestId")), 422);
+      }
+    },
+  });
+
+  app.use("*", async (c, next) => {
+    const incoming = c.req.header("x-request-id");
+    const requestId = incoming && REQUEST_ID_RE.test(incoming) ? incoming : crypto.randomUUID();
+    c.set("requestId", requestId);
+    await next();
+    c.header("X-Request-Id", requestId);
+  });
+  app.use("*", secureHeaders());
+  app.use(
+    "*",
+    cors({
+      origin: deps.allowedOrigins ?? [],
+      allowHeaders: ["Authorization", "Content-Type", "X-Request-Id", "Idempotency-Key", "If-Match", "X-Access-Reason"],
+      exposeHeaders: ["X-Request-Id"],
+    }),
+  );
+
+  const v1 = new OpenAPIHono<Env>();
+
+  v1.openapi(liveRoute, (c) => c.json({ success: true, data: { status: "UP" as const }, request_id: c.get("requestId") }, 200));
+
+  v1.openapi(readyRoute, async (c) => {
+    let up = false;
+    if (deps.db) {
+      try {
+        up = (await checkDatabase(deps.db)).ok;
+      } catch {
+        up = false; // tanpa detail internal (API-000 bagian 18)
+      }
+    }
+    const body = { success: up, data: { status: up ? ("UP" as const) : ("DOWN" as const) }, request_id: c.get("requestId") };
+    return up ? c.json(body, 200) : c.json(body, 503);
+  });
+
+  app.route("/api/v1", v1);
+
+  app.doc31("/api/v1/openapi.json", {
+    openapi: "3.1.0",
+    info: {
+      title: "Safety On Hand Core API",
+      version: API_VERSION,
+      description: "Kontrak API v1 (ARCH-003). Data sintetis saja sampai syarat B-24 terpenuhi.",
+    },
+    servers: [{ url: "/" }],
+  });
+
+  app.notFound((c) => fail(c, "NOT_FOUND"));
+  app.onError((_err, c) => fail(c, "INTERNAL_ERROR"));
+
+  return app;
+}
+
+function fail(c: { get: (k: "requestId") => string; json: (b: unknown, s: number) => Response }, code: ErrorCode) {
+  return c.json(errorBody(code, c.get("requestId")), errorStatus[code]);
+}

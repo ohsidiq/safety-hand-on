@@ -1,0 +1,48 @@
+/** Katalog kode galat API-000 bagian 7. Pesan tidak memuat data sensitif atau detail internal. */
+export const errorStatus = {
+  BAD_REQUEST: 400,
+  ACCESS_REASON_REQUIRED: 400,
+  UNAUTHORIZED: 401,
+  TOKEN_EXPIRED: 401,
+  FORBIDDEN: 403,
+  SCOPE_DENIED: 403,
+  AI_DISABLED: 403,
+  NOT_FOUND: 404,
+  CONFLICT: 409,
+  DUPLICATE: 409,
+  VERSION_CONFLICT: 412,
+  PAYLOAD_TOO_LARGE: 413,
+  VALIDATION_ERROR: 422,
+  IDEMPOTENCY_MISMATCH: 422,
+  RATE_LIMITED: 429,
+  QUOTA_EXCEEDED: 429,
+  INTERNAL_ERROR: 500,
+  SERVICE_UNAVAILABLE: 503,
+} as const;
+
+export type ErrorCode = keyof typeof errorStatus;
+
+const messages: Record<ErrorCode, string> = {
+  BAD_REQUEST: "Permintaan tidak dapat diproses",
+  ACCESS_REASON_REQUIRED: "Alasan akses wajib diisi",
+  UNAUTHORIZED: "Autentikasi tidak valid",
+  TOKEN_EXPIRED: "Sesi kedaluwarsa",
+  FORBIDDEN: "Tidak memiliki izin",
+  SCOPE_DENIED: "Di luar cakupan akses",
+  AI_DISABLED: "AI belum diaktifkan",
+  NOT_FOUND: "Tidak ditemukan",
+  CONFLICT: "Konflik keadaan",
+  DUPLICATE: "Data duplikat",
+  VERSION_CONFLICT: "Versi data tidak cocok",
+  PAYLOAD_TOO_LARGE: "Ukuran melebihi batas",
+  VALIDATION_ERROR: "Data tidak valid",
+  IDEMPOTENCY_MISMATCH: "Kunci idempotensi dipakai dengan isi berbeda",
+  RATE_LIMITED: "Terlalu banyak permintaan",
+  QUOTA_EXCEEDED: "Kuota terlampaui",
+  INTERNAL_ERROR: "Terjadi galat pada server",
+  SERVICE_UNAVAILABLE: "Layanan sementara tidak tersedia",
+};
+
+export function errorBody(code: ErrorCode, requestId: string) {
+  return { success: false as const, error: { code, message: messages[code] }, request_id: requestId };
+}

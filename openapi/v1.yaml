@@ -1,0 +1,67 @@
+# Dibangkitkan oleh: pnpm --filter @soh/api openapi. Jangan diubah manual.
+openapi: 3.1.0
+info:
+  title: Safety On Hand Core API
+  version: 0.1.0
+  description: Kontrak API v1 (ARCH-003). Data sintetis saja sampai syarat B-24 terpenuhi.
+servers:
+  - url: /
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: "#/components/schemas/HealthStatus"
+        request_id:
+          type: string
+      required:
+        - success
+        - data
+        - request_id
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - UP
+            - DOWN
+          example: UP
+      required:
+        - status
+  parameters: {}
+paths:
+  /api/v1/health/live:
+    get:
+      tags:
+        - Health
+      summary: "Liveness: proses Core API berjalan"
+      responses:
+        "200":
+          description: Proses hidup
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+  /api/v1/health/ready:
+    get:
+      tags:
+        - Health
+      summary: "Readiness: dependensi (database) siap"
+      responses:
+        "200":
+          description: Siap melayani
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+        "503":
+          description: Belum siap
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+webhooks: {}

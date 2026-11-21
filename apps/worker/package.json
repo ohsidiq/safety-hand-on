@@ -1,0 +1,17 @@
+{
+  "name": "@soh/worker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "start": "node --import tsx src/main.ts",
+    "once": "tsx src/main.ts --once",
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@soh/db": "workspace:*"
+  }
+}

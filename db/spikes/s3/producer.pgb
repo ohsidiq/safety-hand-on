@@ -1,0 +1,6 @@
+\set v random(1, 1000000)
+BEGIN;
+WITH b AS (INSERT INTO s3_business(v) VALUES (:v) RETURNING id)
+INSERT INTO outbox_event(organization_id, event_type, payload)
+SELECT '00000000-0000-0000-0000-000000000001'::uuid, 'S3_TEST', jsonb_build_object('business_id', id) FROM b;
+END;

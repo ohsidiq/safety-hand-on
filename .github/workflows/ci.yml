@@ -1,0 +1,84 @@
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  app:
+    name: Lint, tipe, uji unit, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Lint dan format (Biome)
+        run: pnpm lint
+      - name: Pemeriksaan tipe
+        run: pnpm typecheck
+      - name: Kontrak OpenAPI sinkron dengan kode (ARCH-003)
+        run: pnpm --filter @soh/api exec tsx src/scripts/export-openapi.ts --check
+      - name: Uji unit (uji integrasi dilewati tanpa DATABASE_URL)
+        run: pnpm test
+      - name: Build web
+        run: pnpm --filter @soh/web build
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+      - name: Audit dependensi (tingkat tinggi ke atas)
+        run: pnpm audit --audit-level high --prod
+
+  database:
+    name: Migrasi dari nol, RLS, integrasi API dan worker
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/m0test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Migrasi dari nol (dua kali), seed sintetis, uji isolasi tenant
+        run: bash scripts/test-db.sh
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Uji integrasi Core API (RLS lewat withUser) dan worker outbox
+        run: pnpm --filter @soh/api --filter @soh/worker test
+
+  secrets:
+    name: Pemindaian rahasia
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

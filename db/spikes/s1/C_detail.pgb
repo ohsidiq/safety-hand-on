@@ -1,0 +1,7 @@
+\set w random(1, 10000)
+BEGIN;
+SELECT set_config('app.user_id', (SELECT user_id::text FROM bench.users WHERE grp='mgr_big' AND n=1), true);
+SELECT w.id, w.full_name, w.job_position, rs.status, rs.reasons FROM worker w LEFT JOIN readiness_snapshot rs ON rs.worker_id = w.id WHERE w.id = (SELECT worker_id FROM bench.workers WHERE n=:w);
+SELECT requirement_name, expires_on, verified_at FROM competency_record WHERE worker_id = (SELECT worker_id FROM bench.workers WHERE n=:w);
+SELECT status, detail_status FROM (SELECT status, 'x' AS detail_status FROM medical_status WHERE worker_id = (SELECT worker_id FROM bench.workers WHERE n=:w)) m;
+END;

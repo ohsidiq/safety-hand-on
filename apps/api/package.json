@@ -1,0 +1,24 @@
+{
+  "name": "@soh/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "node --import tsx src/server.ts",
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "openapi": "tsx src/scripts/export-openapi.ts"
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.1.11",
+    "@hono/zod-openapi": "^1.6.3",
+    "@soh/db": "workspace:*",
+    "hono": "^4.13.19",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "yaml": "^2.9.1"
+  }
+}
