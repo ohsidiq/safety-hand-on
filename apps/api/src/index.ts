@@ -1,7 +1,7 @@
-import { createPool } from "@soh/db";
 import { Hono } from "hono";
 import { allowedOriginsFromEnv } from "./config.js";
 import { createApp } from "./create-app.js";
+import { createPoolSafe } from "./db.js";
 
 /**
  * Entrypoint Vercel (Hono zero-config): ekspor default aplikasi Hono. Detektor Vercel mensyaratkan
@@ -11,7 +11,7 @@ import { createApp } from "./create-app.js";
  * DATABASE_URL memakai Supabase transaction pooler. `SET LOCAL` dan `set_config(..., true)`
  * di `withUser` berlaku per transaksi, jadi aman untuk mode transaction pooling.
  */
-const db = process.env.DATABASE_URL ? createPool() : undefined;
+const db = createPoolSafe();
 
 const app = createApp({ db, allowedOrigins: allowedOriginsFromEnv() });
 if (!(app instanceof Hono)) {

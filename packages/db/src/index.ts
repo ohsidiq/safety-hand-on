@@ -23,8 +23,24 @@ const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1", ""]);
  * - Tanpa itu: terenkripsi tanpa verifikasi rantai sertifikat (cukup untuk staging data sintetis;
  *   wajib diisi sebelum data nyata, lihat REQ-ENV-001).
  */
+/**
+ * Mengurai connection string tanpa pernah membocorkan isinya. `new URL()` bawaan Node menyertakan
+ * input (termasuk password) di pesan galat, jadi galat diganti dengan pesan generik.
+ */
+export function parseConnectionString(connectionString: string): URL {
+  try {
+    return new URL(connectionString);
+  } catch {
+    const err = new Error(
+      "DATABASE_URL tidak valid. Periksa format URI; password dengan karakter khusus (# / ? @ : % ( ) [ ]) harus di-URL-encode.",
+    );
+    (err as Error & { code: string }).code = "DATABASE_URL_INVALID";
+    throw err;
+  }
+}
+
 export function sslOptions(connectionString: string, caCert = process.env.DATABASE_CA_CERT): pg.PoolConfig["ssl"] {
-  const host = new URL(connectionString).hostname;
+  const host = parseConnectionString(connectionString).hostname;
   if (LOCAL_HOSTS.has(host)) return undefined;
   return caCert ? { ca: caCert, rejectUnauthorized: true } : { rejectUnauthorized: false };
 }
@@ -34,7 +50,7 @@ export function createPool(connectionString = process.env.DATABASE_URL): Db {
     throw new Error("DATABASE_URL belum diatur");
   }
   // sslmode di URL diabaikan agar perilaku TLS hanya ditentukan sslOptions (konsisten lintas penyedia).
-  const url = new URL(connectionString);
+  const url = parseConnectionString(connectionString);
   url.searchParams.delete("sslmode");
   return new pg.Pool({
     connectionString: url.toString(),

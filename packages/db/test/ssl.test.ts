@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sslOptions } from "../src/index.js";
+import { parseConnectionString, sslOptions } from "../src/index.js";
 
 describe("sslOptions", () => {
   it("tanpa TLS untuk database lokal", () => {
@@ -13,5 +13,20 @@ describe("sslOptions", () => {
 
   it("verifikasi penuh bila CA disediakan", () => {
     expect(sslOptions("postgres://u:p@db.contoh.com/postgres", "PEM")).toEqual({ ca: "PEM", rejectUnauthorized: true });
+  });
+});
+
+describe("parseConnectionString", () => {
+  it("galat URI tidak valid tidak pernah memuat isi connection string (password)", () => {
+    const secret = "RahasiaSuper#123";
+    let message = "";
+    try {
+      parseConnectionString(`postgresql://u:(${secret})@host.contoh:6543/postgres`);
+    } catch (e) {
+      message = `${(e as Error).message} ${JSON.stringify(e)}`;
+    }
+    expect(message).toContain("DATABASE_URL tidak valid");
+    expect(message).not.toContain(secret);
+    expect(message).not.toContain("host.contoh");
   });
 });
