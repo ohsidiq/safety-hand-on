@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { allowedOriginsFromEnv } from "./config.js";
 import { createApp } from "./create-app.js";
 import { createPoolSafe } from "./db.js";
+import { pushSenderFromEnv } from "./push-sender.js";
 
 /**
  * Entrypoint Vercel (Hono zero-config): ekspor default aplikasi Hono. Detektor Vercel mensyaratkan
@@ -13,7 +14,7 @@ import { createPoolSafe } from "./db.js";
  */
 const db = createPoolSafe();
 
-const app = createApp({ db, allowedOrigins: allowedOriginsFromEnv() });
+const app = createApp({ db, allowedOrigins: allowedOriginsFromEnv(), pushSender: pushSenderFromEnv() });
 if (!(app instanceof Hono)) {
   throw new Error("Core API harus berupa aplikasi Hono");
 }

@@ -16,10 +16,12 @@
     "@hono/zod-openapi": "^1.6.3",
     "@soh/db": "workspace:*",
     "hono": "^4.13.19",
+    "web-push": "^4.0.0",
     "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",
+    "@types/web-push": "^3.6.4",
     "typescript": "^5.9.3",
     "yaml": "^2.9.1"
   }
