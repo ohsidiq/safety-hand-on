@@ -6,7 +6,7 @@ Proyek portofolio: platform kesiapan kerja (Workforce Readiness) dan kepatuhan k
 
 ## Status
 
-Milestone **M0 (fondasi) IN PROGRESS**. Lihat `docs/03_Requirements_Management/13_MVP_Implementation_Plan` di vault. M1 sampai M5 NOT STARTED.
+Milestone **M0 (fondasi) TESTED** (2026-11-22). Staging publik: https://soh-web.vercel.app dan https://soh-api.vercel.app. M1 berikutnya.
 
 | Bagian | Isi | Status |
 |---|---|---|

@@ -10,7 +10,7 @@ Tanggal: 2026-11-21. Status: **indikatif**. Dijalankan di PostgreSQL 16.15 lokal
 | S-2 Evaluasi massal 1.000 pekerja | ≤ 60 detik (NFR-PERF-006) | 0,10 sampai 0,15 detik. 10.000 pekerja 0,81 detik. 30.000 pekerja 2,46 detik | Lulus lokal |
 | S-3 Outbox dan worker tahan dimatikan paksa | 0 kehilangan (NFR-REL-003) | 50.001 event, 2 kali SIGKILL pada semua proses PostgreSQL, 0 kehilangan, 0 duplikat efek | Lulus lokal |
 | S-4 Isolasi tenant pada seluruh tabel | 0 kebocoran (NFR-SEC-001) | 46 pemeriksaan, 0 kebocoran. Uji terbukti gagal saat kebijakan dirusak (3 mutasi) | Lulus lokal |
-| S-6 Push iOS lewat PWA | Berfungsi di perangkat target | Belum dijalankan (perlu perangkat nyata dan PWA) | Belum |
+| S-6 Push PWA | Berfungsi di perangkat target | 2026-11-22: Chrome desktop dan Android lulus; iOS belum | Sebagian |
 | S-5, S-7, S-8 | | Ditunda sampai ada data nyata (B-24) | Ditunda |
 
 ## S-1: kinerja RLS
@@ -101,3 +101,19 @@ bash scripts/test-db.sh                       # migrasi dari nol + S-4
 #            psql -f db/spikes/s1/setup.sql ; PGDATABASE=... db/spikes/s1/run.sh
 # S-3: db/spikes/s3/run.sh dengan CRASH_CMD dan START_CMD sesuai lingkungan
 ```
+
+
+## Pengulangan di Supabase staging (2026-11-22)
+
+Proyek `soh-staging` (PostgreSQL 17, ap-southeast-1, paket gratis). Diukur di sisi database sebagai `app_authenticated`
+(RLS berlaku), satu transaksi yang dibatalkan di akhir (staging tetap bersih, diverifikasi). Lihat `supabase_s1_s2.sql`.
+
+| Spike | Hasil Supabase | Status |
+|---|---|---|
+| S-1 (organisasi 10.000 pekerja, 20 Site) | A Supervisor p95 9,0 ms; B HSE Manager 10.000 p95 8,4 ms; C detail p95 2,7 ms; D dashboard p95 7,4 ms; 0 kebocoran | Lulus |
+| S-2 | 1.000 pekerja 180 ms; 10.000 pekerja 1.553 ms | Lulus |
+| S-3 | Tidak diulang (butuh akses OS untuk SIGKILL). Diterima: mekanisme PostgreSQL sama, uji integrasi worker di CI | Diterima |
+| S-4 | 62 pemeriksaan, 0 kebocoran (`db/tests/staging/rls_isolation_staging.sql`) | Lulus |
+| S-6 | Chrome desktop dan Android lulus (`/uji-push`). iOS belum diuji | Sebagian |
+
+Batasan: tanpa latensi jaringan Core API ke pooler; diukur ujung ke ujung saat endpoint bisnis ada (M1).

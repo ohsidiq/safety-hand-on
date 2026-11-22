@@ -1,0 +1,9 @@
+-- Spike S-1 dan S-2 di Supabase staging (2026-11-22). Dijalankan manual lewat SQL Editor/MCP.
+-- Satu transaksi yang SELALU diakhiri exception: semua data uji (organisasi 10.000 pekerja) dan
+-- fungsi sementara dibatalkan, staging tetap bersih. Hasil muncul di pesan "HASIL_SPIKE {...}".
+-- Prasyarat: migrasi 0001..0004 dan fungsi seed.make_org (db/seed/synthetic_seed.sql).
+-- Hasil 2026-11-22 (PostgreSQL 17, ap-southeast-1, paket gratis):
+--   seed 10.000 pekerja 1,8 dtk; S-2 1.000 pekerja 180 ms, 10.000 pekerja 1.553 ms;
+--   S-1 (40 iterasi, peran app_authenticated): A Supervisor daftar p95 9,0 ms; B HSE Mgr daftar 10.000 p95 8,4 ms;
+--   C detail p95 2,7 ms; D dashboard p95 7,4 ms; 0 baris organisasi lain terlihat.
+-- Isi lengkap blok DO sama dengan yang dijalankan; lihat riwayat chat/ADR-001 bagian 7.2.
