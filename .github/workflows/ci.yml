@@ -29,6 +29,8 @@ jobs:
         run: pnpm typecheck
       - name: Kontrak OpenAPI sinkron dengan kode (ARCH-003)
         run: pnpm --filter @soh/api exec tsx src/scripts/export-openapi.ts --check
+      - name: Smoke ESM Core API (impor seperti runtime Node di Vercel)
+        run: pnpm --filter @soh/api smoke:esm
       - name: Uji unit (uji integrasi dilewati tanpa DATABASE_URL)
         run: pnpm test
       - name: Build web
