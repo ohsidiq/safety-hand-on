@@ -18,3 +18,7 @@ dan memperluasnya di M1 dan M2. Peran dan izin di `0002` bukan PB-009.
 4. Tabel anak membawa `site_id` dan memakai FK komposit `(worker_id, organization_id, site_id)`.
 
 `0003_runtime_roles.sql`: peran `app_worker` (hanya outbox) dan kolom percobaan ulang/antrean gagal pada outbox.
+
+`0004_hardening.sql`: hasil Supabase Security Advisor pada staging. RLS pada tabel acuan peran/izin, `search_path`
+dikunci, hak peran klien Supabase (`anon`, `authenticated`) dicabut dari tabel aplikasi (ARCH-001), dan
+`schema_migrations` dilindungi RLS.
