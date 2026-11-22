@@ -15,8 +15,8 @@ export const API_VERSION = "0.1.0";
 
 export interface AppDeps {
   /** Pool database. Boleh kosong saat uji unit; /health/ready lalu melapor tidak siap. */
-  db?: Db;
-  allowedOrigins?: string[];
+  db?: Db | undefined;
+  allowedOrigins?: string[] | undefined;
 }
 
 type Env = { Variables: { requestId: string } };
