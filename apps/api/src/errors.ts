@@ -1,4 +1,4 @@
-/** Katalog kode galat API-000 bagian 7. Pesan tidak memuat data sensitif atau detail internal. */
+/** Katalog kode galat API-000 bagian 7 dan API-001 bagian 10. Pesan tidak memuat data sensitif atau detail internal. */
 export const errorStatus = {
   BAD_REQUEST: 400,
   ACCESS_REASON_REQUIRED: 400,
@@ -7,11 +7,13 @@ export const errorStatus = {
   FORBIDDEN: 403,
   SCOPE_DENIED: 403,
   AI_DISABLED: 403,
+  ACCOUNT_DEACTIVATED: 403,
   NOT_FOUND: 404,
   CONFLICT: 409,
   DUPLICATE: 409,
   VERSION_CONFLICT: 412,
   PAYLOAD_TOO_LARGE: 413,
+  ACCOUNT_LOCKED: 423,
   VALIDATION_ERROR: 422,
   IDEMPOTENCY_MISMATCH: 422,
   RATE_LIMITED: 429,
@@ -30,11 +32,13 @@ const messages: Record<ErrorCode, string> = {
   FORBIDDEN: "Tidak memiliki izin",
   SCOPE_DENIED: "Di luar cakupan akses",
   AI_DISABLED: "AI belum diaktifkan",
+  ACCOUNT_DEACTIVATED: "Akun dinonaktifkan",
   NOT_FOUND: "Tidak ditemukan",
   CONFLICT: "Konflik keadaan",
   DUPLICATE: "Data duplikat",
   VERSION_CONFLICT: "Versi data tidak cocok",
   PAYLOAD_TOO_LARGE: "Ukuran melebihi batas",
+  ACCOUNT_LOCKED: "Akun dikunci sementara",
   VALIDATION_ERROR: "Data tidak valid",
   IDEMPOTENCY_MISMATCH: "Kunci idempotensi dipakai dengan isi berbeda",
   RATE_LIMITED: "Terlalu banyak permintaan",
