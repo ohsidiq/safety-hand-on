@@ -19,7 +19,8 @@ declare
   v_req text[] := array['K3 Umum','Induksi Site','Sertifikat Posisi','Otorisasi Kerja'];
   v_pos text[] := array['Operator Alat Berat','Welder','Helper'];
 begin
-  insert into organization(name) values (p_name) returning id into v_org;
+  insert into organization(name, code) values (p_name, upper(regexp_replace(p_name, '[^A-Za-z0-9]', '', 'g')))
+  returning id into v_org;
 
   insert into site(organization_id, name)
   select v_org, 'Site ' || g from generate_series(1, p_sites) g;
@@ -86,6 +87,14 @@ begin
   insert into medical_detail(worker_id, organization_id, site_id, detail)
   select w.id, w.organization_id, w.site_id, 'Catatan medis sintetis ' || w.full_name
   from worker w where w.organization_id = v_org;
+
+  -- satu akun pekerja lapangan sintetis (role WORKER, scope SELF) yang terhubung lewat worker.user_id (B-18)
+  insert into user_profile(organization_id, email, full_name, status)
+  values (v_org, 'pekerja1@' || replace(lower(p_name), ' ', '-') || '.contoh', 'Pekerja 000001', 'ACTIVE');
+  update worker set user_id = (select id from user_profile where organization_id = v_org and email like 'pekerja1@%')
+  where id = (select id from worker where organization_id = v_org and full_name = 'Pekerja 000001');
+  insert into user_role_assignment(user_id, organization_id, role_code, scope_type, scope_id, granted_by)
+  select id, v_org, 'WORKER', 'SELF', null, v_admin from user_profile where organization_id = v_org and email like 'pekerja1@%';
 
   return v_org;
 end $$;

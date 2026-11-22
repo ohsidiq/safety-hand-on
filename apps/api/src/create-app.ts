@@ -3,6 +3,8 @@ import type { Db } from "@soh/db";
 import { checkDatabase } from "@soh/db";
 import { cors } from "hono/cors";
 import { secureHeaders } from "hono/secure-headers";
+import type { AuthEnv, AuthVerifier } from "./auth.js";
+import { registerAuthMe } from "./auth-me.js";
 import { type ErrorCode, errorBody, errorStatus } from "./errors.js";
 import { type PushSender, registerSpikePush } from "./spike-push.js";
 
@@ -20,9 +22,11 @@ export interface AppDeps {
   allowedOrigins?: string[] | undefined;
   /** SPIKE S-6: pengirim Web Push. Kosong = endpoint spike menjawab 404. */
   pushSender?: PushSender | undefined;
+  /** Verifier token Supabase Auth. Kosong = endpoint terlindungi menjawab 503. */
+  auth?: AuthVerifier | undefined;
 }
 
-type Env = { Variables: { requestId: string } };
+type Env = AuthEnv;
 
 const REQUEST_ID_RE = /^[A-Za-z0-9._-]{1,128}$/;
 
@@ -115,6 +119,7 @@ export function createApp(deps: AppDeps = {}) {
     return up ? c.json(body, 200) : c.json(body, 503);
   });
 
+  registerAuthMe(v1, deps);
   registerSpikePush(v1, deps.pushSender);
 
   app.route("/api/v1", v1);
