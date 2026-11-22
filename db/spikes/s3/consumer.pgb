@@ -1,0 +1,9 @@
+BEGIN;
+WITH batch AS (
+  SELECT id, payload FROM outbox_event WHERE processed_at IS NULL ORDER BY id LIMIT 50 FOR UPDATE SKIP LOCKED
+), eff AS (
+  INSERT INTO s3_effect(event_id, business_id)
+  SELECT id, (payload->>'business_id')::bigint FROM batch ON CONFLICT DO NOTHING RETURNING event_id
+)
+UPDATE outbox_event o SET processed_at = now() FROM batch b WHERE o.id = b.id;
+END;

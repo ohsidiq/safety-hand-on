@@ -1,0 +1,29 @@
+{
+  "name": "safety-on-hand",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Safety On Hand: platform tata kelola kesiapan dan keselamatan tenaga kerja (portofolio, data sintetis)",
+  "packageManager": "pnpm@10.9.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev:web": "pnpm --filter @soh/web dev",
+    "dev:api": "pnpm --filter @soh/api dev",
+    "dev:worker": "pnpm --filter @soh/worker dev",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "build": "pnpm -r build",
+    "db:migrate": "bash scripts/migrate.sh",
+    "db:test": "bash scripts/test-db.sh"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.6.8",
+    "@types/node": "^26.6.6",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.1"
+  }
+}

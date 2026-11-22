@@ -1,0 +1,7 @@
+\set u random(1, 20)
+\set off random(0, 400)
+BEGIN;
+SELECT set_config('app.user_id', (SELECT user_id::text FROM bench.users WHERE grp='spv_big' AND n=:u), true);
+SELECT id, full_name, job_position FROM worker ORDER BY full_name LIMIT 50 OFFSET :off;
+SELECT count(*) FROM worker;
+END;
