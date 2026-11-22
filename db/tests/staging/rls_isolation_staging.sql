@@ -1,4 +1,5 @@
--- rls_isolation_staging.sql: uji isolasi tenant (S-4) untuk dijalankan di Supabase SQL Editor.
+-- rls_isolation_staging.sql: uji isolasi tenant (S-4) untuk dijalankan manual di Supabase SQL Editor.
+-- Sengaja di luar db/tests/*.sql karena selalu diakhiri exception (tidak dijalankan test-db.sh).
 -- Sama dengan db/tests/rls_isolation.sql, ditambah T9 (anon/authenticated tanpa hak, ARCH-001).
 -- Selalu berakhir dengan pesan galat agar semua perubahan uji dibatalkan:
 --   "HASIL_UJI LULUS: N pemeriksaan, 0 kebocoran"  -> LULUS
