@@ -12,7 +12,7 @@
 create schema if not exists seed;
 
 create or replace function seed.make_org(p_name text, p_sites int, p_workers int) returns uuid
-language plpgsql as $$
+language plpgsql set search_path = public, pg_temp as $$
 declare
   v_org uuid;
   v_req text[] := array['K3 Umum','Induksi Site','Sertifikat Posisi','Otorisasi Kerja'];

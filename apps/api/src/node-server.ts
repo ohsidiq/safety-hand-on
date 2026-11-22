@@ -1,15 +1,12 @@
 import { serve } from "@hono/node-server";
-import { createPool } from "@soh/db";
-import { createApp } from "./app.js";
+import { allowedOriginsFromEnv } from "./config.js";
+import { createApp } from "./create-app.js";
+import { createPoolSafe } from "./db.js";
 
+// Server lokal untuk pengembangan. Di Vercel dipakai src/index.ts.
 const port = Number(process.env.API_PORT ?? 8787);
-const allowedOrigins = (process.env.API_ALLOWED_ORIGINS ?? "")
-  .split(",")
-  .map((s) => s.trim())
-  .filter(Boolean);
-
-const db = process.env.DATABASE_URL ? createPool() : undefined;
-const app = createApp({ db, allowedOrigins });
+const db = createPoolSafe();
+const app = createApp({ db, allowedOrigins: allowedOriginsFromEnv() });
 
 serve({ fetch: app.fetch, port }, (info) => {
   // Log terstruktur tanpa data sensitif (API-000 bagian 17)

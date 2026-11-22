@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
-    "start": "node --import tsx src/server.ts",
+    "dev": "tsx watch src/node-server.ts",
+    "start": "node --import tsx src/node-server.ts",
     "build": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -19,6 +19,8 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@types/node": "^22.20.5",
+    "typescript": "^5.9.3",
     "yaml": "^2.9.1"
   }
 }

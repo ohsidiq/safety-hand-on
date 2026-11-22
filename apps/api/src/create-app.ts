@@ -15,8 +15,8 @@ export const API_VERSION = "0.1.0";
 
 export interface AppDeps {
   /** Pool database. Boleh kosong saat uji unit; /health/ready lalu melapor tidak siap. */
-  db?: Db;
-  allowedOrigins?: string[];
+  db?: Db | undefined;
+  allowedOrigins?: string[] | undefined;
 }
 
 type Env = { Variables: { requestId: string } };
@@ -93,8 +93,19 @@ export function createApp(deps: AppDeps = {}) {
     if (deps.db) {
       try {
         up = (await checkDatabase(deps.db)).ok;
-      } catch {
-        up = false; // tanpa detail internal (API-000 bagian 18)
+      } catch (err) {
+        up = false; // respons tanpa detail internal (API-000 bagian 18)
+        // Log hanya kode galat (mis. 28P01, ECONNREFUSED, SELF_SIGNED_CERT_IN_CHAIN), tanpa pesan/URL/kredensial.
+        const e = err as { code?: unknown; name?: unknown };
+        console.error(
+          JSON.stringify({
+            level: "error",
+            msg: "readiness db check failed",
+            code: typeof e.code === "string" ? e.code : undefined,
+            name: typeof e.name === "string" ? e.name : undefined,
+            request_id: c.get("requestId"),
+          }),
+        );
       }
     }
     const body = { success: up, data: { status: up ? ("UP" as const) : ("DOWN" as const) }, request_id: c.get("requestId") };

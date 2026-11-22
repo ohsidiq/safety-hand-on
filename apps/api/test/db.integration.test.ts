@@ -1,6 +1,6 @@
 import { createPool, type Db, withUser } from "@soh/db";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { createApp } from "../src/app.js";
+import { createApp } from "../src/create-app.js";
 
 /**
  * Uji integrasi Core API -> PostgreSQL (butuh DATABASE_URL ke database yang sudah dimigrasi dan
