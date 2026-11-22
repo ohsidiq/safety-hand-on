@@ -46,3 +46,46 @@ describe("urlBase64ToUint8Array", () => {
     expect(Array.from(urlBase64ToUint8Array("AQID_-8"))).toEqual([1, 2, 3, 255, 239]);
   });
 });
+
+describe("login dan /auth/me", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("pesan galat login tidak membedakan akun tidak ada dan kata sandi salah", async () => {
+    const { loginErrorMessage } = await import("../lib/supabase");
+    expect(loginErrorMessage({ status: 400, code: "invalid_credentials" })).toBe("Email atau kata sandi salah.");
+    expect(loginErrorMessage({ status: 400, code: "user_not_found" })).toBe("Email atau kata sandi salah.");
+    expect(loginErrorMessage({ status: 429 })).toMatch(/Terlalu banyak/);
+  });
+
+  it("tanpa konfigurasi Supabase, klien login tidak dibuat", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "");
+    vi.resetModules();
+    const { getSupabase } = await import("../lib/supabase");
+    expect(getSupabase()).toBeNull();
+  });
+
+  it("fetchMe mengirim token Bearer dan memetakan galat API", async () => {
+    vi.stubEnv("NEXT_PUBLIC_API_BASE_URL", "https://api.contoh");
+    const { fetchMe } = await import("../lib/api");
+    const calls: [string, RequestInit | undefined][] = [];
+    const reply = (status: number, body: unknown) =>
+      (async (url: string, init?: RequestInit) => {
+        calls.push([url, init]);
+        return new Response(JSON.stringify(body), { status });
+      }) as unknown as typeof fetch;
+
+    const ok = await fetchMe("tok", reply(200, { success: true, data: { user_id: "u" } }));
+    expect(ok).toMatchObject({ ok: true, me: { user_id: "u" } });
+    expect(calls[0]?.[0]).toBe("https://api.contoh/api/v1/auth/me");
+    expect((calls[0]?.[1]?.headers as Record<string, string> | undefined)?.Authorization).toBe("Bearer tok");
+
+    expect(await fetchMe("t", reply(401, { error: { code: "UNAUTHORIZED" } }))).toEqual({ ok: false, code: "UNAUTHORIZED" });
+    expect(await fetchMe("t", reply(403, { error: { code: "ACCOUNT_DEACTIVATED" } }))).toEqual({
+      ok: false,
+      code: "ACCOUNT_DEACTIVATED",
+    });
+    expect(await fetchMe("t", reply(500, { error: { code: "INTERNAL_ERROR" } }))).toEqual({ ok: false, code: "UNAVAILABLE" });
+  });
+});
