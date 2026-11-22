@@ -4,6 +4,7 @@ import { checkDatabase } from "@soh/db";
 import { cors } from "hono/cors";
 import { secureHeaders } from "hono/secure-headers";
 import { type ErrorCode, errorBody, errorStatus } from "./errors.js";
+import { type PushSender, registerSpikePush } from "./spike-push.js";
 
 /**
  * Core API Safety On Hand (ADR-001 Opsi B).
@@ -17,6 +18,8 @@ export interface AppDeps {
   /** Pool database. Boleh kosong saat uji unit; /health/ready lalu melapor tidak siap. */
   db?: Db | undefined;
   allowedOrigins?: string[] | undefined;
+  /** SPIKE S-6: pengirim Web Push. Kosong = endpoint spike menjawab 404. */
+  pushSender?: PushSender | undefined;
 }
 
 type Env = { Variables: { requestId: string } };
@@ -111,6 +114,8 @@ export function createApp(deps: AppDeps = {}) {
     const body = { success: up, data: { status: up ? ("UP" as const) : ("DOWN" as const) }, request_id: c.get("requestId") };
     return up ? c.json(body, 200) : c.json(body, 503);
   });
+
+  registerSpikePush(v1, deps.pushSender);
 
   app.route("/api/v1", v1);
 

@@ -32,6 +32,30 @@ components:
           example: UP
       required:
         - status
+    PushSubscription:
+      type: object
+      properties:
+        endpoint:
+          type: string
+          maxLength: 2048
+          format: uri
+        keys:
+          type: object
+          properties:
+            p256dh:
+              type: string
+              minLength: 1
+              maxLength: 256
+            auth:
+              type: string
+              minLength: 1
+              maxLength: 64
+          required:
+            - p256dh
+            - auth
+      required:
+        - endpoint
+        - keys
   parameters: {}
 paths:
   /api/v1/health/live:
@@ -64,4 +88,52 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthResponse"
+  /api/v1/spike/push-test:
+    post:
+      tags:
+        - Spike S-6
+      summary: "SPIKE: kirim notifikasi uji ke langganan Web Push (sementara, nonaktif
+        secara bawaan)"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                subscription:
+                  $ref: "#/components/schemas/PushSubscription"
+              required:
+                - subscription
+      responses:
+        "202":
+          description: Notifikasi uji dikirim ke layanan push
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      sent:
+                        type: boolean
+                    required:
+                      - sent
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "404":
+          description: Spike tidak aktif
+        "422":
+          description: Langganan tidak valid atau layanan push tidak diizinkan
+        "429":
+          description: Terlalu banyak permintaan
+        "502":
+          description: Layanan push menolak
 webhooks: {}
