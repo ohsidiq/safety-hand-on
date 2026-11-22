@@ -15,6 +15,7 @@ create or replace function seed.make_org(p_name text, p_sites int, p_workers int
 language plpgsql set search_path = public, pg_temp as $$
 declare
   v_org uuid;
+  v_admin uuid;
   v_req text[] := array['K3 Umum','Induksi Site','Sertifikat Posisi','Otorisasi Kerja'];
   v_pos text[] := array['Operator Alat Berat','Welder','Helper'];
 begin
@@ -23,27 +24,32 @@ begin
   insert into site(organization_id, name)
   select v_org, 'Site ' || g from generate_series(1, p_sites) g;
 
-  -- pengguna tingkat organisasi
-  insert into app_user(organization_id, email)
-  select v_org, r || '@' || replace(lower(p_name), ' ', '-') || '.contoh'
+  -- pengguna tingkat organisasi (nama sintetis). Company Admin pertama dibuat sistem (granted_by NULL);
+  -- penugasan lain diberikan oleh Company Admin.
+  insert into user_profile(organization_id, email, full_name, status)
+  select v_org, r || '@' || replace(lower(p_name), ' ', '-') || '.contoh', initcap(r) || ' ' || p_name, 'ACTIVE'
   from unnest(array['admin','hsemgr','medis']) r;
-  insert into user_role_assignment(user_id, organization_id, role_code, site_id)
+  select id into v_admin from user_profile where organization_id = v_org and email like 'admin@%';
+  insert into user_role_assignment(user_id, organization_id, role_code, scope_type, scope_id, granted_by)
   select u.id, v_org,
-         case split_part(u.email, '@', 1) when 'admin' then 'ORG_ADMIN' when 'hsemgr' then 'HSE_MANAGER' else 'MEDICAL_REVIEWER' end,
-         null
-  from app_user u where u.organization_id = v_org;
+         case split_part(u.email, '@', 1) when 'admin' then 'COMPANY_ADMIN' when 'hsemgr' then 'HSE_MANAGER' else 'MEDICAL_OFFICER' end,
+         'ORGANIZATION', null,
+         case when u.id = v_admin then null else v_admin end
+  from user_profile u where u.organization_id = v_org;
 
   -- pengguna per Site
-  insert into app_user(organization_id, email)
-  select v_org, r || s.n || '@' || replace(lower(p_name), ' ', '-') || '.contoh'
+  insert into user_profile(organization_id, email, full_name, status)
+  select v_org, r || s.n || '@' || replace(lower(p_name), ' ', '-') || '.contoh', initcap(r) || ' ' || s.n || ' ' || p_name, 'ACTIVE'
   from (select row_number() over (order by name) n from site where organization_id = v_org) s,
        unnest(array['spv','hseo']) r;
-  insert into user_role_assignment(user_id, organization_id, role_code, site_id)
+  insert into user_role_assignment(user_id, organization_id, role_code, scope_type, scope_id, granted_by)
   select u.id, v_org,
          case when u.email like 'spv%' then 'SUPERVISOR' else 'HSE_OFFICER' end,
+         'SITE',
          (select id from (select id, row_number() over (order by name) n from site where organization_id = v_org) x
-           where x.n = substring(split_part(u.email, '@', 1) from '\d+')::int)
-  from app_user u
+           where x.n = substring(split_part(u.email, '@', 1) from '\d+')::int),
+         v_admin
+  from user_profile u
   where u.organization_id = v_org and (u.email like 'spv%' or u.email like 'hseo%');
 
   insert into requirement_item(organization_id, job_position, requirement_name)

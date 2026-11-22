@@ -22,11 +22,15 @@ describe.skipIf(!url)("Core API + RLS (integrasi)", () => {
     const orgA = orgs.rows[0]?.id as string;
     orgB = orgs.rows[1]?.id as string;
     const q = (pattern: string, org: string) =>
-      db.query<{ id: string }>("select id from app_user where organization_id = $1 and email like $2", [org, pattern]);
+      db.query<{ id: string }>("select id from user_profile where organization_id = $1 and email like $2", [org, pattern]);
     mgrA = (await q("hsemgr@%", orgA)).rows[0]?.id as string;
     spvA = (await q("spv1@%", orgA)).rows[0]?.id as string;
-    spvSite = (await db.query<{ site_id: string }>("select site_id from user_role_assignment where user_id = $1", [spvA])).rows[0]
-      ?.site_id as string;
+    spvSite = (
+      await db.query<{ site_id: string }>(
+        "select scope_id as site_id from user_role_assignment where user_id = $1 and scope_type = 'SITE'",
+        [spvA],
+      )
+    ).rows[0]?.site_id as string;
     expect(mgrA && orgB && spvA && spvSite).toBeTruthy();
   });
 

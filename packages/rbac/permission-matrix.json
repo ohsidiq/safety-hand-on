@@ -1,0 +1,1747 @@
+{
+  "source": "PB-009 v3.5 dan PB-008 v3.5 (vault docs/01_Product_Bible), disalin 2026-11-23",
+  "levels": {
+    "FULL": "✔",
+    "LIMITED": "◐",
+    "TEAM": "T",
+    "SELF": "S"
+  },
+  "roles": [
+    {
+      "code": "PLATFORM_SUPER_ADMIN",
+      "name": "Platform Super Admin",
+      "scope_levels": ["PLATFORM"],
+      "phase": "P0",
+      "is_active": true
+    },
+    {
+      "code": "COMPANY_ADMIN",
+      "name": "Company Admin",
+      "scope_levels": ["ORGANIZATION"],
+      "phase": "P0",
+      "is_active": true
+    },
+    {
+      "code": "EXECUTIVE",
+      "name": "Executive",
+      "scope_levels": ["ORGANIZATION", "SITE"],
+      "phase": "P1",
+      "is_active": true
+    },
+    {
+      "code": "HSE_MANAGER",
+      "name": "HSE Manager",
+      "scope_levels": ["ORGANIZATION", "SITE"],
+      "phase": "P1",
+      "is_active": true
+    },
+    {
+      "code": "HSE_OFFICER",
+      "name": "HSE Officer",
+      "scope_levels": ["SITE"],
+      "phase": "P1",
+      "is_active": true
+    },
+    {
+      "code": "SITE_ADMIN",
+      "name": "Site Admin",
+      "scope_levels": ["SITE"],
+      "phase": "P0",
+      "is_active": true
+    },
+    {
+      "code": "SUPERVISOR",
+      "name": "Supervisor",
+      "scope_levels": ["SITE", "DEPARTMENT", "TEAM"],
+      "phase": "P1",
+      "is_active": true
+    },
+    {
+      "code": "MEDICAL_OFFICER",
+      "name": "Medical Officer",
+      "scope_levels": ["ORGANIZATION", "SITE"],
+      "phase": "P1",
+      "is_active": true
+    },
+    {
+      "code": "TRAINER",
+      "name": "Trainer",
+      "scope_levels": ["ORGANIZATION", "SITE"],
+      "phase": "P3",
+      "is_active": false
+    },
+    {
+      "code": "AUDITOR",
+      "name": "Auditor",
+      "scope_levels": ["ORGANIZATION"],
+      "phase": "P2",
+      "is_active": false
+    },
+    {
+      "code": "WORKER",
+      "name": "Worker",
+      "scope_levels": ["SELF"],
+      "phase": "P0",
+      "is_active": true
+    },
+    {
+      "code": "CONTRACTOR_ADMIN",
+      "name": "Contractor Admin",
+      "scope_levels": ["CONTRACTOR"],
+      "phase": "P2",
+      "is_active": false
+    }
+  ],
+  "permissions": [
+    {
+      "code": "tenant.manage",
+      "module": "tenant",
+      "action": "manage",
+      "domain": "People",
+      "description": "Mengelola tenant",
+      "is_sensitive": false
+    },
+    {
+      "code": "organization.read",
+      "module": "organization",
+      "action": "read",
+      "domain": "People",
+      "description": "Melihat struktur organisasi",
+      "is_sensitive": false
+    },
+    {
+      "code": "organization.manage",
+      "module": "organization",
+      "action": "manage",
+      "domain": "People",
+      "description": "Mengelola organisasi, site, department, Job Position",
+      "is_sensitive": false
+    },
+    {
+      "code": "worker.read",
+      "module": "worker",
+      "action": "read",
+      "domain": "People",
+      "description": "Melihat data pekerja",
+      "is_sensitive": false
+    },
+    {
+      "code": "worker.create",
+      "module": "worker",
+      "action": "create",
+      "domain": "People",
+      "description": "Menambah pekerja",
+      "is_sensitive": false
+    },
+    {
+      "code": "worker.update",
+      "module": "worker",
+      "action": "update",
+      "domain": "People",
+      "description": "Mengubah data pekerja",
+      "is_sensitive": false
+    },
+    {
+      "code": "worker.deactivate",
+      "module": "worker",
+      "action": "deactivate",
+      "domain": "People",
+      "description": "Menonaktifkan pekerja",
+      "is_sensitive": false
+    },
+    {
+      "code": "user.manage",
+      "module": "user",
+      "action": "manage",
+      "domain": "People",
+      "description": "Mengelola pengguna",
+      "is_sensitive": false
+    },
+    {
+      "code": "role.manage",
+      "module": "role",
+      "action": "manage",
+      "domain": "People",
+      "description": "Menugaskan role dan scope",
+      "is_sensitive": false
+    },
+    {
+      "code": "contractor.read",
+      "module": "contractor",
+      "action": "read",
+      "domain": "People",
+      "description": "Melihat data kontraktor (P2)",
+      "is_sensitive": false
+    },
+    {
+      "code": "contractor.manage",
+      "module": "contractor",
+      "action": "manage",
+      "domain": "People",
+      "description": "Mengelola kontraktor dan keterkaitan Site (P2)",
+      "is_sensitive": false
+    },
+    {
+      "code": "contractor_document.update",
+      "module": "contractor_document",
+      "action": "update",
+      "domain": "People",
+      "description": "Menambah atau mengubah dokumen perusahaan kontraktor (P2)",
+      "is_sensitive": false
+    },
+    {
+      "code": "contractor_document.verify",
+      "module": "contractor_document",
+      "action": "verify",
+      "domain": "People",
+      "description": "Memverifikasi dokumen perusahaan kontraktor (P2)",
+      "is_sensitive": false
+    },
+    {
+      "code": "competency.read",
+      "module": "competency",
+      "action": "read",
+      "domain": "Readiness",
+      "description": "Melihat kompetensi",
+      "is_sensitive": false
+    },
+    {
+      "code": "competency.update",
+      "module": "competency",
+      "action": "update",
+      "domain": "Readiness",
+      "description": "Menambah atau mengubah kompetensi",
+      "is_sensitive": false
+    },
+    {
+      "code": "competency.verify",
+      "module": "competency",
+      "action": "verify",
+      "domain": "Readiness",
+      "description": "Memverifikasi kompetensi",
+      "is_sensitive": false
+    },
+    {
+      "code": "medical.read_status",
+      "module": "medical",
+      "action": "read_status",
+      "domain": "Readiness",
+      "description": "Melihat status Fit to Work, pembatasan, tanggal berakhir",
+      "is_sensitive": false
+    },
+    {
+      "code": "medical.read_detail",
+      "module": "medical",
+      "action": "read_detail",
+      "domain": "Readiness",
+      "description": "Melihat detail hasil medis",
+      "is_sensitive": true
+    },
+    {
+      "code": "medical.update",
+      "module": "medical",
+      "action": "update",
+      "domain": "Readiness",
+      "description": "Mencatat data medical",
+      "is_sensitive": false
+    },
+    {
+      "code": "medical.verify",
+      "module": "medical",
+      "action": "verify",
+      "domain": "Readiness",
+      "description": "Menetapkan Fit to Work",
+      "is_sensitive": false
+    },
+    {
+      "code": "authorization.read",
+      "module": "authorization",
+      "action": "read",
+      "domain": "Readiness",
+      "description": "Melihat Otorisasi Kerja",
+      "is_sensitive": false
+    },
+    {
+      "code": "authorization.update",
+      "module": "authorization",
+      "action": "update",
+      "domain": "Readiness",
+      "description": "Menambah atau mengubah Otorisasi Kerja",
+      "is_sensitive": false
+    },
+    {
+      "code": "authorization.verify",
+      "module": "authorization",
+      "action": "verify",
+      "domain": "Readiness",
+      "description": "Memverifikasi Otorisasi Kerja",
+      "is_sensitive": false
+    },
+    {
+      "code": "simper.read",
+      "module": "simper",
+      "action": "read",
+      "domain": "Readiness",
+      "description": "Melihat SIMPER",
+      "is_sensitive": false
+    },
+    {
+      "code": "simper.update",
+      "module": "simper",
+      "action": "update",
+      "domain": "Readiness",
+      "description": "Menambah atau mengubah SIMPER",
+      "is_sensitive": false
+    },
+    {
+      "code": "simper.verify",
+      "module": "simper",
+      "action": "verify",
+      "domain": "Readiness",
+      "description": "Memverifikasi SIMPER",
+      "is_sensitive": false
+    },
+    {
+      "code": "training.read",
+      "module": "training",
+      "action": "read",
+      "domain": "Readiness",
+      "description": "Melihat training",
+      "is_sensitive": false
+    },
+    {
+      "code": "training.manage",
+      "module": "training",
+      "action": "manage",
+      "domain": "Readiness",
+      "description": "Mengelola training dan kehadiran",
+      "is_sensitive": false
+    },
+    {
+      "code": "readiness.read",
+      "module": "readiness",
+      "action": "read",
+      "domain": "Readiness",
+      "description": "Melihat status kesiapan dan alasan",
+      "is_sensitive": false
+    },
+    {
+      "code": "readiness.evaluate",
+      "module": "readiness",
+      "action": "evaluate",
+      "domain": "Readiness",
+      "description": "Menjalankan evaluasi ulang manual",
+      "is_sensitive": false
+    },
+    {
+      "code": "readiness_profile.manage",
+      "module": "readiness_profile",
+      "action": "manage",
+      "domain": "Readiness",
+      "description": "Mengelola Requirement Profile",
+      "is_sensitive": false
+    },
+    {
+      "code": "inspection.read",
+      "module": "inspection",
+      "action": "read",
+      "domain": "Operations",
+      "description": "Melihat inspeksi",
+      "is_sensitive": false
+    },
+    {
+      "code": "inspection.create",
+      "module": "inspection",
+      "action": "create",
+      "domain": "Operations",
+      "description": "Menjadwalkan inspeksi",
+      "is_sensitive": false
+    },
+    {
+      "code": "inspection.execute",
+      "module": "inspection",
+      "action": "execute",
+      "domain": "Operations",
+      "description": "Melaksanakan inspeksi yang ditugaskan",
+      "is_sensitive": false
+    },
+    {
+      "code": "inspection.review",
+      "module": "inspection",
+      "action": "review",
+      "domain": "Operations",
+      "description": "Meninjau hasil inspeksi",
+      "is_sensitive": false
+    },
+    {
+      "code": "observation.create",
+      "module": "observation",
+      "action": "create",
+      "domain": "Operations",
+      "description": "Membuat observasi",
+      "is_sensitive": false
+    },
+    {
+      "code": "observation.read",
+      "module": "observation",
+      "action": "read",
+      "domain": "Operations",
+      "description": "Melihat observasi",
+      "is_sensitive": false
+    },
+    {
+      "code": "observation.review",
+      "module": "observation",
+      "action": "review",
+      "domain": "Operations",
+      "description": "Meninjau observasi",
+      "is_sensitive": false
+    },
+    {
+      "code": "corrective_action.read",
+      "module": "corrective_action",
+      "action": "read",
+      "domain": "Operations",
+      "description": "Melihat Corrective Action",
+      "is_sensitive": false
+    },
+    {
+      "code": "corrective_action.create",
+      "module": "corrective_action",
+      "action": "create",
+      "domain": "Operations",
+      "description": "Membuat Corrective Action",
+      "is_sensitive": false
+    },
+    {
+      "code": "corrective_action.assign",
+      "module": "corrective_action",
+      "action": "assign",
+      "domain": "Operations",
+      "description": "Menugaskan PIC",
+      "is_sensitive": false
+    },
+    {
+      "code": "corrective_action.update",
+      "module": "corrective_action",
+      "action": "update",
+      "domain": "Operations",
+      "description": "Memperbarui progres tugas",
+      "is_sensitive": false
+    },
+    {
+      "code": "corrective_action.verify",
+      "module": "corrective_action",
+      "action": "verify",
+      "domain": "Operations",
+      "description": "Memverifikasi penyelesaian",
+      "is_sensitive": false
+    },
+    {
+      "code": "dashboard.view",
+      "module": "dashboard",
+      "action": "view",
+      "domain": "Intelligence",
+      "description": "Melihat dashboard",
+      "is_sensitive": false
+    },
+    {
+      "code": "compliance.view",
+      "module": "compliance",
+      "action": "view",
+      "domain": "Intelligence",
+      "description": "Melihat dashboard kepatuhan",
+      "is_sensitive": false
+    },
+    {
+      "code": "report.export",
+      "module": "report",
+      "action": "export",
+      "domain": "Intelligence",
+      "description": "Mengekspor laporan",
+      "is_sensitive": false
+    },
+    {
+      "code": "ai_recommendation.read",
+      "module": "ai_recommendation",
+      "action": "read",
+      "domain": "Intelligence",
+      "description": "Melihat rekomendasi AI",
+      "is_sensitive": false
+    },
+    {
+      "code": "ai_recommendation.generate",
+      "module": "ai_recommendation",
+      "action": "generate",
+      "domain": "Intelligence",
+      "description": "Membuat rekomendasi AI",
+      "is_sensitive": false
+    },
+    {
+      "code": "ai_recommendation.review",
+      "module": "ai_recommendation",
+      "action": "review",
+      "domain": "Intelligence",
+      "description": "Meninjau, menerima, atau menolak rekomendasi",
+      "is_sensitive": false
+    },
+    {
+      "code": "ai_recommendation.configure",
+      "module": "ai_recommendation",
+      "action": "configure",
+      "domain": "Intelligence",
+      "description": "Mengatur AI perusahaan",
+      "is_sensitive": false
+    },
+    {
+      "code": "notification.read",
+      "module": "notification",
+      "action": "read",
+      "domain": "Platform",
+      "description": "Melihat notifikasi sendiri",
+      "is_sensitive": false
+    },
+    {
+      "code": "notification.configure",
+      "module": "notification",
+      "action": "configure",
+      "domain": "Platform",
+      "description": "Mengatur notifikasi perusahaan",
+      "is_sensitive": false
+    },
+    {
+      "code": "audit.view",
+      "module": "audit",
+      "action": "view",
+      "domain": "Platform",
+      "description": "Melihat jejak audit",
+      "is_sensitive": false
+    },
+    {
+      "code": "configuration.manage",
+      "module": "configuration",
+      "action": "manage",
+      "domain": "Platform",
+      "description": "Konfigurasi tenant",
+      "is_sensitive": false
+    },
+    {
+      "code": "platform.configure",
+      "module": "platform",
+      "action": "configure",
+      "domain": "Platform",
+      "description": "Konfigurasi platform",
+      "is_sensitive": false
+    },
+    {
+      "code": "integration.manage",
+      "module": "integration",
+      "action": "manage",
+      "domain": "Platform",
+      "description": "Mengelola integrasi (P5)",
+      "is_sensitive": false
+    }
+  ],
+  "grants": [
+    {
+      "role": "PLATFORM_SUPER_ADMIN",
+      "permission": "tenant.manage",
+      "level": "FULL"
+    },
+    {
+      "role": "COMPANY_ADMIN",
+      "permission": "organization.read",
+      "level": "FULL"
+    },
+    {
+      "role": "EXECUTIVE",
+      "permission": "organization.read",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_MANAGER",
+      "permission": "organization.read",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_OFFICER",
+      "permission": "organization.read",
+      "level": "FULL"
+    },
+    {
+      "role": "SITE_ADMIN",
+      "permission": "organization.read",
+      "level": "FULL"
+    },
+    {
+      "role": "SUPERVISOR",
+      "permission": "organization.read",
+      "level": "FULL"
+    },
+    {
+      "role": "MEDICAL_OFFICER",
+      "permission": "organization.read",
+      "level": "FULL"
+    },
+    {
+      "role": "TRAINER",
+      "permission": "organization.read",
+      "level": "FULL"
+    },
+    {
+      "role": "AUDITOR",
+      "permission": "organization.read",
+      "level": "FULL"
+    },
+    {
+      "role": "COMPANY_ADMIN",
+      "permission": "organization.manage",
+      "level": "FULL"
+    },
+    {
+      "role": "SITE_ADMIN",
+      "permission": "organization.manage",
+      "level": "LIMITED"
+    },
+    {
+      "role": "COMPANY_ADMIN",
+      "permission": "worker.read",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_MANAGER",
+      "permission": "worker.read",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_OFFICER",
+      "permission": "worker.read",
+      "level": "FULL"
+    },
+    {
+      "role": "SITE_ADMIN",
+      "permission": "worker.read",
+      "level": "FULL"
+    },
+    {
+      "role": "SUPERVISOR",
+      "permission": "worker.read",
+      "level": "TEAM"
+    },
+    {
+      "role": "MEDICAL_OFFICER",
+      "permission": "worker.read",
+      "level": "FULL"
+    },
+    {
+      "role": "TRAINER",
+      "permission": "worker.read",
+      "level": "LIMITED"
+    },
+    {
+      "role": "AUDITOR",
+      "permission": "worker.read",
+      "level": "FULL"
+    },
+    {
+      "role": "WORKER",
+      "permission": "worker.read",
+      "level": "SELF"
+    },
+    {
+      "role": "COMPANY_ADMIN",
+      "permission": "worker.create",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_MANAGER",
+      "permission": "worker.create",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_OFFICER",
+      "permission": "worker.create",
+      "level": "FULL"
+    },
+    {
+      "role": "SITE_ADMIN",
+      "permission": "worker.create",
+      "level": "FULL"
+    },
+    {
+      "role": "COMPANY_ADMIN",
+      "permission": "worker.update",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_MANAGER",
+      "permission": "worker.update",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_OFFICER",
+      "permission": "worker.update",
+      "level": "FULL"
+    },
+    {
+      "role": "SITE_ADMIN",
+      "permission": "worker.update",
+      "level": "FULL"
+    },
+    {
+      "role": "WORKER",
+      "permission": "worker.update",
+      "level": "SELF"
+    },
+    {
+      "role": "COMPANY_ADMIN",
+      "permission": "worker.deactivate",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_MANAGER",
+      "permission": "worker.deactivate",
+      "level": "FULL"
+    },
+    {
+      "role": "SITE_ADMIN",
+      "permission": "worker.deactivate",
+      "level": "FULL"
+    },
+    {
+      "role": "PLATFORM_SUPER_ADMIN",
+      "permission": "user.manage",
+      "level": "LIMITED"
+    },
+    {
+      "role": "COMPANY_ADMIN",
+      "permission": "user.manage",
+      "level": "FULL"
+    },
+    {
+      "role": "COMPANY_ADMIN",
+      "permission": "role.manage",
+      "level": "FULL"
+    },
+    {
+      "role": "COMPANY_ADMIN",
+      "permission": "contractor.read",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_MANAGER",
+      "permission": "contractor.read",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_OFFICER",
+      "permission": "contractor.read",
+      "level": "FULL"
+    },
+    {
+      "role": "SITE_ADMIN",
+      "permission": "contractor.read",
+      "level": "LIMITED"
+    },
+    {
+      "role": "AUDITOR",
+      "permission": "contractor.read",
+      "level": "FULL"
+    },
+    {
+      "role": "COMPANY_ADMIN",
+      "permission": "contractor.manage",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_MANAGER",
+      "permission": "contractor.manage",
+      "level": "FULL"
+    },
+    {
+      "role": "COMPANY_ADMIN",
+      "permission": "contractor_document.update",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_MANAGER",
+      "permission": "contractor_document.update",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_OFFICER",
+      "permission": "contractor_document.update",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_MANAGER",
+      "permission": "contractor_document.verify",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_OFFICER",
+      "permission": "contractor_document.verify",
+      "level": "LIMITED"
+    },
+    {
+      "role": "COMPANY_ADMIN",
+      "permission": "competency.read",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_MANAGER",
+      "permission": "competency.read",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_OFFICER",
+      "permission": "competency.read",
+      "level": "FULL"
+    },
+    {
+      "role": "SITE_ADMIN",
+      "permission": "competency.read",
+      "level": "FULL"
+    },
+    {
+      "role": "SUPERVISOR",
+      "permission": "competency.read",
+      "level": "TEAM"
+    },
+    {
+      "role": "TRAINER",
+      "permission": "competency.read",
+      "level": "FULL"
+    },
+    {
+      "role": "AUDITOR",
+      "permission": "competency.read",
+      "level": "FULL"
+    },
+    {
+      "role": "WORKER",
+      "permission": "competency.read",
+      "level": "SELF"
+    },
+    {
+      "role": "HSE_MANAGER",
+      "permission": "competency.update",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_OFFICER",
+      "permission": "competency.update",
+      "level": "FULL"
+    },
+    {
+      "role": "SITE_ADMIN",
+      "permission": "competency.update",
+      "level": "FULL"
+    },
+    {
+      "role": "TRAINER",
+      "permission": "competency.update",
+      "level": "LIMITED"
+    },
+    {
+      "role": "WORKER",
+      "permission": "competency.update",
+      "level": "SELF"
+    },
+    {
+      "role": "HSE_MANAGER",
+      "permission": "competency.verify",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_OFFICER",
+      "permission": "competency.verify",
+      "level": "LIMITED"
+    },
+    {
+      "role": "COMPANY_ADMIN",
+      "permission": "medical.read_status",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_MANAGER",
+      "permission": "medical.read_status",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_OFFICER",
+      "permission": "medical.read_status",
+      "level": "FULL"
+    },
+    {
+      "role": "SITE_ADMIN",
+      "permission": "medical.read_status",
+      "level": "FULL"
+    },
+    {
+      "role": "SUPERVISOR",
+      "permission": "medical.read_status",
+      "level": "TEAM"
+    },
+    {
+      "role": "MEDICAL_OFFICER",
+      "permission": "medical.read_status",
+      "level": "FULL"
+    },
+    {
+      "role": "AUDITOR",
+      "permission": "medical.read_status",
+      "level": "FULL"
+    },
+    {
+      "role": "WORKER",
+      "permission": "medical.read_status",
+      "level": "SELF"
+    },
+    {
+      "role": "HSE_MANAGER",
+      "permission": "medical.read_detail",
+      "level": "LIMITED"
+    },
+    {
+      "role": "MEDICAL_OFFICER",
+      "permission": "medical.read_detail",
+      "level": "FULL"
+    },
+    {
+      "role": "WORKER",
+      "permission": "medical.read_detail",
+      "level": "SELF"
+    },
+    {
+      "role": "HSE_OFFICER",
+      "permission": "medical.update",
+      "level": "LIMITED"
+    },
+    {
+      "role": "SITE_ADMIN",
+      "permission": "medical.update",
+      "level": "LIMITED"
+    },
+    {
+      "role": "MEDICAL_OFFICER",
+      "permission": "medical.update",
+      "level": "FULL"
+    },
+    {
+      "role": "MEDICAL_OFFICER",
+      "permission": "medical.verify",
+      "level": "FULL"
+    },
+    {
+      "role": "COMPANY_ADMIN",
+      "permission": "authorization.read",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_MANAGER",
+      "permission": "authorization.read",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_OFFICER",
+      "permission": "authorization.read",
+      "level": "FULL"
+    },
+    {
+      "role": "SITE_ADMIN",
+      "permission": "authorization.read",
+      "level": "FULL"
+    },
+    {
+      "role": "SUPERVISOR",
+      "permission": "authorization.read",
+      "level": "TEAM"
+    },
+    {
+      "role": "AUDITOR",
+      "permission": "authorization.read",
+      "level": "FULL"
+    },
+    {
+      "role": "WORKER",
+      "permission": "authorization.read",
+      "level": "SELF"
+    },
+    {
+      "role": "HSE_MANAGER",
+      "permission": "authorization.update",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_OFFICER",
+      "permission": "authorization.update",
+      "level": "FULL"
+    },
+    {
+      "role": "SITE_ADMIN",
+      "permission": "authorization.update",
+      "level": "FULL"
+    },
+    {
+      "role": "WORKER",
+      "permission": "authorization.update",
+      "level": "SELF"
+    },
+    {
+      "role": "HSE_MANAGER",
+      "permission": "authorization.verify",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_OFFICER",
+      "permission": "authorization.verify",
+      "level": "LIMITED"
+    },
+    {
+      "role": "COMPANY_ADMIN",
+      "permission": "simper.read",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_MANAGER",
+      "permission": "simper.read",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_OFFICER",
+      "permission": "simper.read",
+      "level": "FULL"
+    },
+    {
+      "role": "SITE_ADMIN",
+      "permission": "simper.read",
+      "level": "FULL"
+    },
+    {
+      "role": "SUPERVISOR",
+      "permission": "simper.read",
+      "level": "TEAM"
+    },
+    {
+      "role": "AUDITOR",
+      "permission": "simper.read",
+      "level": "FULL"
+    },
+    {
+      "role": "WORKER",
+      "permission": "simper.read",
+      "level": "SELF"
+    },
+    {
+      "role": "HSE_MANAGER",
+      "permission": "simper.update",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_OFFICER",
+      "permission": "simper.update",
+      "level": "FULL"
+    },
+    {
+      "role": "SITE_ADMIN",
+      "permission": "simper.update",
+      "level": "FULL"
+    },
+    {
+      "role": "WORKER",
+      "permission": "simper.update",
+      "level": "SELF"
+    },
+    {
+      "role": "HSE_MANAGER",
+      "permission": "simper.verify",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_OFFICER",
+      "permission": "simper.verify",
+      "level": "LIMITED"
+    },
+    {
+      "role": "COMPANY_ADMIN",
+      "permission": "training.read",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_MANAGER",
+      "permission": "training.read",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_OFFICER",
+      "permission": "training.read",
+      "level": "FULL"
+    },
+    {
+      "role": "SITE_ADMIN",
+      "permission": "training.read",
+      "level": "FULL"
+    },
+    {
+      "role": "SUPERVISOR",
+      "permission": "training.read",
+      "level": "TEAM"
+    },
+    {
+      "role": "TRAINER",
+      "permission": "training.read",
+      "level": "FULL"
+    },
+    {
+      "role": "AUDITOR",
+      "permission": "training.read",
+      "level": "FULL"
+    },
+    {
+      "role": "WORKER",
+      "permission": "training.read",
+      "level": "SELF"
+    },
+    {
+      "role": "HSE_MANAGER",
+      "permission": "training.manage",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_OFFICER",
+      "permission": "training.manage",
+      "level": "LIMITED"
+    },
+    {
+      "role": "TRAINER",
+      "permission": "training.manage",
+      "level": "FULL"
+    },
+    {
+      "role": "COMPANY_ADMIN",
+      "permission": "readiness.read",
+      "level": "FULL"
+    },
+    {
+      "role": "EXECUTIVE",
+      "permission": "readiness.read",
+      "level": "LIMITED"
+    },
+    {
+      "role": "HSE_MANAGER",
+      "permission": "readiness.read",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_OFFICER",
+      "permission": "readiness.read",
+      "level": "FULL"
+    },
+    {
+      "role": "SITE_ADMIN",
+      "permission": "readiness.read",
+      "level": "FULL"
+    },
+    {
+      "role": "SUPERVISOR",
+      "permission": "readiness.read",
+      "level": "TEAM"
+    },
+    {
+      "role": "MEDICAL_OFFICER",
+      "permission": "readiness.read",
+      "level": "FULL"
+    },
+    {
+      "role": "AUDITOR",
+      "permission": "readiness.read",
+      "level": "FULL"
+    },
+    {
+      "role": "WORKER",
+      "permission": "readiness.read",
+      "level": "SELF"
+    },
+    {
+      "role": "HSE_MANAGER",
+      "permission": "readiness.evaluate",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_OFFICER",
+      "permission": "readiness.evaluate",
+      "level": "FULL"
+    },
+    {
+      "role": "SITE_ADMIN",
+      "permission": "readiness.evaluate",
+      "level": "LIMITED"
+    },
+    {
+      "role": "COMPANY_ADMIN",
+      "permission": "readiness_profile.manage",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_MANAGER",
+      "permission": "readiness_profile.manage",
+      "level": "FULL"
+    },
+    {
+      "role": "COMPANY_ADMIN",
+      "permission": "inspection.read",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_MANAGER",
+      "permission": "inspection.read",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_OFFICER",
+      "permission": "inspection.read",
+      "level": "FULL"
+    },
+    {
+      "role": "SITE_ADMIN",
+      "permission": "inspection.read",
+      "level": "FULL"
+    },
+    {
+      "role": "SUPERVISOR",
+      "permission": "inspection.read",
+      "level": "TEAM"
+    },
+    {
+      "role": "AUDITOR",
+      "permission": "inspection.read",
+      "level": "FULL"
+    },
+    {
+      "role": "WORKER",
+      "permission": "inspection.read",
+      "level": "LIMITED"
+    },
+    {
+      "role": "HSE_MANAGER",
+      "permission": "inspection.create",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_OFFICER",
+      "permission": "inspection.create",
+      "level": "FULL"
+    },
+    {
+      "role": "SUPERVISOR",
+      "permission": "inspection.create",
+      "level": "LIMITED"
+    },
+    {
+      "role": "HSE_MANAGER",
+      "permission": "inspection.execute",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_OFFICER",
+      "permission": "inspection.execute",
+      "level": "FULL"
+    },
+    {
+      "role": "SUPERVISOR",
+      "permission": "inspection.execute",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_MANAGER",
+      "permission": "inspection.review",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_OFFICER",
+      "permission": "inspection.review",
+      "level": "LIMITED"
+    },
+    {
+      "role": "HSE_MANAGER",
+      "permission": "observation.create",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_OFFICER",
+      "permission": "observation.create",
+      "level": "FULL"
+    },
+    {
+      "role": "SITE_ADMIN",
+      "permission": "observation.create",
+      "level": "FULL"
+    },
+    {
+      "role": "SUPERVISOR",
+      "permission": "observation.create",
+      "level": "FULL"
+    },
+    {
+      "role": "MEDICAL_OFFICER",
+      "permission": "observation.create",
+      "level": "FULL"
+    },
+    {
+      "role": "TRAINER",
+      "permission": "observation.create",
+      "level": "FULL"
+    },
+    {
+      "role": "WORKER",
+      "permission": "observation.create",
+      "level": "FULL"
+    },
+    {
+      "role": "COMPANY_ADMIN",
+      "permission": "observation.read",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_MANAGER",
+      "permission": "observation.read",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_OFFICER",
+      "permission": "observation.read",
+      "level": "FULL"
+    },
+    {
+      "role": "SITE_ADMIN",
+      "permission": "observation.read",
+      "level": "FULL"
+    },
+    {
+      "role": "SUPERVISOR",
+      "permission": "observation.read",
+      "level": "TEAM"
+    },
+    {
+      "role": "AUDITOR",
+      "permission": "observation.read",
+      "level": "FULL"
+    },
+    {
+      "role": "WORKER",
+      "permission": "observation.read",
+      "level": "LIMITED"
+    },
+    {
+      "role": "HSE_MANAGER",
+      "permission": "observation.review",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_OFFICER",
+      "permission": "observation.review",
+      "level": "FULL"
+    },
+    {
+      "role": "SUPERVISOR",
+      "permission": "observation.review",
+      "level": "LIMITED"
+    },
+    {
+      "role": "COMPANY_ADMIN",
+      "permission": "corrective_action.read",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_MANAGER",
+      "permission": "corrective_action.read",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_OFFICER",
+      "permission": "corrective_action.read",
+      "level": "FULL"
+    },
+    {
+      "role": "SITE_ADMIN",
+      "permission": "corrective_action.read",
+      "level": "FULL"
+    },
+    {
+      "role": "SUPERVISOR",
+      "permission": "corrective_action.read",
+      "level": "TEAM"
+    },
+    {
+      "role": "AUDITOR",
+      "permission": "corrective_action.read",
+      "level": "FULL"
+    },
+    {
+      "role": "WORKER",
+      "permission": "corrective_action.read",
+      "level": "LIMITED"
+    },
+    {
+      "role": "HSE_MANAGER",
+      "permission": "corrective_action.create",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_OFFICER",
+      "permission": "corrective_action.create",
+      "level": "FULL"
+    },
+    {
+      "role": "SUPERVISOR",
+      "permission": "corrective_action.create",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_MANAGER",
+      "permission": "corrective_action.assign",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_OFFICER",
+      "permission": "corrective_action.assign",
+      "level": "FULL"
+    },
+    {
+      "role": "SUPERVISOR",
+      "permission": "corrective_action.assign",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_MANAGER",
+      "permission": "corrective_action.update",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_OFFICER",
+      "permission": "corrective_action.update",
+      "level": "FULL"
+    },
+    {
+      "role": "SITE_ADMIN",
+      "permission": "corrective_action.update",
+      "level": "FULL"
+    },
+    {
+      "role": "SUPERVISOR",
+      "permission": "corrective_action.update",
+      "level": "FULL"
+    },
+    {
+      "role": "MEDICAL_OFFICER",
+      "permission": "corrective_action.update",
+      "level": "LIMITED"
+    },
+    {
+      "role": "TRAINER",
+      "permission": "corrective_action.update",
+      "level": "LIMITED"
+    },
+    {
+      "role": "WORKER",
+      "permission": "corrective_action.update",
+      "level": "LIMITED"
+    },
+    {
+      "role": "HSE_MANAGER",
+      "permission": "corrective_action.verify",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_OFFICER",
+      "permission": "corrective_action.verify",
+      "level": "LIMITED"
+    },
+    {
+      "role": "COMPANY_ADMIN",
+      "permission": "dashboard.view",
+      "level": "FULL"
+    },
+    {
+      "role": "EXECUTIVE",
+      "permission": "dashboard.view",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_MANAGER",
+      "permission": "dashboard.view",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_OFFICER",
+      "permission": "dashboard.view",
+      "level": "FULL"
+    },
+    {
+      "role": "SITE_ADMIN",
+      "permission": "dashboard.view",
+      "level": "FULL"
+    },
+    {
+      "role": "SUPERVISOR",
+      "permission": "dashboard.view",
+      "level": "LIMITED"
+    },
+    {
+      "role": "MEDICAL_OFFICER",
+      "permission": "dashboard.view",
+      "level": "LIMITED"
+    },
+    {
+      "role": "TRAINER",
+      "permission": "dashboard.view",
+      "level": "LIMITED"
+    },
+    {
+      "role": "AUDITOR",
+      "permission": "dashboard.view",
+      "level": "FULL"
+    },
+    {
+      "role": "WORKER",
+      "permission": "dashboard.view",
+      "level": "LIMITED"
+    },
+    {
+      "role": "COMPANY_ADMIN",
+      "permission": "compliance.view",
+      "level": "FULL"
+    },
+    {
+      "role": "EXECUTIVE",
+      "permission": "compliance.view",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_MANAGER",
+      "permission": "compliance.view",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_OFFICER",
+      "permission": "compliance.view",
+      "level": "FULL"
+    },
+    {
+      "role": "SITE_ADMIN",
+      "permission": "compliance.view",
+      "level": "FULL"
+    },
+    {
+      "role": "SUPERVISOR",
+      "permission": "compliance.view",
+      "level": "LIMITED"
+    },
+    {
+      "role": "AUDITOR",
+      "permission": "compliance.view",
+      "level": "FULL"
+    },
+    {
+      "role": "COMPANY_ADMIN",
+      "permission": "report.export",
+      "level": "FULL"
+    },
+    {
+      "role": "EXECUTIVE",
+      "permission": "report.export",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_MANAGER",
+      "permission": "report.export",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_OFFICER",
+      "permission": "report.export",
+      "level": "FULL"
+    },
+    {
+      "role": "SITE_ADMIN",
+      "permission": "report.export",
+      "level": "LIMITED"
+    },
+    {
+      "role": "AUDITOR",
+      "permission": "report.export",
+      "level": "FULL"
+    },
+    {
+      "role": "COMPANY_ADMIN",
+      "permission": "ai_recommendation.read",
+      "level": "FULL"
+    },
+    {
+      "role": "EXECUTIVE",
+      "permission": "ai_recommendation.read",
+      "level": "LIMITED"
+    },
+    {
+      "role": "HSE_MANAGER",
+      "permission": "ai_recommendation.read",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_OFFICER",
+      "permission": "ai_recommendation.read",
+      "level": "FULL"
+    },
+    {
+      "role": "SUPERVISOR",
+      "permission": "ai_recommendation.read",
+      "level": "TEAM"
+    },
+    {
+      "role": "MEDICAL_OFFICER",
+      "permission": "ai_recommendation.read",
+      "level": "LIMITED"
+    },
+    {
+      "role": "TRAINER",
+      "permission": "ai_recommendation.read",
+      "level": "LIMITED"
+    },
+    {
+      "role": "AUDITOR",
+      "permission": "ai_recommendation.read",
+      "level": "LIMITED"
+    },
+    {
+      "role": "WORKER",
+      "permission": "ai_recommendation.read",
+      "level": "SELF"
+    },
+    {
+      "role": "HSE_MANAGER",
+      "permission": "ai_recommendation.generate",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_OFFICER",
+      "permission": "ai_recommendation.generate",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_MANAGER",
+      "permission": "ai_recommendation.review",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_OFFICER",
+      "permission": "ai_recommendation.review",
+      "level": "LIMITED"
+    },
+    {
+      "role": "COMPANY_ADMIN",
+      "permission": "ai_recommendation.configure",
+      "level": "FULL"
+    },
+    {
+      "role": "PLATFORM_SUPER_ADMIN",
+      "permission": "notification.read",
+      "level": "FULL"
+    },
+    {
+      "role": "COMPANY_ADMIN",
+      "permission": "notification.read",
+      "level": "FULL"
+    },
+    {
+      "role": "EXECUTIVE",
+      "permission": "notification.read",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_MANAGER",
+      "permission": "notification.read",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_OFFICER",
+      "permission": "notification.read",
+      "level": "FULL"
+    },
+    {
+      "role": "SITE_ADMIN",
+      "permission": "notification.read",
+      "level": "FULL"
+    },
+    {
+      "role": "SUPERVISOR",
+      "permission": "notification.read",
+      "level": "FULL"
+    },
+    {
+      "role": "MEDICAL_OFFICER",
+      "permission": "notification.read",
+      "level": "FULL"
+    },
+    {
+      "role": "TRAINER",
+      "permission": "notification.read",
+      "level": "FULL"
+    },
+    {
+      "role": "AUDITOR",
+      "permission": "notification.read",
+      "level": "FULL"
+    },
+    {
+      "role": "WORKER",
+      "permission": "notification.read",
+      "level": "FULL"
+    },
+    {
+      "role": "COMPANY_ADMIN",
+      "permission": "notification.configure",
+      "level": "FULL"
+    },
+    {
+      "role": "PLATFORM_SUPER_ADMIN",
+      "permission": "audit.view",
+      "level": "LIMITED"
+    },
+    {
+      "role": "COMPANY_ADMIN",
+      "permission": "audit.view",
+      "level": "FULL"
+    },
+    {
+      "role": "HSE_MANAGER",
+      "permission": "audit.view",
+      "level": "LIMITED"
+    },
+    {
+      "role": "AUDITOR",
+      "permission": "audit.view",
+      "level": "FULL"
+    },
+    {
+      "role": "COMPANY_ADMIN",
+      "permission": "configuration.manage",
+      "level": "FULL"
+    },
+    {
+      "role": "PLATFORM_SUPER_ADMIN",
+      "permission": "platform.configure",
+      "level": "FULL"
+    },
+    {
+      "role": "PLATFORM_SUPER_ADMIN",
+      "permission": "integration.manage",
+      "level": "LIMITED"
+    },
+    {
+      "role": "COMPANY_ADMIN",
+      "permission": "integration.manage",
+      "level": "FULL"
+    }
+  ]
+}
