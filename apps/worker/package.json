@@ -15,7 +15,7 @@
     "@soh/db": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^26.6.6",
-    "typescript": "^7.0.2"
+    "@types/node": "^22.20.5",
+    "typescript": "^5.9.3"
   }
 }
