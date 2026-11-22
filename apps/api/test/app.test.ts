@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createApp } from "../src/app.js";
+import { createApp } from "../src/create-app.js";
 
 describe("Core API: kerangka v1", () => {
   const app = createApp({ allowedOrigins: ["http://localhost:3000"] });

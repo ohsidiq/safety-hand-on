@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
-    "start": "node --import tsx src/server.ts",
+    "dev": "tsx watch src/node-server.ts",
+    "start": "node --import tsx src/node-server.ts",
     "build": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

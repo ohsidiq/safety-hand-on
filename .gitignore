@@ -12,3 +12,8 @@ next-env.d.ts
 *.tsbuildinfo
 .vercel/
 .turbo/
+
+# Vault Obsidian dan catatan lokal (tidak ikut repositori)
+docs/
+.obsidian/
+/2026-*.md

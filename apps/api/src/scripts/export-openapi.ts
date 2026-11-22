@@ -2,7 +2,7 @@ import { writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { stringify } from "yaml";
-import { createApp } from "../app.js";
+import { createApp } from "../create-app.js";
 
 /**
  * Menulis kontrak OpenAPI ke openapi/v1.yaml (sumber kebenaran kontrak, API-000 bagian 3).

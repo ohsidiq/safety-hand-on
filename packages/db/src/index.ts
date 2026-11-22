@@ -15,11 +15,32 @@ export type Tx = pg.PoolClient;
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1", ""]);
+
+/**
+ * Opsi TLS: koneksi ke host non-lokal selalu dienkripsi.
+ * - DATABASE_CA_CERT (PEM, sertifikat CA publik penyedia, bukan rahasia): sertifikat server diverifikasi penuh.
+ * - Tanpa itu: terenkripsi tanpa verifikasi rantai sertifikat (cukup untuk staging data sintetis;
+ *   wajib diisi sebelum data nyata, lihat REQ-ENV-001).
+ */
+export function sslOptions(connectionString: string, caCert = process.env.DATABASE_CA_CERT): pg.PoolConfig["ssl"] {
+  const host = new URL(connectionString).hostname;
+  if (LOCAL_HOSTS.has(host)) return undefined;
+  return caCert ? { ca: caCert, rejectUnauthorized: true } : { rejectUnauthorized: false };
+}
+
 export function createPool(connectionString = process.env.DATABASE_URL): Db {
   if (!connectionString) {
     throw new Error("DATABASE_URL belum diatur");
   }
-  return new pg.Pool({ connectionString, max: Number(process.env.DB_POOL_MAX ?? 5) });
+  // sslmode di URL diabaikan agar perilaku TLS hanya ditentukan sslOptions (konsisten lintas penyedia).
+  const url = new URL(connectionString);
+  url.searchParams.delete("sslmode");
+  return new pg.Pool({
+    connectionString: url.toString(),
+    ssl: sslOptions(connectionString),
+    max: Number(process.env.DB_POOL_MAX ?? 5),
+  });
 }
 
 async function inTransaction<T>(db: Db, setup: (tx: Tx) => Promise<void>, fn: (tx: Tx) => Promise<T>): Promise<T> {
