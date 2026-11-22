@@ -22,3 +22,10 @@ dan memperluasnya di M1 dan M2. Peran dan izin di `0002` bukan PB-009.
 `0004_hardening.sql`: hasil Supabase Security Advisor pada staging. RLS pada tabel acuan peran/izin, `search_path`
 dikunci, hak peran klien Supabase (`anon`, `authenticated`) dicabut dari tabel aplikasi (ARCH-001), dan
 `schema_migrations` dilindungi RLS.
+
+`0005_identity_access.sql` (M1.1): katalog resmi 12 role (PB-008), 56 permission dan 240 pemetaan dengan level
+`FULL`/`LIMITED`/`TEAM`/`SELF` (PB-009), dibangkitkan dari `packages/rbac/permission-matrix.json`. `app_user`
+menjadi `user_profile` (DB-002 §2). Penugasan role dengan `scope_type`/`scope_id`, masa berlaku, pencabutan,
+larangan memberi role kepada diri sendiri, role belum aktif ditolak (`ROLE_NOT_ACTIVE`). RLS memakai nama
+permission resmi dan hanya menghormati level `FULL`/`TEAM`; `LIMITED`/`SELF` ditolak bawaan sampai aturannya dibangun.
+Hapus fisik `worker` dan `competency_record` dicabut (soft delete).
