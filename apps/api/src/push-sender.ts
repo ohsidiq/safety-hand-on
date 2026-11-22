@@ -1,4 +1,4 @@
-import webpush from "web-push";
+import { sendNotification } from "web-push";
 import type { PushSender } from "./spike-push.js";
 
 /**
@@ -14,6 +14,6 @@ export function pushSenderFromEnv(env = process.env): PushSender | undefined {
     privateKey: VAPID_PRIVATE_KEY,
   };
   return async (subscription, payload) => {
-    await webpush.sendNotification(subscription, payload, { vapidDetails: details, TTL: 300, urgency: "high" });
+    await sendNotification(subscription, payload, { vapidDetails: details, TTL: 300, urgency: "high" });
   };
 }

@@ -17,3 +17,4 @@ next-env.d.ts
 docs/
 .obsidian/
 /2026-*.md
+dist-smoke/
