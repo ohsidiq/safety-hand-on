@@ -619,3 +619,19 @@ button.danger {
   background: var(--bad);
   border-color: var(--bad);
 }
+
+/* Pekerja (M2.4) */
+a.button-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0.625rem 1rem;
+  border-radius: 0.5rem;
+  background: var(--text);
+  color: var(--surface);
+  text-decoration: none;
+}
+
+.card .facts {
+  width: 100%;
+}

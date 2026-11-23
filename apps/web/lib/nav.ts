@@ -15,7 +15,7 @@ export interface NavItem {
 
 export const NAV: NavItem[] = [
   { href: "/dashboard", label: "Beranda", domain: "Beranda", anyOf: [], phase: "P0", built: true },
-  { href: "/workers", label: "Pekerja", domain: "People", anyOf: ["worker.read"], phase: "P0", built: false },
+  { href: "/workers", label: "Pekerja", domain: "People", anyOf: ["worker.read"], phase: "P0", built: true },
   // UIUX-002 §5: Struktur Organisasi untuk Company Admin dan Site Admin (pengelola struktur)
   {
     href: "/organization",
@@ -119,4 +119,12 @@ export const ACTION_LABEL: Record<string, string> = {
   "team.member_add": "Anggota tim ditambahkan",
   "team.member_end": "Keanggotaan tim diakhiri",
   "organization.update": "Organisasi diubah",
+  "worker.assign": "Penempatan pekerja",
+  "worker.resign": "Pekerja berhenti",
+  "worker.reactivate": "Pekerja diaktifkan kembali",
+  "worker.deactivate": "Pekerja dinonaktifkan",
+  "worker.reinstate": "Skorsing diakhiri",
+  "worker.suspend": "Pekerja diskors",
+  "worker.update": "Data pekerja diubah",
+  "worker.create": "Pekerja dibuat",
 };
