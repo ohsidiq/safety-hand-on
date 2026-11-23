@@ -182,21 +182,31 @@ describe.skipIf(!url)("Dashboard ringkasan P0 (integrasi)", () => {
     app.request("/api/v1/dashboard/summary", { headers: { Authorization: `Bearer ${await issuer.sign({ sub: userId })}` } });
 
   it("Company Admin: blok administrasi dihitung dari organisasinya sendiri, dengan as_of", async () => {
+    // uji pekerja berjalan paralel dan dapat menambah/mengubah pekerja: bandingkan dengan hitungan sebelum dan sesudah
+    const count = async () =>
+      (
+        await db.query<{ total: number; linked: number }>(
+          `select count(*)::int as total, count(user_id)::int as linked from worker
+           where organization_id = $1 and deleted_at is null and worker_status in ('ACTIVE', 'SUSPENDED')`,
+          [orgA],
+        )
+      ).rows[0] as { total: number; linked: number };
+    const before = await count();
     const res = await get(u.admin as string);
+    const after = await count();
     expect(res.status).toBe(200);
     const { data } = await res.json();
     const users = await db.query<{ n: number }>(
       "select count(*)::int as n from user_profile where organization_id = $1 and status = 'ACTIVE'",
       [orgA],
     );
-    const workers = await db.query<{ total: number; linked: number }>(
-      "select count(*)::int as total, count(user_id)::int as linked from worker where organization_id = $1",
-      [orgA],
-    );
     expect(data.scope.organization_id).toBe(orgA);
     expect(Date.parse(data.as_of)).not.toBeNaN();
     expect(data.administration.users.active).toBe(users.rows[0]?.n);
-    expect(data.administration.workers).toMatchObject({ total: workers.rows[0]?.total, with_account: workers.rows[0]?.linked });
+    const { total, with_account } = data.administration.workers;
+    expect(total).toBeGreaterThanOrEqual(Math.min(before.total, after.total));
+    expect(total).toBeLessThanOrEqual(Math.max(before.total, after.total));
+    expect(with_account).toBe(before.linked);
   });
 
   it("HSE Manager (dashboard.view tanpa user.manage): ringkasan tanpa blok administrasi", async () => {

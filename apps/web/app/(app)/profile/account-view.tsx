@@ -1,7 +1,48 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { apiGet } from "@/lib/api";
 import { ROLE_LABEL, SCOPE_LABEL } from "@/lib/nav";
-import { useMe } from "@/lib/session";
+import { useMe, useSession } from "@/lib/session";
+import { EMPLOYMENT_LABEL, WORKER_STATUS_LABEL, type Worker } from "@/lib/workers";
+
+/** Data pekerja milik akun (B-18, PB-009 worker.read S). Hanya baca; NIK tidak pernah ditampilkan. */
+function MyWorker() {
+  const { getToken } = useSession();
+  const [w, setW] = useState<Worker | null>(null);
+  const [state, setState] = useState<"loading" | "idle" | "error">("loading");
+  useEffect(() => {
+    void (async () => {
+      const token = await getToken();
+      if (!token) return;
+      const r = await apiGet<Worker>("/workers/me", token);
+      if (r.ok) setW(r.data);
+      setState(r.ok ? "idle" : "error");
+    })();
+  }, [getToken]);
+  if (state === "loading") return <p role="status">Memuat…</p>;
+  if (!w) return <p role="alert">Data pekerja tidak dapat dimuat.</p>;
+  return (
+    <dl className="facts">
+      <dt>SHO ID</dt>
+      <dd>{w.sho_id}</dd>
+      <dt>Nomor pekerja</dt>
+      <dd>{w.employee_number}</dd>
+      <dt>Posisi</dt>
+      <dd>{w.job_position?.name ?? "-"}</dd>
+      <dt>Site</dt>
+      <dd>{w.site?.name ?? "-"}</dd>
+      <dt>Department</dt>
+      <dd>{w.department?.name ?? "-"}</dd>
+      <dt>Status kerja</dt>
+      <dd>{EMPLOYMENT_LABEL[w.employment_status]}</dd>
+      <dt>Status</dt>
+      <dd>{WORKER_STATUS_LABEL[w.worker_status]}</dd>
+      <dt>Tanggal masuk</dt>
+      <dd>{w.join_date}</dd>
+    </dl>
+  );
+}
 
 export function AccountView() {
   const { me, email } = useMe();
@@ -20,6 +61,13 @@ export function AccountView() {
           <dd>{me.worker_id ? "Ya" : "Tidak"}</dd>
         </dl>
       </section>
+      {me.worker_id ? (
+        <section className="card" aria-labelledby="pekerja">
+          <h2 id="pekerja">Data pekerja saya</h2>
+          <MyWorker />
+          <p className="muted small-text">Perubahan data hubungi admin perusahaan.</p>
+        </section>
+      ) : null}
       <section className="card" aria-labelledby="peran">
         <h2 id="peran">Peran</h2>
         <ul>

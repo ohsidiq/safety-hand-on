@@ -17,6 +17,7 @@ import {
   validateNameCode,
 } from "@/lib/org";
 import { useMe, useSession } from "@/lib/session";
+import type { WorkerSummary } from "@/lib/workers";
 
 /**
  * WF001 Organisasi dan Struktur (UIUX-005 §3, API-002). Semua data lewat Core API (ARCH-001).
@@ -278,9 +279,16 @@ function MembersPanel({ team, canManage, onClose }: { team: Team; canManage: boo
           Tutup
         </button>
       </div>
-      <p className="muted small-text">
-        Keanggotaan memakai tanggal berlaku dan tidak dihapus. Penambahan anggota dilakukan dari halaman Pekerja.
-      </p>
+      <p className="muted small-text">Keanggotaan memakai tanggal berlaku dan tidak dihapus.</p>
+      {canManage && team.status === "ACTIVE" ? (
+        <AddMember
+          team={team}
+          onAdded={(text) => {
+            setMessage(text);
+            void load();
+          }}
+        />
+      ) : null}
       <label className="check">
         <input type="checkbox" checked={includeEnded} onChange={(e) => setIncludeEnded(e.target.checked)} />
         Tampilkan keanggotaan yang sudah berakhir
@@ -336,6 +344,92 @@ function MembersPanel({ team, canManage, onClose }: { team: Team; canManage: boo
       </div>
       {state === "idle" && members.length === 0 ? <p className="muted">Belum ada anggota.</p> : null}
     </div>
+  );
+}
+
+/** Menambah anggota: cari pekerja aktif di Site tim (API-003 daftar pekerja), lalu tanggal mulai. */
+function AddMember({ team, onAdded }: { team: Team; onAdded: (text: string) => void }) {
+  const { getToken } = useSession();
+  const id = useId();
+  const [q, setQ] = useState("");
+  const [results, setResults] = useState<WorkerSummary[]>([]);
+  const [workerId, setWorkerId] = useState("");
+  const [from, setFrom] = useState(() => new Date().toISOString().slice(0, 10));
+  const [error, setError] = useState<string | null>(null);
+
+  async function search(e: FormEvent) {
+    e.preventDefault();
+    const token = await getToken();
+    if (!token) return;
+    const params = new URLSearchParams({ site_id: team.site_id, worker_status: "ACTIVE", limit: "20" });
+    if (q.trim()) params.set("q", q.trim());
+    const r = await apiGet<WorkerSummary[]>(`/workers?${params}`, token);
+    setResults(r.ok ? r.data : []);
+    setWorkerId("");
+    setError(
+      r.ok ? (r.data.length === 0 ? "Tidak ada pekerja aktif yang cocok di Site ini." : null) : "Pekerja tidak dapat dicari.",
+    );
+  }
+
+  async function add() {
+    const token = await getToken();
+    if (!token || !workerId) return;
+    const r = await apiSend("POST", `/teams/${team.id}/members`, token, { worker_id: workerId, valid_from: from });
+    if (!r.ok) {
+      setError(orgErrorMessage(r.error));
+      return;
+    }
+    setResults([]);
+    setWorkerId("");
+    setQ("");
+    setError(null);
+    onAdded("Anggota ditambahkan.");
+  }
+
+  return (
+    <form className="filters" onSubmit={search} aria-label="Tambah anggota tim">
+      <label htmlFor={`${id}-q`}>
+        Cari pekerja di Site tim
+        <input
+          id={`${id}-q`}
+          type="search"
+          value={q}
+          maxLength={100}
+          placeholder="Nama, nomor, SHO ID"
+          onChange={(e) => setQ(e.target.value)}
+        />
+      </label>
+      <button type="submit" className="secondary">
+        Cari
+      </button>
+      {results.length > 0 ? (
+        <>
+          <label htmlFor={`${id}-w`}>
+            Pekerja
+            <select id={`${id}-w`} value={workerId} onChange={(e) => setWorkerId(e.target.value)}>
+              <option value="">Pilih pekerja</option>
+              {results.map((w) => (
+                <option key={w.id} value={w.id}>
+                  {w.full_name} ({w.employee_number})
+                </option>
+              ))}
+            </select>
+          </label>
+          <label htmlFor={`${id}-from`}>
+            Mulai
+            <input id={`${id}-from`} type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+          </label>
+          <button type="button" onClick={add} disabled={!workerId}>
+            Tambah anggota
+          </button>
+        </>
+      ) : null}
+      {error ? (
+        <p role="alert" className="error block">
+          {error}
+        </p>
+      ) : null}
+    </form>
   );
 }
 

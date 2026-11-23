@@ -3,6 +3,7 @@ import { authVerifierFromEnv } from "./auth.js";
 import { allowedOriginsFromEnv } from "./config.js";
 import { createApp } from "./create-app.js";
 import { createPoolSafe } from "./db.js";
+import { nationalIdCryptoFromEnv } from "./national-id.js";
 import { pushSenderFromEnv } from "./push-sender.js";
 
 /**
@@ -20,6 +21,7 @@ const app = createApp({
   allowedOrigins: allowedOriginsFromEnv(),
   pushSender: pushSenderFromEnv(),
   auth: authVerifierFromEnv(),
+  nationalId: nationalIdCryptoFromEnv(),
 });
 if (!(app instanceof Hono)) {
   throw new Error("Core API harus berupa aplikasi Hono");

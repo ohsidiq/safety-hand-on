@@ -1,9 +1,28 @@
-import { createRoute, type OpenAPIHono, z } from "@hono/zod-openapi";
-import type { Db, Tx } from "@soh/db";
-import { withUser } from "@soh/db";
-import type { Context, MiddlewareHandler } from "hono";
-import { type AuthEnv, type AuthVerifier, authenticate, requirePermission } from "./auth.js";
-import { type ErrorCode, type ErrorDetail, errorBody, errorStatus } from "./errors.js";
+import { createRoute, z } from "@hono/zod-openapi";
+import type { Tx } from "@soh/db";
+import {
+  ApiFailure,
+  baseErrors,
+  type Deps,
+  ErrorResponse,
+  guard,
+  IfMatch,
+  IfMatchValue,
+  json,
+  LIST_LIMIT,
+  list,
+  ok,
+  parseIfMatch,
+  pick,
+  type Row,
+  respondFailure,
+  run,
+  security,
+  serialize,
+  updateRow,
+  type V1,
+  writeErrors,
+} from "./route-kit.js";
 
 /**
  * Struktur organisasi (API-002 §3-§6, §8-§11): organisasi sendiri, Site, Department, Division, Team (dan anggota),
@@ -15,24 +34,6 @@ import { type ErrorCode, type ErrorDetail, errorBody, errorStatus } from "./erro
  * Belum di M2.3: area platform /platform/tenants, /organization/settings (configuration.manage), evaluasi ulang readiness
  * saat timezone/posisi berubah (ORG-API-009, menunggu Readiness Engine M4), Contractor (API-003 §11a, M2.4/M2.5).
  */
-
-type Deps = { auth?: AuthVerifier | undefined; db?: Db | undefined };
-type Ctx = Context<AuthEnv>;
-type Row = Record<string, unknown>;
-
-// ---------------------------------------------------------------- skema bersama
-
-const ErrorResponse = z
-  .object({
-    success: z.literal(false),
-    error: z.object({
-      code: z.string(),
-      message: z.string(),
-      details: z.array(z.object({ field: z.string().optional(), issue: z.string() })).optional(),
-    }),
-    request_id: z.string(),
-  })
-  .openapi("OrgErrorResponse");
 
 const Name = z.string().trim().min(2).max(150);
 const Code = z
@@ -49,34 +50,6 @@ const Meta = {
   created_at: z.string(),
   updated_at: z.string(),
 };
-
-const json = (schema: z.ZodType, description: string) => ({ content: { "application/json": { schema } }, description });
-const ok = (data: z.ZodType) => z.object({ success: z.literal(true), data, request_id: z.string() });
-const list = (item: z.ZodType) =>
-  z.object({
-    success: z.literal(true),
-    data: z.array(item),
-    pagination: z.object({ limit: z.number(), next_cursor: z.string().nullable(), has_more: z.boolean() }),
-    request_id: z.string(),
-  });
-const security = [{ bearerAuth: [] }];
-const baseErrors = {
-  401: json(ErrorResponse, "UNAUTHORIZED atau TOKEN_EXPIRED"),
-  403: json(ErrorResponse, "FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED"),
-};
-const writeErrors = {
-  ...baseErrors,
-  404: json(ErrorResponse, "NOT_FOUND (tidak ada atau di luar organisasi/scope)"),
-  409: json(ErrorResponse, "DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja aktif)"),
-  422: json(ErrorResponse, "VALIDATION_ERROR"),
-};
-const IF_MATCH_RE = /^(?:W\/)?"?\d{1,9}"?$/;
-const IfMatchValue = z
-  .string()
-  .regex(IF_MATCH_RE)
-  .openapi({ description: "Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422", example: '"3"' });
-const IfMatch = z.object({ "if-match": IfMatchValue });
-const LIST_LIMIT = 500;
 
 // ---------------------------------------------------------------- definisi sumber daya
 
@@ -253,120 +226,15 @@ const RESOURCES: ResourceDef[] = [
   },
 ];
 
-// ---------------------------------------------------------------- utilitas
-
-class ApiFailure extends Error {
-  constructor(
-    readonly code: ErrorCode,
-    readonly details?: ErrorDetail[],
-    readonly extra?: Row,
-  ) {
-    super(code);
-  }
-}
-
-function serialize(row: Row): Row {
-  const out: Row = {};
-  for (const [k, v] of Object.entries(row)) out[k] = v instanceof Date ? v.toISOString() : v;
-  return out;
-}
-
-/** If-Match: "3", 3, W/"3". Kosong/rusak -> null. */
-export function parseIfMatch(header: string | undefined): number | null {
-  const m = /^(?:W\/)?"?(\d{1,9})"?$/.exec((header ?? "").trim());
-  return m ? Number(m[1]) : null;
-}
-
-/** Galat PostgreSQL -> kode API-000. Galat lain dilempar ulang (500 tanpa detail). */
-export function mapPgError(err: unknown, inUseIssue = "ACTIVE_WORKERS_EXIST"): ApiFailure {
-  if (err instanceof ApiFailure) return err;
-  const e = err as { code?: string; message?: string; constraint?: string };
-  const msg = e.message ?? "";
-  switch (e.code) {
-    case "23505":
-      return new ApiFailure("DUPLICATE", [{ field: "code", issue: "already_used" }]);
-    case "23P01":
-      return new ApiFailure("CONFLICT", [{ field: "valid_from", issue: "MEMBERSHIP_OVERLAP" }]);
-    case "23503":
-      return new ApiFailure("VALIDATION_ERROR", [{ issue: "reference_not_found" }]);
-    case "23514":
-      if (msg.startsWith("INVALID_TIMEZONE"))
-        return new ApiFailure("VALIDATION_ERROR", [{ field: "timezone", issue: "invalid_iana" }]);
-      if (msg.startsWith("ACTIVE_WORKERS_EXIST")) return new ApiFailure("CONFLICT", [{ issue: inUseIssue }]);
-      if (msg.startsWith("WORKER_SITE_MISMATCH"))
-        return new ApiFailure("VALIDATION_ERROR", [{ field: "worker_id", issue: "WORKER_SITE_MISMATCH" }]);
-      if (e.constraint === "team_member_range_chk")
-        return new ApiFailure("VALIDATION_ERROR", [{ field: "valid_until", issue: "must_be_on_or_after_valid_from" }]);
-      return new ApiFailure("VALIDATION_ERROR");
-    case "22007":
-    case "22008":
-      return new ApiFailure("VALIDATION_ERROR", [{ issue: "invalid_date" }]);
-    case "42501":
-      // permission ada, tetapi RLS menolak baris baru: di luar scope
-      return new ApiFailure("SCOPE_DENIED");
-    default:
-      throw err;
-  }
-}
-
-/** Respons galat. Status dinamis dari katalog; kontrak per rute didokumentasikan di `responses` (cast untuk pemeriksa tipe). */
-function respondFailure(c: Ctx, f: ApiFailure): never {
-  const body = errorBody(f.code, c.get("requestId"), f.details);
-  return c.json(f.extra ? { ...body, error: { ...body.error, ...f.extra } } : body, errorStatus[f.code]) as never;
-}
-
-async function run<T>(c: Ctx, deps: Deps, fn: (tx: Tx) => Promise<T>, inUseIssue?: string): Promise<T | ApiFailure> {
-  const identity = c.get("identity");
-  try {
-    return await withUser(deps.db as Db, identity.userId, fn, identity.ctx);
-  } catch (err) {
-    return mapPgError(err, inUseIssue);
-  }
-}
-
-const guard = (deps: Deps, permission: string): MiddlewareHandler<AuthEnv>[] => [
-  authenticate(deps),
-  requirePermission(permission),
-];
-
-/** Memperbarui satu baris dengan pemeriksaan keberadaan (404), versi (412), dan scope tulis (403). */
-async function updateRow(tx: Tx, table: string, columns: string, id: string, set: Row, expected: number | null): Promise<Row> {
-  const cur = await tx.query<{ version: number }>(`select version from ${table} where id = $1`, [id]);
-  const row = cur.rows[0];
-  if (!row) throw new ApiFailure("NOT_FOUND");
-  if (expected !== null && expected !== row.version) {
-    throw new ApiFailure("VERSION_CONFLICT", undefined, { current_version: row.version });
-  }
-  const keys = Object.keys(set);
-  if (keys.length === 0) {
-    const same = await tx.query(`select ${columns} from ${table} where id = $1`, [id]);
-    return same.rows[0] as Row;
-  }
-  const assigns = keys.map((k, i) => `${k} = $${i + 2}`).join(", ");
-  const res = await tx.query(`update ${table} set ${assigns} where id = $1 returning ${columns}`, [
-    id,
-    ...keys.map((k) => set[k]),
-  ]);
-  // terlihat (baca) tetapi kebijakan tulis menolak: permission ada, di luar scope tulis
-  if (res.rowCount === 0) throw new ApiFailure("SCOPE_DENIED");
-  return res.rows[0] as Row;
-}
-
-function pick(body: Row, keys: string[]): Row {
-  const out: Row = {};
-  for (const k of keys) if (body[k] !== undefined) out[k] = body[k];
-  return out;
-}
-
 // ---------------------------------------------------------------- pendaftaran
 
-export function registerOrgStructure(v1: OpenAPIHono<AuthEnv>, deps: Deps) {
+export function registerOrgStructure(v1: V1, deps: Deps) {
   registerOrganization(v1, deps);
   for (const def of RESOURCES) registerResource(v1, deps, def);
   registerTeamMembers(v1, deps);
 }
 
-function registerOrganization(v1: OpenAPIHono<AuthEnv>, deps: Deps) {
+function registerOrganization(v1: V1, deps: Deps) {
   const Organization = z
     .object({
       id: z.uuid(),
@@ -441,7 +309,7 @@ function registerOrganization(v1: OpenAPIHono<AuthEnv>, deps: Deps) {
   });
 }
 
-function registerResource(v1: OpenAPIHono<AuthEnv>, deps: Deps, def: ResourceDef) {
+function registerResource(v1: V1, deps: Deps, def: ResourceDef) {
   const itemPath = `${def.itemBase}/{id}`;
   const IdParam = z.object({ id: z.uuid() });
   const parentParam = def.parent ? z.object({ [def.parent.param]: z.uuid() }) : undefined;
@@ -588,7 +456,7 @@ function registerResource(v1: OpenAPIHono<AuthEnv>, deps: Deps, def: ResourceDef
         );
         return res.rows[0] as Row;
       },
-      def.inUseIssue,
+      { inUseIssue: def.inUseIssue },
     );
     if (r instanceof ApiFailure) return respondFailure(c, r);
     c.header("ETag", `"${r.version}"`);
@@ -612,12 +480,9 @@ function registerResource(v1: OpenAPIHono<AuthEnv>, deps: Deps, def: ResourceDef
     const { id } = c.req.valid("param");
     const expected = parseIfMatch(c.req.valid("header")["if-match"]);
     const body = c.req.valid("json") as Row;
-    const r = await run(
-      c,
-      deps,
-      (tx) => updateRow(tx, def.table, def.columns, id, pick(body, def.writable), expected),
-      def.inUseIssue,
-    );
+    const r = await run(c, deps, (tx) => updateRow(tx, def.table, def.columns, id, pick(body, def.writable), expected), {
+      inUseIssue: def.inUseIssue,
+    });
     if (r instanceof ApiFailure) return respondFailure(c, r);
     c.header("ETag", `"${r.version}"`);
     return c.json({ success: true, data: serialize(r), request_id: c.get("requestId") }, 200);
@@ -642,7 +507,7 @@ function registerResource(v1: OpenAPIHono<AuthEnv>, deps: Deps, def: ResourceDef
           }
           return updateRow(tx, def.table, def.columns, id, { status: target }, expected);
         },
-        def.inUseIssue,
+        { inUseIssue: def.inUseIssue },
       );
       if (r instanceof ApiFailure) return respondFailure(c, r);
       c.header("ETag", `"${r.version}"`);
@@ -651,7 +516,7 @@ function registerResource(v1: OpenAPIHono<AuthEnv>, deps: Deps, def: ResourceDef
   }
 }
 
-function registerTeamMembers(v1: OpenAPIHono<AuthEnv>, deps: Deps) {
+function registerTeamMembers(v1: V1, deps: Deps) {
   const Member = z
     .object({
       worker_id: z.uuid(),

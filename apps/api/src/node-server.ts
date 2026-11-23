@@ -3,6 +3,7 @@ import { authVerifierFromEnv } from "./auth.js";
 import { allowedOriginsFromEnv } from "./config.js";
 import { createApp } from "./create-app.js";
 import { createPoolSafe } from "./db.js";
+import { nationalIdCryptoFromEnv } from "./national-id.js";
 import { pushSenderFromEnv } from "./push-sender.js";
 
 // Server lokal untuk pengembangan. Di Vercel dipakai src/index.ts.
@@ -13,6 +14,7 @@ const app = createApp({
   allowedOrigins: allowedOriginsFromEnv(),
   pushSender: pushSenderFromEnv(),
   auth: authVerifierFromEnv(),
+  nationalId: nationalIdCryptoFromEnv(),
 });
 
 serve({ fetch: app.fetch, port }, (info) => {

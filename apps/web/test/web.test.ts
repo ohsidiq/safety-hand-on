@@ -94,13 +94,13 @@ describe("menu per peran (UIUX-002 §5, IA-006, IA-008)", () => {
   it("Company Admin melihat Beranda, Jejak Audit, Profil; menu yang belum dibangun tidak tampil", async () => {
     const { visibleNav } = await import("../lib/nav");
     const hrefs = visibleNav(["user.manage", "audit.view", "worker.read", "dashboard.view"]).map((i) => i.href);
-    expect(hrefs).toEqual(["/dashboard", "/audit", "/profile"]);
+    expect(hrefs).toEqual(["/dashboard", "/workers", "/audit", "/profile"]);
   });
 
   it("Supervisor (tanpa audit.view) tidak melihat Jejak Audit", async () => {
     const { visibleNav, canSee } = await import("../lib/nav");
     const perms = ["worker.read", "observation.create"];
-    expect(visibleNav(perms).map((i) => i.href)).toEqual(["/dashboard", "/profile"]);
+    expect(visibleNav(perms).map((i) => i.href)).toEqual(["/dashboard", "/workers", "/profile"]);
     expect(canSee(perms, "/audit")).toBe(false);
   });
 
@@ -256,5 +256,51 @@ describe("Struktur Organisasi di web (UIUX-005 §3, API-002)", () => {
       ok: false,
       error: { status: 412, code: "VERSION_CONFLICT", details: [], extra: { current_version: 4 } },
     });
+  });
+});
+
+describe("Pekerja di web (UIUX-005 §4, API-003)", () => {
+  it("aksi status sah per status; berhenti bersifat akhir", async () => {
+    const { STATUS_ACTIONS } = await import("../lib/workers");
+    expect(STATUS_ACTIONS.ACTIVE.map((a) => a.action)).toEqual(["suspend", "deactivate", "resign"]);
+    expect(STATUS_ACTIONS.SUSPENDED.map((a) => a.action)).toContain("reinstate");
+    expect(STATUS_ACTIONS.INACTIVE.map((a) => a.action)).toEqual(["reactivate", "resign"]);
+    expect(STATUS_ACTIONS.RESIGNED).toEqual([]);
+  });
+
+  it("pemilih kontraktor mengikuti Site terhubung (ER-013); kontraktor tanpa relasi tidak dibatasi", async () => {
+    const { contractorsForSite } = await import("../lib/workers");
+    const list = [
+      { id: "a", code: "A", name: "A", status: "ACTIVE" as const, site_ids: ["s1"] },
+      { id: "b", code: "B", name: "B", status: "ACTIVE" as const, site_ids: [] },
+      { id: "c", code: "C", name: "C", status: "INACTIVE" as const, site_ids: ["s2"] },
+    ];
+    expect(contractorsForSite(list, "s1").map((c) => c.id)).toEqual(["a", "b"]);
+    expect(contractorsForSite(list, "s2").map((c) => c.id)).toEqual(["b"]);
+  });
+
+  it("validasi isian dan pesan galat tanpa nilai NIK", async () => {
+    const { validateWorkerInput, workerErrorMessage } = await import("../lib/workers");
+    expect(validateWorkerInput({ employee_number: "EMP-001", full_name: "Budi", phone: "+6281234567890" })).toBeNull();
+    expect(validateWorkerInput({ phone: "0812" })).toMatch(/internasional/);
+    expect(validateWorkerInput({ national_id: "123" })).toMatch(/16 digit/);
+    const msg = workerErrorMessage({
+      status: 409,
+      code: "DUPLICATE",
+      details: [{ field: "national_id", issue: "already_used" }],
+      extra: {},
+    });
+    expect(msg).toMatch(/NIK sudah terdaftar/);
+    expect(workerErrorMessage({ status: 422, code: "SITE_NOT_LINKED_TO_CONTRACTOR", details: [], extra: {} })).toMatch(
+      /tidak terhubung/,
+    );
+    expect(
+      workerErrorMessage({
+        status: 503,
+        code: "SERVICE_UNAVAILABLE",
+        details: [{ field: "national_id", issue: "x" }],
+        extra: {},
+      }),
+    ).toMatch(/NIK belum diaktifkan/);
   });
 });

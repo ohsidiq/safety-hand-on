@@ -8,9 +8,11 @@ import type { AuthEnv, AuthVerifier } from "./auth.js";
 import { registerAuthMe } from "./auth-me.js";
 import { registerDashboard } from "./dashboard.js";
 import { type ErrorCode, errorBody, errorStatus } from "./errors.js";
+import type { NationalIdCrypto } from "./national-id.js";
 import { registerNotifications } from "./notifications.js";
 import { registerOrgStructure } from "./org-structure.js";
 import { type PushSender, registerSpikePush } from "./spike-push.js";
+import { registerWorkers } from "./workers.js";
 
 /**
  * Core API Safety On Hand (ADR-001 Opsi B).
@@ -28,6 +30,8 @@ export interface AppDeps {
   pushSender?: PushSender | undefined;
   /** Verifier token Supabase Auth. Kosong = endpoint terlindungi menjawab 503. */
   auth?: AuthVerifier | undefined;
+  /** Sandi NIK (API-003 WF-API-005). Kosong = NIK tidak dapat disimpan (503), data pekerja lain tetap berjalan. */
+  nationalId?: NationalIdCrypto | undefined;
 }
 
 type Env = AuthEnv;
@@ -135,6 +139,7 @@ export function createApp(deps: AppDeps = {}) {
   registerDashboard(v1, deps);
   registerNotifications(v1, deps);
   registerOrgStructure(v1, deps);
+  registerWorkers(v1, deps);
   registerSpikePush(v1, deps.pushSender);
 
   app.route("/api/v1", v1);

@@ -551,7 +551,7 @@ components:
         - status
         - version
         - updated_at
-    OrgErrorResponse:
+    ApiErrorResponse:
       type: object
       properties:
         success:
@@ -1086,6 +1086,420 @@ components:
           pattern: ^\d{4}-\d{2}-\d{2}$
       required:
         - valid_until
+    WorkerSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        sho_id:
+          type: string
+        employee_number:
+          type: string
+        full_name:
+          type: string
+        employment_status:
+          type: string
+          enum:
+            - PERMANENT
+            - CONTRACT
+            - CONTRACTOR
+        worker_status:
+          type: string
+          enum:
+            - ACTIVE
+            - INACTIVE
+            - SUSPENDED
+            - RESIGNED
+        join_date:
+          type: string
+        site:
+          type:
+            - object
+            - "null"
+          properties:
+            id:
+              type: string
+              format: uuid
+            name:
+              type:
+                - string
+                - "null"
+          required:
+            - id
+            - name
+        department:
+          type:
+            - object
+            - "null"
+          properties:
+            id:
+              type: string
+              format: uuid
+            name:
+              type:
+                - string
+                - "null"
+          required:
+            - id
+            - name
+        division:
+          type:
+            - object
+            - "null"
+          properties:
+            id:
+              type: string
+              format: uuid
+            name:
+              type:
+                - string
+                - "null"
+          required:
+            - id
+            - name
+        job_position:
+          type:
+            - object
+            - "null"
+          properties:
+            id:
+              type: string
+              format: uuid
+            name:
+              type:
+                - string
+                - "null"
+          required:
+            - id
+            - name
+        contractor:
+          type:
+            - object
+            - "null"
+          properties:
+            id:
+              type: string
+              format: uuid
+            name:
+              type:
+                - string
+                - "null"
+          required:
+            - id
+            - name
+        version:
+          type: integer
+      required:
+        - id
+        - sho_id
+        - employee_number
+        - full_name
+        - employment_status
+        - worker_status
+        - join_date
+        - site
+        - department
+        - division
+        - job_position
+        - contractor
+        - version
+    Worker:
+      allOf:
+        - $ref: "#/components/schemas/WorkerSummary"
+        - type: object
+          properties:
+            phone:
+              type:
+                - string
+                - "null"
+            email:
+              type:
+                - string
+                - "null"
+            has_national_id:
+              type: boolean
+            has_account:
+              type: boolean
+            exit_date:
+              type:
+                - string
+                - "null"
+            created_at:
+              type: string
+            updated_at:
+              type: string
+          required:
+            - phone
+            - email
+            - has_national_id
+            - has_account
+            - exit_date
+            - created_at
+            - updated_at
+    WorkerCreate:
+      type: object
+      properties:
+        employee_number:
+          type: string
+          minLength: 3
+          maxLength: 30
+          pattern: ^[A-Za-z0-9][A-Za-z0-9._/-]*$
+        full_name:
+          type: string
+          minLength: 2
+          maxLength: 150
+        phone:
+          type:
+            - string
+            - "null"
+          pattern: ^\+[1-9]\d{7,14}$
+          description: Format E.164
+          example: "+6281200000000"
+        email:
+          type:
+            - string
+            - "null"
+          maxLength: 254
+          format: email
+        national_id:
+          type:
+            - string
+            - "null"
+          maxLength: 32
+          description: "NIK 16 digit. Hanya-tulis: tidak pernah dikembalikan"
+        employment_status:
+          type: string
+          enum:
+            - PERMANENT
+            - CONTRACT
+            - CONTRACTOR
+        join_date:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}$
+        site_id:
+          type: string
+          format: uuid
+        department_id:
+          type: string
+          format: uuid
+        division_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        job_position_id:
+          type: string
+          format: uuid
+        contractor_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+      required:
+        - employee_number
+        - full_name
+        - employment_status
+        - join_date
+        - site_id
+        - department_id
+        - job_position_id
+    WorkerPatch:
+      type: object
+      properties:
+        full_name:
+          type: string
+          minLength: 2
+          maxLength: 150
+        phone:
+          type:
+            - string
+            - "null"
+          pattern: ^\+[1-9]\d{7,14}$
+          description: Format E.164
+          example: "+6281200000000"
+        email:
+          type:
+            - string
+            - "null"
+          maxLength: 254
+          format: email
+        national_id:
+          type:
+            - string
+            - "null"
+          maxLength: 32
+          description: "NIK 16 digit. Hanya-tulis: tidak pernah dikembalikan"
+        employment_status:
+          type: string
+          enum:
+            - PERMANENT
+            - CONTRACT
+            - CONTRACTOR
+        contractor_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+    WorkerStatusAction:
+      type: object
+      properties:
+        reason:
+          type: string
+          maxLength: 500
+          description: Wajib, 3-500 karakter (REASON_REQUIRED)
+        effective_date:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}$
+        exit_date:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}$
+          description: Wajib untuk resign
+    WorkerAssignment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        site:
+          type:
+            - object
+            - "null"
+          properties:
+            id:
+              type: string
+              format: uuid
+            name:
+              type:
+                - string
+                - "null"
+          required:
+            - id
+            - name
+        department:
+          type:
+            - object
+            - "null"
+          properties:
+            id:
+              type: string
+              format: uuid
+            name:
+              type:
+                - string
+                - "null"
+          required:
+            - id
+            - name
+        division:
+          type:
+            - object
+            - "null"
+          properties:
+            id:
+              type: string
+              format: uuid
+            name:
+              type:
+                - string
+                - "null"
+          required:
+            - id
+            - name
+        job_position:
+          type:
+            - object
+            - "null"
+          properties:
+            id:
+              type: string
+              format: uuid
+            name:
+              type:
+                - string
+                - "null"
+          required:
+            - id
+            - name
+        effective_from:
+          type: string
+        effective_until:
+          type:
+            - string
+            - "null"
+        current:
+          type: boolean
+        reason:
+          type: string
+        created_at:
+          type: string
+      required:
+        - id
+        - site
+        - department
+        - division
+        - job_position
+        - effective_from
+        - effective_until
+        - current
+        - reason
+        - created_at
+    WorkerAssignmentCreate:
+      type: object
+      properties:
+        site_id:
+          type: string
+          format: uuid
+        department_id:
+          type: string
+          format: uuid
+        division_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        job_position_id:
+          type: string
+          format: uuid
+        effective_from:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}$
+        reason:
+          type: string
+          maxLength: 200
+          description: Wajib, 3-200 karakter (REASON_REQUIRED)
+      required:
+        - site_id
+        - department_id
+        - job_position_id
+        - effective_from
+    ContractorOption:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: string
+        status:
+          type: string
+          enum:
+            - ACTIVE
+            - INACTIVE
+        site_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Site terhubung yang berlaku (ER-013)
+      required:
+        - id
+        - code
+        - name
+        - status
+        - site_ids
     PushSubscription:
       type: object
       properties:
@@ -1817,19 +2231,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "403":
           description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "404":
           description: NOT_FOUND
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
     patch:
       tags:
         - Organization
@@ -1877,38 +2291,38 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "403":
           description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "404":
           description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "409":
           description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
             aktif)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "412":
           description: VERSION_CONFLICT
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "422":
           description: VALIDATION_ERROR
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
   /api/v1/sites:
     get:
       tags:
@@ -1968,25 +2382,25 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "403":
           description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "404":
           description: NOT_FOUND (induk tidak ada atau di luar scope)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "422":
           description: VALIDATION_ERROR
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
     post:
       tags:
         - Organization
@@ -2024,32 +2438,32 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "403":
           description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "404":
           description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "409":
           description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
             aktif)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "422":
           description: VALIDATION_ERROR
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
   /api/v1/sites/{id}:
     get:
       tags:
@@ -2089,19 +2503,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "403":
           description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "404":
           description: NOT_FOUND
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
     patch:
       tags:
         - Organization
@@ -2155,38 +2569,38 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "403":
           description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "404":
           description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "409":
           description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
             aktif)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "412":
           description: VERSION_CONFLICT (disertai current_version)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "422":
           description: VALIDATION_ERROR
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
   /api/v1/sites/{id}/deactivate:
     post:
       tags:
@@ -2235,38 +2649,38 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "403":
           description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "404":
           description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "409":
           description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
             aktif)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "412":
           description: VERSION_CONFLICT
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "422":
           description: VALIDATION_ERROR
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
   /api/v1/sites/{id}/reactivate:
     post:
       tags:
@@ -2315,38 +2729,38 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "403":
           description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "404":
           description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "409":
           description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
             aktif)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "412":
           description: VERSION_CONFLICT
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "422":
           description: VALIDATION_ERROR
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
   /api/v1/sites/{site_id}/departments:
     get:
       tags:
@@ -2412,25 +2826,25 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "403":
           description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "404":
           description: NOT_FOUND (induk tidak ada atau di luar scope)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "422":
           description: VALIDATION_ERROR
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
     post:
       tags:
         - Organization
@@ -2475,32 +2889,32 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "403":
           description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "404":
           description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "409":
           description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
             aktif)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "422":
           description: VALIDATION_ERROR
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
   /api/v1/departments/{id}:
     get:
       tags:
@@ -2540,19 +2954,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "403":
           description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "404":
           description: NOT_FOUND
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
     patch:
       tags:
         - Organization
@@ -2606,38 +3020,38 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "403":
           description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "404":
           description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "409":
           description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
             aktif)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "412":
           description: VERSION_CONFLICT (disertai current_version)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "422":
           description: VALIDATION_ERROR
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
   /api/v1/departments/{id}/deactivate:
     post:
       tags:
@@ -2686,38 +3100,38 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "403":
           description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "404":
           description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "409":
           description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
             aktif)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "412":
           description: VERSION_CONFLICT
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "422":
           description: VALIDATION_ERROR
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
   /api/v1/departments/{id}/reactivate:
     post:
       tags:
@@ -2766,38 +3180,38 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "403":
           description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "404":
           description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "409":
           description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
             aktif)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "412":
           description: VERSION_CONFLICT
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "422":
           description: VALIDATION_ERROR
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
   /api/v1/departments/{department_id}/divisions:
     get:
       tags:
@@ -2863,25 +3277,25 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "403":
           description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "404":
           description: NOT_FOUND (induk tidak ada atau di luar scope)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "422":
           description: VALIDATION_ERROR
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
     post:
       tags:
         - Organization
@@ -2926,32 +3340,32 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "403":
           description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "404":
           description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "409":
           description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
             aktif)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "422":
           description: VALIDATION_ERROR
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
   /api/v1/divisions/{id}:
     get:
       tags:
@@ -2991,19 +3405,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "403":
           description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "404":
           description: NOT_FOUND
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
     patch:
       tags:
         - Organization
@@ -3057,38 +3471,38 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "403":
           description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "404":
           description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "409":
           description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
             aktif)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "412":
           description: VERSION_CONFLICT (disertai current_version)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "422":
           description: VALIDATION_ERROR
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
   /api/v1/divisions/{id}/deactivate:
     post:
       tags:
@@ -3137,38 +3551,38 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "403":
           description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "404":
           description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "409":
           description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
             aktif)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "412":
           description: VERSION_CONFLICT
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "422":
           description: VALIDATION_ERROR
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
   /api/v1/divisions/{id}/reactivate:
     post:
       tags:
@@ -3217,38 +3631,38 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "403":
           description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "404":
           description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "409":
           description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
             aktif)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "412":
           description: VERSION_CONFLICT
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "422":
           description: VALIDATION_ERROR
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
   /api/v1/sites/{site_id}/teams:
     get:
       tags:
@@ -3314,25 +3728,25 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "403":
           description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "404":
           description: NOT_FOUND (induk tidak ada atau di luar scope)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "422":
           description: VALIDATION_ERROR
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
     post:
       tags:
         - Organization
@@ -3377,32 +3791,32 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "403":
           description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "404":
           description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "409":
           description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
             aktif)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "422":
           description: VALIDATION_ERROR
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
   /api/v1/teams/{id}:
     get:
       tags:
@@ -3442,19 +3856,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "403":
           description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "404":
           description: NOT_FOUND
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
     patch:
       tags:
         - Organization
@@ -3508,38 +3922,38 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "403":
           description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "404":
           description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "409":
           description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
             aktif)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "412":
           description: VERSION_CONFLICT (disertai current_version)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "422":
           description: VALIDATION_ERROR
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
   /api/v1/teams/{id}/deactivate:
     post:
       tags:
@@ -3588,38 +4002,38 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "403":
           description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "404":
           description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "409":
           description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
             aktif)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "412":
           description: VERSION_CONFLICT
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "422":
           description: VALIDATION_ERROR
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
   /api/v1/teams/{id}/reactivate:
     post:
       tags:
@@ -3668,38 +4082,38 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "403":
           description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "404":
           description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "409":
           description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
             aktif)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "412":
           description: VERSION_CONFLICT
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "422":
           description: VALIDATION_ERROR
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
   /api/v1/job-positions:
     get:
       tags:
@@ -3759,25 +4173,25 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "403":
           description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "404":
           description: NOT_FOUND (induk tidak ada atau di luar scope)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "422":
           description: VALIDATION_ERROR
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
     post:
       tags:
         - Organization
@@ -3815,32 +4229,32 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "403":
           description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "404":
           description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "409":
           description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
             aktif)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "422":
           description: VALIDATION_ERROR
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
   /api/v1/job-positions/{id}:
     get:
       tags:
@@ -3880,19 +4294,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "403":
           description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "404":
           description: NOT_FOUND
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
     patch:
       tags:
         - Organization
@@ -3946,38 +4360,38 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "403":
           description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "404":
           description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "409":
           description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
             aktif)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "412":
           description: VERSION_CONFLICT (disertai current_version)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "422":
           description: VALIDATION_ERROR
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
   /api/v1/job-positions/{id}/deactivate:
     post:
       tags:
@@ -4026,38 +4440,38 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "403":
           description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "404":
           description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "409":
           description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
             aktif)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "412":
           description: VERSION_CONFLICT
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "422":
           description: VALIDATION_ERROR
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
   /api/v1/job-positions/{id}/reactivate:
     post:
       tags:
@@ -4106,38 +4520,38 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "403":
           description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "404":
           description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "409":
           description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
             aktif)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "412":
           description: VERSION_CONFLICT
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "422":
           description: VALIDATION_ERROR
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
   /api/v1/equipment-classes:
     get:
       tags:
@@ -4198,25 +4612,25 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "403":
           description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "404":
           description: NOT_FOUND (induk tidak ada atau di luar scope)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "422":
           description: VALIDATION_ERROR
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
     post:
       tags:
         - Organization
@@ -4254,32 +4668,32 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "403":
           description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "404":
           description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "409":
           description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
             aktif)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "422":
           description: VALIDATION_ERROR
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
   /api/v1/equipment-classes/{id}:
     get:
       tags:
@@ -4319,19 +4733,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "403":
           description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "404":
           description: NOT_FOUND
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
     patch:
       tags:
         - Organization
@@ -4385,38 +4799,38 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "403":
           description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "404":
           description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "409":
           description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
             aktif)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "412":
           description: VERSION_CONFLICT (disertai current_version)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "422":
           description: VALIDATION_ERROR
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
   /api/v1/equipment-classes/{id}/deactivate:
     post:
       tags:
@@ -4465,38 +4879,38 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "403":
           description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "404":
           description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "409":
           description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
             aktif)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "412":
           description: VERSION_CONFLICT
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "422":
           description: VALIDATION_ERROR
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
   /api/v1/equipment-classes/{id}/reactivate:
     post:
       tags:
@@ -4545,38 +4959,38 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "403":
           description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "404":
           description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "409":
           description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
             aktif)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "412":
           description: VERSION_CONFLICT
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "422":
           description: VALIDATION_ERROR
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
   /api/v1/teams/{id}/members:
     get:
       tags:
@@ -4642,25 +5056,25 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "403":
           description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "404":
           description: NOT_FOUND
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "422":
           description: VALIDATION_ERROR
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
     post:
       tags:
         - Organization
@@ -4705,32 +5119,32 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "403":
           description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "404":
           description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "409":
           description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
             aktif)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "422":
           description: VALIDATION_ERROR
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
   /api/v1/teams/{id}/members/{worker_id}/end:
     post:
       tags:
@@ -4782,32 +5196,1190 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "403":
           description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "404":
           description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "409":
           description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
             aktif)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
         "422":
           description: VALIDATION_ERROR
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrgErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/workers:
+    get:
+      tags:
+        - Workers
+      summary: Daftar pekerja dalam scope pemanggil (kursor)
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: false
+          name: site_id
+          in: query
+        - schema:
+            type: string
+            format: uuid
+          required: false
+          name: department_id
+          in: query
+        - schema:
+            type: string
+            format: uuid
+          required: false
+          name: division_id
+          in: query
+        - schema:
+            type: string
+            format: uuid
+          required: false
+          name: team_id
+          in: query
+        - schema:
+            type: string
+            format: uuid
+          required: false
+          name: job_position_id
+          in: query
+        - schema:
+            type: string
+            format: uuid
+          required: false
+          name: contractor_id
+          in: query
+        - schema:
+            type: string
+            enum:
+              - ACTIVE
+              - INACTIVE
+              - SUSPENDED
+              - RESIGNED
+          required: false
+          name: worker_status
+          in: query
+        - schema:
+            type: string
+            enum:
+              - PERMANENT
+              - CONTRACT
+              - CONTRACTOR
+          required: false
+          name: employment_status
+          in: query
+        - schema:
+            type: string
+            minLength: 1
+            maxLength: 100
+            description: Nama, nomor pekerja, atau SHO ID
+          required: false
+          description: Nama, nomor pekerja, atau SHO ID
+          name: q
+          in: query
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+          required: false
+          name: limit
+          in: query
+        - schema:
+            type: string
+            maxLength: 400
+          required: false
+          name: cursor
+          in: query
+      responses:
+        "200":
+          description: Daftar pekerja (urut nama). Status kesiapan tidak dimuat (API-014)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/WorkerSummary"
+                  pagination:
+                    type: object
+                    properties:
+                      limit:
+                        type: number
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      has_more:
+                        type: boolean
+                    required:
+                      - limit
+                      - next_cursor
+                      - has_more
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - pagination
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    post:
+      tags:
+        - Workers
+      summary: Membuat pekerja (SHO ID dibuat sistem, penempatan awal otomatis)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkerCreate"
+      responses:
+        "201":
+          description: Pekerja dibuat
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/Worker"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: DUPLICATE, INVALID_STATE_TRANSITION, ASSIGNMENT_OVERLAP
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "412":
+          description: VERSION_CONFLICT (disertai current_version)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: VALIDATION_ERROR, DEPARTMENT_NOT_IN_SITE, CONTRACTOR_REQUIRED,
+            CONTRACTOR_NOT_ALLOWED, REASON_REQUIRED,
+            SITE_NOT_LINKED_TO_CONTRACTOR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "503":
+          description: SERVICE_UNAVAILABLE (penyimpanan NIK belum dikonfigurasi)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/workers/me:
+    get:
+      tags:
+        - Workers
+      summary: Data pekerja milik akun pemanggil (B-18, WF-API-010)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Pekerja
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/Worker"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: Akun tidak terhubung ke pekerja
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/workers/duplicate-check:
+    get:
+      tags:
+        - Workers
+      summary: Apakah nomor pekerja sudah dipakai di organisasi (tanpa data pekerja)
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            minLength: 3
+            maxLength: 30
+            pattern: ^[A-Za-z0-9][A-Za-z0-9._/-]*$
+          required: true
+          name: employee_number
+          in: query
+      responses:
+        "200":
+          description: Hasil
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    type: object
+                    properties:
+                      exists:
+                        type: boolean
+                    required:
+                      - exists
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/workers/{id}:
+    get:
+      tags:
+        - Workers
+      summary: Detail pekerja (tanpa NIK)
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Pekerja
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/Worker"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    patch:
+      tags:
+        - Workers
+      summary: Mengubah data pekerja (bukan penempatan, bukan status)
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+        - schema:
+            type: string
+            pattern: ^(?:W\/)?"?\d{1,9}"?$
+            description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+            example: '"3"'
+          required: true
+          description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+          name: if-match
+          in: header
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkerPatch"
+      responses:
+        "200":
+          description: Pekerja
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/Worker"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: DUPLICATE, INVALID_STATE_TRANSITION, ASSIGNMENT_OVERLAP
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "412":
+          description: VERSION_CONFLICT (disertai current_version)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: VALIDATION_ERROR, DEPARTMENT_NOT_IN_SITE, CONTRACTOR_REQUIRED,
+            CONTRACTOR_NOT_ALLOWED, REASON_REQUIRED,
+            SITE_NOT_LINKED_TO_CONTRACTOR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "503":
+          description: SERVICE_UNAVAILABLE (penyimpanan NIK belum dikonfigurasi)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/workers/{id}/suspend:
+    post:
+      tags:
+        - Workers
+      summary: "Aksi status: suspend (ACTIVE ke SUSPENDED), alasan wajib"
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+        - schema:
+            type: string
+            pattern: ^(?:W\/)?"?\d{1,9}"?$
+            description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+            example: '"3"'
+          required: false
+          description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+          name: if-match
+          in: header
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkerStatusAction"
+      responses:
+        "200":
+          description: Pekerja
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/Worker"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: DUPLICATE, INVALID_STATE_TRANSITION, ASSIGNMENT_OVERLAP
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "412":
+          description: VERSION_CONFLICT (disertai current_version)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: VALIDATION_ERROR, DEPARTMENT_NOT_IN_SITE, CONTRACTOR_REQUIRED,
+            CONTRACTOR_NOT_ALLOWED, REASON_REQUIRED,
+            SITE_NOT_LINKED_TO_CONTRACTOR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "503":
+          description: SERVICE_UNAVAILABLE (penyimpanan NIK belum dikonfigurasi)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/workers/{id}/reinstate:
+    post:
+      tags:
+        - Workers
+      summary: "Aksi status: reinstate (SUSPENDED ke ACTIVE), alasan wajib"
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+        - schema:
+            type: string
+            pattern: ^(?:W\/)?"?\d{1,9}"?$
+            description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+            example: '"3"'
+          required: false
+          description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+          name: if-match
+          in: header
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkerStatusAction"
+      responses:
+        "200":
+          description: Pekerja
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/Worker"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: DUPLICATE, INVALID_STATE_TRANSITION, ASSIGNMENT_OVERLAP
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "412":
+          description: VERSION_CONFLICT (disertai current_version)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: VALIDATION_ERROR, DEPARTMENT_NOT_IN_SITE, CONTRACTOR_REQUIRED,
+            CONTRACTOR_NOT_ALLOWED, REASON_REQUIRED,
+            SITE_NOT_LINKED_TO_CONTRACTOR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "503":
+          description: SERVICE_UNAVAILABLE (penyimpanan NIK belum dikonfigurasi)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/workers/{id}/deactivate:
+    post:
+      tags:
+        - Workers
+      summary: "Aksi status: deactivate (ACTIVE/SUSPENDED ke INACTIVE), alasan wajib"
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+        - schema:
+            type: string
+            pattern: ^(?:W\/)?"?\d{1,9}"?$
+            description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+            example: '"3"'
+          required: false
+          description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+          name: if-match
+          in: header
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkerStatusAction"
+      responses:
+        "200":
+          description: Pekerja
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/Worker"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: DUPLICATE, INVALID_STATE_TRANSITION, ASSIGNMENT_OVERLAP
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "412":
+          description: VERSION_CONFLICT (disertai current_version)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: VALIDATION_ERROR, DEPARTMENT_NOT_IN_SITE, CONTRACTOR_REQUIRED,
+            CONTRACTOR_NOT_ALLOWED, REASON_REQUIRED,
+            SITE_NOT_LINKED_TO_CONTRACTOR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "503":
+          description: SERVICE_UNAVAILABLE (penyimpanan NIK belum dikonfigurasi)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/workers/{id}/reactivate:
+    post:
+      tags:
+        - Workers
+      summary: "Aksi status: reactivate (INACTIVE ke ACTIVE), alasan wajib"
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+        - schema:
+            type: string
+            pattern: ^(?:W\/)?"?\d{1,9}"?$
+            description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+            example: '"3"'
+          required: false
+          description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+          name: if-match
+          in: header
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkerStatusAction"
+      responses:
+        "200":
+          description: Pekerja
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/Worker"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: DUPLICATE, INVALID_STATE_TRANSITION, ASSIGNMENT_OVERLAP
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "412":
+          description: VERSION_CONFLICT (disertai current_version)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: VALIDATION_ERROR, DEPARTMENT_NOT_IN_SITE, CONTRACTOR_REQUIRED,
+            CONTRACTOR_NOT_ALLOWED, REASON_REQUIRED,
+            SITE_NOT_LINKED_TO_CONTRACTOR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "503":
+          description: SERVICE_UNAVAILABLE (penyimpanan NIK belum dikonfigurasi)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/workers/{id}/resign:
+    post:
+      tags:
+        - Workers
+      summary: "Aksi status: resign (ACTIVE/SUSPENDED/INACTIVE ke RESIGNED), alasan
+        wajib"
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+        - schema:
+            type: string
+            pattern: ^(?:W\/)?"?\d{1,9}"?$
+            description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+            example: '"3"'
+          required: false
+          description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+          name: if-match
+          in: header
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkerStatusAction"
+      responses:
+        "200":
+          description: Pekerja
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/Worker"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: DUPLICATE, INVALID_STATE_TRANSITION, ASSIGNMENT_OVERLAP
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "412":
+          description: VERSION_CONFLICT (disertai current_version)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: VALIDATION_ERROR, DEPARTMENT_NOT_IN_SITE, CONTRACTOR_REQUIRED,
+            CONTRACTOR_NOT_ALLOWED, REASON_REQUIRED,
+            SITE_NOT_LINKED_TO_CONTRACTOR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "503":
+          description: SERVICE_UNAVAILABLE (penyimpanan NIK belum dikonfigurasi)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/workers/{id}/assignments:
+    get:
+      tags:
+        - Workers
+      summary: Riwayat penempatan
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Riwayat (terbaru dulu)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/WorkerAssignment"
+                  pagination:
+                    type: object
+                    properties:
+                      limit:
+                        type: number
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      has_more:
+                        type: boolean
+                    required:
+                      - limit
+                      - next_cursor
+                      - has_more
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - pagination
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    post:
+      tags:
+        - Workers
+      summary: Penempatan baru (mutasi Site/department/posisi); menutup penempatan
+        sebelumnya
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkerAssignmentCreate"
+      responses:
+        "201":
+          description: Pekerja dengan penempatan terbaru
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/Worker"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: DUPLICATE, INVALID_STATE_TRANSITION, ASSIGNMENT_OVERLAP
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "412":
+          description: VERSION_CONFLICT (disertai current_version)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: VALIDATION_ERROR, DEPARTMENT_NOT_IN_SITE, CONTRACTOR_REQUIRED,
+            CONTRACTOR_NOT_ALLOWED, REASON_REQUIRED,
+            SITE_NOT_LINKED_TO_CONTRACTOR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "503":
+          description: SERVICE_UNAVAILABLE (penyimpanan NIK belum dikonfigurasi)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/contractors:
+    get:
+      tags:
+        - Contractors
+      summary: Daftar kontraktor untuk pemilih (data induk P0, B-23). Pengelolaan
+        penuh P2
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            enum:
+              - ACTIVE
+              - INACTIVE
+          required: false
+          name: status
+          in: query
+      responses:
+        "200":
+          description: Kontraktor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ContractorOption"
+                  pagination:
+                    type: object
+                    properties:
+                      limit:
+                        type: number
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      has_more:
+                        type: boolean
+                    required:
+                      - limit
+                      - next_cursor
+                      - has_more
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - pagination
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
   /api/v1/spike/push-test:
     post:
       tags:
