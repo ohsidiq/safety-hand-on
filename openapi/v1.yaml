@@ -7,6 +7,12 @@ info:
 servers:
   - url: /
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Token akses Supabase Auth
   schemas:
     HealthResponse:
       type: object
@@ -32,6 +38,141 @@ components:
           example: UP
       required:
         - status
+    MeResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          enum:
+            - true
+        data:
+          $ref: "#/components/schemas/Me"
+        request_id:
+          type: string
+      required:
+        - success
+        - data
+        - request_id
+    Me:
+      type: object
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        organization:
+          type:
+            - object
+            - "null"
+          properties:
+            id:
+              type: string
+              format: uuid
+            name:
+              type: string
+            code:
+              type:
+                - string
+                - "null"
+          required:
+            - id
+            - name
+            - code
+        full_name:
+          type:
+            - string
+            - "null"
+        worker_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        language:
+          type: string
+          enum:
+            - id
+            - en
+        role_assignments:
+          type: array
+          items:
+            $ref: "#/components/schemas/RoleAssignment"
+        permissions:
+          type: array
+          items:
+            type: string
+          example:
+            - worker.read
+            - readiness.read
+        mfa_enabled:
+          type: boolean
+        must_change_credential:
+          type: boolean
+      required:
+        - user_id
+        - organization
+        - full_name
+        - worker_id
+        - language
+        - role_assignments
+        - permissions
+        - mfa_enabled
+        - must_change_credential
+    RoleAssignment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        role_code:
+          type: string
+          example: SUPERVISOR
+        scope_type:
+          type: string
+          enum:
+            - PLATFORM
+            - ORGANIZATION
+            - SITE
+            - DEPARTMENT
+            - TEAM
+            - CONTRACTOR
+            - SELF
+        scope_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        valid_until:
+          type:
+            - string
+            - "null"
+      required:
+        - id
+        - role_code
+        - scope_type
+        - scope_id
+        - valid_until
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          enum:
+            - false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+          required:
+            - code
+            - message
+        request_id:
+          type: string
+      required:
+        - success
+        - error
+        - request_id
     PushSubscription:
       type: object
       properties:
@@ -88,6 +229,44 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthResponse"
+  /api/v1/auth/me:
+    get:
+      tags:
+        - Auth
+      summary: "Identitas pemanggil: profil, penugasan role aktif, permission efektif"
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Identitas pengguna yang sedang login
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MeResponse"
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "423":
+          description: ACCOUNT_LOCKED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: Autentikasi atau database belum tersedia
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/v1/spike/push-test:
     post:
       tags:

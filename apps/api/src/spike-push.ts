@@ -1,4 +1,5 @@
 import { createRoute, type OpenAPIHono, z } from "@hono/zod-openapi";
+import type { AuthEnv } from "./auth.js";
 import { errorBody } from "./errors.js";
 
 /**
@@ -65,7 +66,7 @@ const route = createRoute({
   },
 });
 
-type Env = { Variables: { requestId: string } };
+type Env = AuthEnv;
 
 export function registerSpikePush(app: OpenAPIHono<Env>, sender: PushSender | undefined, now = () => Date.now()) {
   const hits: number[] = [];
