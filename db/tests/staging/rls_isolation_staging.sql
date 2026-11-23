@@ -79,14 +79,14 @@ begin
   -- T3 tulis lintas tenant: Admin org A (berhak mengelola pekerja) tetap tidak boleh menulis ke org B
   perform set_config('app.user_id', u_adm_a::text, true);
   begin
-    insert into worker(organization_id, site_id, full_name, job_position, employment_status)
-    values (org_b, site_b1, 'Penyusup', 'Helper', 'EMPLOYEE');
+    insert into worker(organization_id, site_id, full_name, employee_number, employment_status, join_date)
+    values (org_b, site_b1, 'Penyusup', 'X-1', 'PERMANENT', current_date);
     raise exception 'T3 GAGAL: insert lintas tenant berhasil';
   exception when insufficient_privilege then null;
   end;
   -- kontrol positif: admin A boleh menulis ke org A
-  insert into worker(organization_id, site_id, full_name, job_position, employment_status)
-  select org_a, id, 'Pekerja Baru', 'Helper', 'EMPLOYEE' from site where organization_id = org_a order by name limit 1;
+  insert into worker(organization_id, site_id, full_name, employee_number, employment_status, join_date)
+  select org_a, id, 'Pekerja Baru', 'X-2', 'PERMANENT', current_date from site where organization_id = org_a order by name limit 1;
   get diagnostics rc = row_count;
   if rc <> 1 then raise exception 'T3 GAGAL: admin tidak dapat menulis ke organisasinya sendiri'; end if;
   update worker set full_name = 'Diubah' where organization_id = org_b;
@@ -163,8 +163,8 @@ begin
 
   -- T7 integritas FK komposit: pekerja tidak boleh menunjuk Site organisasi lain
   begin
-    insert into worker(organization_id, site_id, full_name, job_position, employment_status)
-    select org_a, id, 'Salah', 'Helper', 'EMPLOYEE' from site where organization_id = org_b limit 1;
+    insert into worker(organization_id, site_id, full_name, employee_number, employment_status, join_date)
+    select org_a, id, 'Salah', 'X-3', 'PERMANENT', current_date from site where organization_id = org_b limit 1;
     raise exception 'T7 GAGAL: FK komposit tidak mencegah Site lintas organisasi';
   exception when foreign_key_violation then null;
   end;

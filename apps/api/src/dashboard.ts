@@ -76,8 +76,8 @@ export function registerDashboard(v1: OpenAPIHono<AuthEnv>, deps: { auth?: AuthV
         const workers = await tx.query<{ total: number; with_account: number; missing_job_position: number }>(
           `select count(*)::int as total,
                   count(*) filter (where user_id is not null)::int as with_account,
-                  count(*) filter (where coalesce(btrim(job_position), '') = '')::int as missing_job_position
-           from worker where organization_id = $1`,
+                  count(*) filter (where job_position_id is null)::int as missing_job_position
+           from worker where organization_id = $1 and deleted_at is null and worker_status in ('ACTIVE', 'SUSPENDED')`,
           [identity.organizationId],
         );
         const by = Object.fromEntries(users.rows.map((r) => [r.status, r.n]));

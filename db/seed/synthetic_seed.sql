@@ -79,14 +79,25 @@ begin
   insert into requirement_item(organization_id, job_position, requirement_name)
   select v_org, p, r from unnest(v_pos) p, unnest(v_req) r;
 
-  insert into worker(organization_id, site_id, full_name, job_position, employment_status)
-  select v_org,
-         (select id from (select id, row_number() over (order by name) n from site where organization_id = v_org) x
-           where x.n = 1 + (g % p_sites)),
-         'Pekerja ' || lpad(g::text, 6, '0'),
-         v_pos[1 + (g % 3)],
-         case when g % 10 < 3 then 'CONTRACTOR' else 'EMPLOYEE' end
-  from generate_series(1, p_workers) g;
+  -- pekerja: ~30% Site 1 berstatus CONTRACTOR (kontraktor sintetis A, terhubung Site 1, ER-012/ER-013),
+  -- sebagian CONTRACT, sisanya PERMANENT. SHO ID dibuat trigger.
+  insert into worker(organization_id, site_id, full_name, employee_number, employment_status, contractor_id, join_date,
+                     department_id, job_position_id)
+  select v_org, s.id, 'Pekerja ' || lpad(g::text, 6, '0'), 'EMP-' || lpad(g::text, 6, '0'),
+         case when s.code = 'SITE-1' and g % 10 < 3 then 'CONTRACTOR' when g % 10 < 3 then 'CONTRACT' else 'PERMANENT' end,
+         case when s.code = 'SITE-1' and g % 10 < 3 then (select id from contractor where organization_id = v_org and code = 'KTR-A') end,
+         current_date - (30 + g % 700),
+         (select id from department where site_id = s.id and code = case when g % 4 = 0 then 'MAINT' else 'PROD' end),
+         (select id from job_position where organization_id = v_org and name = v_pos[1 + (g % 3)])
+  from generate_series(1, p_workers) g
+  join lateral (select id, code from (select id, code, row_number() over (order by name) n from site where organization_id = v_org) x
+                where x.n = 1 + (g % p_sites)) s on true;
+
+  -- keanggotaan team: setiap pekerja masuk team department-nya
+  insert into team_member(organization_id, team_id, worker_id, valid_from)
+  select v_org, t.id, w.id, w.join_date
+  from worker w join team t on t.department_id = w.department_id
+  where w.organization_id = v_org;
 
   -- kompetensi: ~5% kosong, ~10% kedaluwarsa, ~15% segera berakhir (<30 hari), sisanya valid
   insert into competency_record(organization_id, site_id, worker_id, requirement_name, expires_on, verified_at)
@@ -118,6 +129,14 @@ begin
   where id = (select id from worker where organization_id = v_org and full_name = 'Pekerja 000001');
   insert into user_role_assignment(user_id, organization_id, role_code, scope_type, scope_id, granted_by)
   select id, v_org, 'WORKER', 'SELF', null, v_admin from user_profile where organization_id = v_org and email like 'pekerja1@%';
+
+  -- Supervisor berscope Tim (PB-008): team Produksi Site 1
+  insert into user_profile(organization_id, email, full_name, status)
+  values (v_org, 'spvtim1@' || replace(lower(p_name), ' ', '-') || '.contoh', 'Spv Tim 1 ' || p_name, 'ACTIVE');
+  insert into user_role_assignment(user_id, organization_id, role_code, scope_type, scope_id, granted_by)
+  select u.id, v_org, 'SUPERVISOR', 'TEAM', (select t.id from team t join site s on s.id = t.site_id
+                                            where s.organization_id = v_org and s.code = 'SITE-1' and t.code = 'TIM-PROD'), v_admin
+  from user_profile u where u.organization_id = v_org and u.email like 'spvtim1@%';
 
   return v_org;
 end $$;
