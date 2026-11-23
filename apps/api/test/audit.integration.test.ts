@@ -19,7 +19,17 @@ describe.skipIf(!url)("Audit Trail (integrasi)", () => {
   const from = new Date(Date.now() - 60 * 60 * 1000).toISOString();
   const to = new Date(Date.now() + 60 * 60 * 1000).toISOString();
 
-  const drain = () => db.query("set role app_worker; select app.audit_drain(100000); reset role;");
+  // Pemindah lain (uji worker) dapat berjalan bersamaan dan mengunci baris (SKIP LOCKED): ulangi sampai antrean kosong.
+  const drain = async () => {
+    for (let i = 0; i < 40; i++) {
+      await db.query("set role app_worker; select app.audit_drain(100000); reset role;");
+      const left = await db.query<{ n: number }>(
+        "select count(*)::int as n from audit_outbox where processed_at is null and failed_at is null",
+      );
+      if ((left.rows[0]?.n ?? 0) === 0) return;
+      await new Promise((r) => setTimeout(r, 100));
+    }
+  };
   const call = async (userId: string, path: string, headers: Record<string, string> = {}, sessionId?: string) => {
     const token = await issuer.sign({ sub: userId, ...(sessionId ? { session_id: sessionId } : {}) });
     return app.request(`/api/v1${path}`, { headers: { Authorization: `Bearer ${token}`, ...headers } });

@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect, useState } from "react";
+import { apiGet, NOTIFICATIONS_CHANGED } from "@/lib/api";
 import { visibleNav } from "@/lib/nav";
 import { useSession } from "@/lib/session";
 
@@ -17,8 +18,31 @@ const FAIL_TEXT: Record<string, string> = {
 
 /** Kerangka aplikasi (UIUX-002 §3 dan §7): header, menu samping di layar lebar, navigasi bawah di ponsel. */
 export function AppShell({ children }: { children: ReactNode }) {
-  const { state, signOut } = useSession();
+  const { state, signOut, getToken } = useSession();
   const pathname = usePathname();
+  const [unread, setUnread] = useState<number | null>(null);
+  const canNotify = state.status === "ready" && state.me.permissions.includes("notification.read");
+
+  // Lencana belum dibaca (API-015): dimuat saat halaman berganti, tiap 60 detik, dan setelah notifikasi dibaca
+  // biome-ignore lint/correctness/useExhaustiveDependencies: pathname sengaja dipakai sebagai pemicu muat ulang saat pindah halaman
+  useEffect(() => {
+    if (!canNotify) return;
+    let active = true;
+    const refresh = async () => {
+      const token = await getToken();
+      if (!token) return;
+      const r = await apiGet<{ unread: number }>("/notifications/unread-count", token);
+      if (active && r.ok) setUnread(r.data.unread);
+    };
+    void refresh();
+    const timer = setInterval(refresh, 60_000);
+    window.addEventListener(NOTIFICATIONS_CHANGED, refresh);
+    return () => {
+      active = false;
+      clearInterval(timer);
+      window.removeEventListener(NOTIFICATIONS_CHANGED, refresh);
+    };
+  }, [canNotify, getToken, pathname]);
 
   if (state.status === "loading") {
     return (
@@ -53,6 +77,12 @@ export function AppShell({ children }: { children: ReactNode }) {
           Safety On Hand
         </Link>
         <span className="org muted">{state.me.organization?.name ?? ""}</span>
+        {canNotify ? (
+          <Link href="/notifications" className="bell" aria-label={unread ? `Notifikasi, ${unread} belum dibaca` : "Notifikasi"}>
+            <span aria-hidden="true">🔔</span>
+            {unread ? <span className="bell-count">{unread > 99 ? "99+" : unread}</span> : null}
+          </Link>
+        ) : null}
         <button type="button" className="secondary small" onClick={signOut}>
           Keluar
         </button>

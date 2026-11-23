@@ -1,6 +1,7 @@
 import { createPool } from "@soh/db";
 import { drainAudit, ensureAuditPartitions } from "./audit.js";
 import { handlers } from "./handlers.js";
+import { processNotifications } from "./notifications.js";
 import { processBatch } from "./outbox.js";
 
 const db = createPool();
@@ -28,6 +29,12 @@ async function tick() {
   if (audit.failed > 0) {
     // AUD-009: kegagalan pencatatan memicu alert dan kejadian tidak hilang (tetap di antrean gagal)
     console.error(JSON.stringify({ level: "error", msg: "audit events moved to failed queue", failed: audit.failed }));
+  }
+  const notif = await processNotifications(db);
+  if (notif.processed > 0) console.log(JSON.stringify({ level: "info", msg: "notification batch", ...notif }));
+  if (notif.failed > 0) {
+    // FR-PLT02-012: antrean gagal memicu alert
+    console.error(JSON.stringify({ level: "error", msg: "notification events moved to failed queue", failed: notif.failed }));
   }
   const r = await processBatch(db, handlers, { batchSize });
   if (r.claimed > 0) {
