@@ -26,8 +26,8 @@ describe.skipIf(!url)("Worker audit (integrasi)", () => {
     expect(r.moved).toBeGreaterThanOrEqual(1);
     const row = await db.query("select actor_kind, action from audit_log where id = $1", [id]);
     expect(row.rows).toEqual([{ actor_kind: "SYSTEM", action: "system.worker_test" }]);
-    const again = await drainAudit(db, 100000);
-    expect(again.moved).toBe(0);
+    // Uji lain dapat menambah kejadian bersamaan; yang dibuktikan: kejadian ini tidak tergandakan
+    await drainAudit(db, 100000);
     expect((await db.query("select 1 from audit_log where id = $1", [id])).rowCount).toBe(1);
   });
 

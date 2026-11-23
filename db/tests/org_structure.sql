@@ -23,7 +23,8 @@ begin
   select id into dep_a1 from department where site_id = site_a1 and code = 'PROD';
   select id into dep_a2 from department where site_id = site_a2 and code = 'PROD';
   select id into team_a1 from team where site_id = site_a1 and code = 'TIM-PROD';
-  select id into w_a1 from worker where site_id = site_a1 order by full_name limit 1;
+  select id into w_a1 from worker w where w.site_id = site_a1
+    and not exists (select 1 from team_member tm where tm.worker_id = w.id and tm.team_id = team_a1) order by full_name limit 1;
   select id into ctr_a from contractor where organization_id = org_a;
 
   -- S1 zona waktu IANA wajib valid (ORG-API-006, ER-010)
@@ -52,8 +53,9 @@ begin
   exception when unique_violation then null;
   end;
   insert into job_position (organization_id, name, code) values (org_b, 'Welder Org B', 'WELDER-X');
-  update job_position set status = 'INACTIVE' where organization_id = org_a and code = 'HELPER';
-  insert into job_position (organization_id, name, code) values (org_a, 'Helper Baru', 'HELPER');
+  insert into job_position (organization_id, name, code) values (org_a, 'Posisi Lama', 'POS-LAMA');
+  update job_position set status = 'INACTIVE' where organization_id = org_a and code = 'POS-LAMA';
+  insert into job_position (organization_id, name, code) values (org_a, 'Posisi Lama Baru', 'POS-LAMA');
   begin
     insert into department (organization_id, site_id, name, code) values (org_a, site_a1, 'Produksi Dua', 'PROD');
     raise exception 'S2 GAGAL: kode department ganda dalam satu Site diterima';
