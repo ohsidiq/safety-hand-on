@@ -22,8 +22,31 @@ begin
   insert into organization(name, code) values (p_name, upper(regexp_replace(p_name, '[^A-Za-z0-9]', '', 'g')))
   returning id into v_org;
 
-  insert into site(organization_id, name)
-  select v_org, 'Site ' || g from generate_series(1, p_sites) g;
+  insert into site(organization_id, name, code, location, timezone)
+  select v_org, 'Site ' || g, 'SITE-' || g, 'Lokasi sintetis ' || g,
+         (array['Asia/Makassar', 'Asia/Jakarta', 'Asia/Jayapura'])[1 + ((g - 1) % 3)]
+  from generate_series(1, p_sites) g;
+
+  -- struktur organisasi sintetis (M2.1): department dan team per Site, posisi dan kelas alat tingkat organisasi,
+  -- satu kontraktor yang terhubung ke Site 1 (B-23)
+  insert into department(organization_id, site_id, name, code)
+  select v_org, s.id, d.name, d.code
+  from site s, (values ('Produksi', 'PROD'), ('Pemeliharaan', 'MAINT')) d(name, code)
+  where s.organization_id = v_org;
+  insert into team(organization_id, site_id, department_id, name, code)
+  select v_org, d.site_id, d.id, 'Tim ' || d.name, 'TIM-' || d.code
+  from department d where d.organization_id = v_org;
+  insert into job_position(organization_id, name, code, job_family)
+  select v_org, p.name, p.code, p.family
+  from (values ('Operator Alat Berat', 'OPR-AB', 'Operator'), ('Welder', 'WELDER', 'Mekanik'), ('Helper', 'HELPER', 'Umum')) p(name, code, family);
+  insert into equipment_class(organization_id, name, code)
+  select v_org, e.name, e.code
+  from (values ('Dump Truck', 'DT'), ('Excavator', 'EXC'), ('Light Vehicle', 'LV')) e(name, code);
+  insert into contractor(organization_id, name, code, contract_start, contract_end)
+  values (v_org, 'Kontraktor Sintetis A', 'KTR-A', current_date - 180, current_date + 185);
+  insert into contractor_site(organization_id, contractor_id, site_id, valid_from)
+  select v_org, c.id, s.id, current_date - 180
+  from contractor c, site s where c.organization_id = v_org and s.organization_id = v_org and s.code = 'SITE-1';
 
   -- pengguna tingkat organisasi (nama sintetis). Company Admin pertama dibuat sistem (granted_by NULL);
   -- penugasan lain diberikan oleh Company Admin.
