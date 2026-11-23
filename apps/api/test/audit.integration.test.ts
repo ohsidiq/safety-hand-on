@@ -143,3 +143,62 @@ describe.skipIf(!url)("Audit Trail (integrasi)", () => {
     expect((await call(u.admin as string, `/audit-logs?${range}&cursor=bukan-kursor`)).status).toBe(422);
   });
 });
+
+describe.skipIf(!url)("Dashboard ringkasan P0 (integrasi)", () => {
+  let db: Db;
+  let issuer: Awaited<ReturnType<typeof makeIssuer>>;
+  let app: ReturnType<typeof createApp>;
+  const u: Record<string, string> = {};
+  let orgA: string;
+
+  beforeAll(async () => {
+    db = createPool(url);
+    issuer = await makeIssuer();
+    app = createApp({ db, auth: issuer.verifier });
+    orgA = (await db.query<{ id: string }>("select id from organization order by name limit 1")).rows[0]?.id as string;
+    for (const who of ["admin", "hsemgr", "spv1", "pekerja1"]) {
+      const r = await db.query<{ id: string }>("select id from user_profile where organization_id = $1 and email like $2", [
+        orgA,
+        `${who}@%`,
+      ]);
+      u[who] = r.rows[0]?.id as string;
+    }
+  });
+  afterAll(async () => {
+    await db?.end();
+  });
+
+  const get = async (userId: string) =>
+    app.request("/api/v1/dashboard/summary", { headers: { Authorization: `Bearer ${await issuer.sign({ sub: userId })}` } });
+
+  it("Company Admin: blok administrasi dihitung dari organisasinya sendiri, dengan as_of", async () => {
+    const res = await get(u.admin as string);
+    expect(res.status).toBe(200);
+    const { data } = await res.json();
+    const users = await db.query<{ n: number }>(
+      "select count(*)::int as n from user_profile where organization_id = $1 and status = 'ACTIVE'",
+      [orgA],
+    );
+    const workers = await db.query<{ total: number; linked: number }>(
+      "select count(*)::int as total, count(user_id)::int as linked from worker where organization_id = $1",
+      [orgA],
+    );
+    expect(data.scope.organization_id).toBe(orgA);
+    expect(Date.parse(data.as_of)).not.toBeNaN();
+    expect(data.administration.users.active).toBe(users.rows[0]?.n);
+    expect(data.administration.workers).toMatchObject({ total: workers.rows[0]?.total, with_account: workers.rows[0]?.linked });
+  });
+
+  it("HSE Manager (dashboard.view tanpa user.manage): ringkasan tanpa blok administrasi", async () => {
+    const res = await get(u.hsemgr as string);
+    expect(res.status).toBe(200);
+    expect((await res.json()).data.administration).toBeUndefined();
+  });
+
+  it("Supervisor dan Worker (dashboard.view LIMITED, ditolak bawaan) -> 403 FORBIDDEN", async () => {
+    for (const who of [u.spv1, u.pekerja1]) {
+      const res = await get(who as string);
+      expect(res.status).toBe(403);
+    }
+  });
+});

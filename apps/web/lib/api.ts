@@ -60,3 +60,70 @@ export async function fetchMe(accessToken: string, fetcher: typeof fetch = fetch
     return { ok: false, code: "UNAVAILABLE" };
   }
 }
+
+export type ApiResult<T> = { ok: true; data: T; body: unknown } | { ok: false; status: number; code: string };
+
+/** GET ke Core API dengan token akses. Galat dikembalikan sebagai kode API-000, bukan dilempar. */
+export async function apiGet<T>(path: string, accessToken: string, fetcher: typeof fetch = fetch): Promise<ApiResult<T>> {
+  if (!apiBaseUrl()) return { ok: false, status: 0, code: "UNAVAILABLE" };
+  try {
+    const res = await fetcher(apiUrl(path), { headers: { Authorization: `Bearer ${accessToken}` }, cache: "no-store" });
+    const body = (await res.json().catch(() => ({}))) as { data?: T; error?: { code?: string } };
+    if (res.ok && body.data !== undefined) return { ok: true, data: body.data, body };
+    return { ok: false, status: res.status, code: body.error?.code ?? "UNAVAILABLE" };
+  } catch {
+    return { ok: false, status: 0, code: "UNAVAILABLE" };
+  }
+}
+
+export interface DashboardSummary {
+  as_of: string;
+  scope: { organization_id: string | null };
+  administration?: {
+    users: { active: number; invited: number; locked: number; deactivated: number };
+    workers: { total: number; with_account: number; missing_job_position: number };
+  };
+}
+
+export interface AuditEvent {
+  id: string;
+  occurred_at: string;
+  actor_kind: "USER" | "SYSTEM" | "SUPPORT";
+  actor: { user_id: string; full_name: string | null; role_code: string | null; scope_type: string | null } | null;
+  action: string;
+  entity_type: string;
+  entity_id: string | null;
+  site_id: string | null;
+  changed_fields: string[] | null;
+  changes: Record<string, unknown> | null;
+  sensitive_access: boolean;
+  access_reason: string | null;
+  result: "SUCCESS" | "DENIED" | "FAILED";
+  request_id: string | null;
+  ip?: string | null;
+  user_agent?: string | null;
+}
+
+export interface AuditPage {
+  data: AuditEvent[];
+  pagination: { limit: number; next_cursor: string | null; has_more: boolean };
+}
+
+/** Parameter pencarian audit yang dikirim ke API-016. Tidak memuat data sensitif (RT-005). */
+export function auditQuery(p: { from: string; to: string; action?: string; result?: string; cursor?: string; limit?: number }) {
+  const q = new URLSearchParams({ from: p.from, to: p.to, limit: String(p.limit ?? 25) });
+  if (p.action) q.set("action", p.action);
+  if (p.result) q.set("result", p.result);
+  if (p.cursor) q.set("cursor", p.cursor);
+  return `/audit-logs?${q.toString()}`;
+}
+
+export async function fetchAuditPage(
+  accessToken: string,
+  p: Parameters<typeof auditQuery>[0],
+  fetcher: typeof fetch = fetch,
+): Promise<ApiResult<AuditEvent[]> & { pagination?: AuditPage["pagination"] }> {
+  const r = await apiGet<AuditEvent[]>(auditQuery(p), accessToken, fetcher);
+  if (!r.ok) return r;
+  return { ...r, pagination: (r.body as AuditPage).pagination };
+}

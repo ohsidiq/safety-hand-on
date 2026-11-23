@@ -1,14 +1,6 @@
-import type { Metadata } from "next";
-import { AccountView } from "./account-view";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = { title: "Akun saya" };
-
-export default function AccountPage() {
-  return (
-    <main className="shell">
-      <p className="eyebrow">Safety On Hand</p>
-      <h1>Akun saya</h1>
-      <AccountView />
-    </main>
-  );
+/** Rute lama (M1.4 awal). Rute baku UIUX-002 §4.5: /profile. */
+export default function OldAccount() {
+  redirect("/profile");
 }

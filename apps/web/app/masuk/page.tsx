@@ -1,15 +1,6 @@
-import type { Metadata } from "next";
-import { LoginForm } from "./login-form";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = { title: "Masuk" };
-
-export default function LoginPage() {
-  return (
-    <main className="shell">
-      <p className="eyebrow">Safety On Hand</p>
-      <h1>Masuk</h1>
-      <p className="muted">Gunakan akun yang sudah didaftarkan administrator perusahaan Anda.</p>
-      <LoginForm />
-    </main>
-  );
+/** Rute lama (M1.4 awal). Rute baku UIUX-002 §4.6: /login. */
+export default function OldLogin() {
+  redirect("/login");
 }

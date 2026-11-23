@@ -335,6 +335,100 @@ components:
         - success
         - error
         - request_id
+    DashboardSummaryResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          enum:
+            - true
+        data:
+          type: object
+          properties:
+            as_of:
+              type: string
+            scope:
+              type: object
+              properties:
+                organization_id:
+                  type:
+                    - string
+                    - "null"
+                  format: uuid
+              required:
+                - organization_id
+            administration:
+              $ref: "#/components/schemas/DashboardAdministration"
+          required:
+            - as_of
+            - scope
+        request_id:
+          type: string
+      required:
+        - success
+        - data
+        - request_id
+    DashboardAdministration:
+      type: object
+      properties:
+        users:
+          type: object
+          properties:
+            active:
+              type: integer
+            invited:
+              type: integer
+              description: Undangan tertunda (status INVITED)
+            locked:
+              type: integer
+            deactivated:
+              type: integer
+          required:
+            - active
+            - invited
+            - locked
+            - deactivated
+        workers:
+          type: object
+          properties:
+            total:
+              type: integer
+            with_account:
+              type: integer
+              description: Pekerja yang terhubung ke akun (B-18)
+            missing_job_position:
+              type: integer
+              description: "Kelengkapan data: pekerja tanpa Job Position"
+          required:
+            - total
+            - with_account
+            - missing_job_position
+      required:
+        - users
+        - workers
+    DashboardErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          enum:
+            - false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+          required:
+            - code
+            - message
+        request_id:
+          type: string
+      required:
+        - success
+        - error
+        - request_id
     PushSubscription:
       type: object
       properties:
@@ -612,6 +706,33 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AuditErrorResponse"
+  /api/v1/dashboard/summary:
+    get:
+      tags:
+        - Dashboard
+      summary: "Ringkasan dashboard sesuai peran dan fase (P0: administrasi)"
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Ringkasan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummaryResponse"
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardErrorResponse"
+        "403":
+          description: FORBIDDEN (tanpa dashboard.view tingkat FULL/TEAM) atau
+            ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardErrorResponse"
   /api/v1/spike/push-test:
     post:
       tags:
