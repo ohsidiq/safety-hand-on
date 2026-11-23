@@ -518,6 +518,574 @@ components:
         - success
         - error
         - request_id
+    Organization:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        code:
+          type:
+            - string
+            - "null"
+        default_timezone:
+          type: string
+        plan:
+          type:
+            - string
+            - "null"
+        status:
+          type: string
+        version:
+          type: integer
+        updated_at:
+          type: string
+      required:
+        - id
+        - name
+        - code
+        - default_timezone
+        - plan
+        - status
+        - version
+        - updated_at
+    OrgErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          enum:
+            - false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: array
+              items:
+                type: object
+                properties:
+                  field:
+                    type: string
+                  issue:
+                    type: string
+                required:
+                  - issue
+          required:
+            - code
+            - message
+        request_id:
+          type: string
+      required:
+        - success
+        - error
+        - request_id
+    OrganizationPatch:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 150
+        default_timezone:
+          type: string
+          minLength: 1
+          maxLength: 64
+          description: Nama zona IANA
+          example: Asia/Makassar
+    Site:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        code:
+          type: string
+        location:
+          type:
+            - string
+            - "null"
+        timezone:
+          type: string
+        status:
+          type: string
+          enum:
+            - ACTIVE
+            - INACTIVE
+        version:
+          type: integer
+        created_at:
+          type: string
+        updated_at:
+          type: string
+      required:
+        - id
+        - name
+        - code
+        - location
+        - timezone
+        - status
+        - version
+        - created_at
+        - updated_at
+    SiteCreate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 150
+        code:
+          type: string
+          pattern: ^[A-Z0-9][A-Z0-9-]{1,29}$
+          description: Huruf besar, angka, tanda hubung; 2-30 karakter
+          example: SITE-A
+        location:
+          type:
+            - string
+            - "null"
+          maxLength: 200
+        timezone:
+          type: string
+          minLength: 1
+          maxLength: 64
+          description: Nama zona IANA
+          example: Asia/Makassar
+      required:
+        - name
+        - code
+    SitePatch:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 150
+        code:
+          type: string
+          pattern: ^[A-Z0-9][A-Z0-9-]{1,29}$
+          description: Huruf besar, angka, tanda hubung; 2-30 karakter
+          example: SITE-A
+        location:
+          type:
+            - string
+            - "null"
+          maxLength: 200
+        timezone:
+          type: string
+          minLength: 1
+          maxLength: 64
+          description: Nama zona IANA
+          example: Asia/Makassar
+    Department:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        site_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        code:
+          type: string
+        status:
+          type: string
+          enum:
+            - ACTIVE
+            - INACTIVE
+        version:
+          type: integer
+        created_at:
+          type: string
+        updated_at:
+          type: string
+      required:
+        - id
+        - site_id
+        - name
+        - code
+        - status
+        - version
+        - created_at
+        - updated_at
+    DepartmentCreate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 150
+        code:
+          type: string
+          pattern: ^[A-Z0-9][A-Z0-9-]{1,29}$
+          description: Huruf besar, angka, tanda hubung; 2-30 karakter
+          example: SITE-A
+      required:
+        - name
+        - code
+    DepartmentPatch:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 150
+        code:
+          type: string
+          pattern: ^[A-Z0-9][A-Z0-9-]{1,29}$
+          description: Huruf besar, angka, tanda hubung; 2-30 karakter
+          example: SITE-A
+    Division:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        site_id:
+          type: string
+          format: uuid
+        department_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        code:
+          type: string
+        status:
+          type: string
+          enum:
+            - ACTIVE
+            - INACTIVE
+        version:
+          type: integer
+        created_at:
+          type: string
+        updated_at:
+          type: string
+      required:
+        - id
+        - site_id
+        - department_id
+        - name
+        - code
+        - status
+        - version
+        - created_at
+        - updated_at
+    DivisionCreate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 150
+        code:
+          type: string
+          pattern: ^[A-Z0-9][A-Z0-9-]{1,29}$
+          description: Huruf besar, angka, tanda hubung; 2-30 karakter
+          example: SITE-A
+      required:
+        - name
+        - code
+    DivisionPatch:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 150
+        code:
+          type: string
+          pattern: ^[A-Z0-9][A-Z0-9-]{1,29}$
+          description: Huruf besar, angka, tanda hubung; 2-30 karakter
+          example: SITE-A
+    Team:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        site_id:
+          type: string
+          format: uuid
+        department_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        name:
+          type: string
+        code:
+          type: string
+        status:
+          type: string
+          enum:
+            - ACTIVE
+            - INACTIVE
+        version:
+          type: integer
+        created_at:
+          type: string
+        updated_at:
+          type: string
+      required:
+        - id
+        - site_id
+        - department_id
+        - name
+        - code
+        - status
+        - version
+        - created_at
+        - updated_at
+    TeamCreate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 150
+        code:
+          type: string
+          pattern: ^[A-Z0-9][A-Z0-9-]{1,29}$
+          description: Huruf besar, angka, tanda hubung; 2-30 karakter
+          example: SITE-A
+        department_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+      required:
+        - name
+        - code
+    TeamPatch:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 150
+        code:
+          type: string
+          pattern: ^[A-Z0-9][A-Z0-9-]{1,29}$
+          description: Huruf besar, angka, tanda hubung; 2-30 karakter
+          example: SITE-A
+    JobPosition:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        code:
+          type: string
+        job_family:
+          type:
+            - string
+            - "null"
+        description:
+          type:
+            - string
+            - "null"
+        status:
+          type: string
+          enum:
+            - ACTIVE
+            - INACTIVE
+        version:
+          type: integer
+        created_at:
+          type: string
+        updated_at:
+          type: string
+      required:
+        - id
+        - name
+        - code
+        - job_family
+        - description
+        - status
+        - version
+        - created_at
+        - updated_at
+    JobPositionCreate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 150
+        code:
+          type: string
+          pattern: ^[A-Z0-9][A-Z0-9-]{1,29}$
+          description: Huruf besar, angka, tanda hubung; 2-30 karakter
+          example: SITE-A
+        job_family:
+          type:
+            - string
+            - "null"
+          maxLength: 100
+        description:
+          type:
+            - string
+            - "null"
+          maxLength: 1000
+      required:
+        - name
+        - code
+    JobPositionPatch:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 150
+        code:
+          type: string
+          pattern: ^[A-Z0-9][A-Z0-9-]{1,29}$
+          description: Huruf besar, angka, tanda hubung; 2-30 karakter
+          example: SITE-A
+        job_family:
+          type:
+            - string
+            - "null"
+          maxLength: 100
+        description:
+          type:
+            - string
+            - "null"
+          maxLength: 1000
+    EquipmentClass:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        code:
+          type: string
+        description:
+          type:
+            - string
+            - "null"
+        status:
+          type: string
+          enum:
+            - ACTIVE
+            - INACTIVE
+        version:
+          type: integer
+        created_at:
+          type: string
+        updated_at:
+          type: string
+      required:
+        - id
+        - name
+        - code
+        - description
+        - status
+        - version
+        - created_at
+        - updated_at
+    EquipmentClassCreate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 150
+        code:
+          type: string
+          pattern: ^[A-Z0-9][A-Z0-9-]{1,29}$
+          description: Huruf besar, angka, tanda hubung; 2-30 karakter
+          example: SITE-A
+        description:
+          type:
+            - string
+            - "null"
+          maxLength: 1000
+      required:
+        - name
+        - code
+    EquipmentClassPatch:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 150
+        code:
+          type: string
+          pattern: ^[A-Z0-9][A-Z0-9-]{1,29}$
+          description: Huruf besar, angka, tanda hubung; 2-30 karakter
+          example: SITE-A
+        description:
+          type:
+            - string
+            - "null"
+          maxLength: 1000
+    TeamMember:
+      type: object
+      properties:
+        worker_id:
+          type: string
+          format: uuid
+        full_name:
+          type:
+            - string
+            - "null"
+          description: null bila pemanggil tidak memiliki worker.read atas pekerja
+        sho_id:
+          type:
+            - string
+            - "null"
+        valid_from:
+          type: string
+        valid_until:
+          type:
+            - string
+            - "null"
+        active:
+          type: boolean
+      required:
+        - worker_id
+        - full_name
+        - sho_id
+        - valid_from
+        - valid_until
+        - active
+    TeamMemberAdd:
+      type: object
+      properties:
+        worker_id:
+          type: string
+          format: uuid
+        valid_from:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}$
+      required:
+        - worker_id
+        - valid_from
+    TeamMemberEnd:
+      type: object
+      properties:
+        valid_until:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}$
+      required:
+        - valid_until
     PushSubscription:
       type: object
       properties:
@@ -1217,6 +1785,3029 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/NotificationErrorResponse"
+  /api/v1/organization:
+    get:
+      tags:
+        - Organization
+      summary: Organisasi pemanggil (dari token)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Organisasi
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/Organization"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "404":
+          description: NOT_FOUND
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+    patch:
+      tags:
+        - Organization
+      summary: Ubah nama dan zona waktu bawaan organisasi
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            pattern: ^(?:W\/)?"?\d{1,9}"?$
+            description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+            example: '"3"'
+          required: true
+          description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+          name: if-match
+          in: header
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrganizationPatch"
+      responses:
+        "200":
+          description: Organisasi
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/Organization"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "409":
+          description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
+            aktif)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "412":
+          description: VERSION_CONFLICT
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+  /api/v1/sites:
+    get:
+      tags:
+        - Organization
+      summary: Daftar Site
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            enum:
+              - ACTIVE
+              - INACTIVE
+          required: false
+          name: status
+          in: query
+      responses:
+        "200":
+          description: Daftar Site (master data kecil, tanpa kursor; maksimum 500)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Site"
+                  pagination:
+                    type: object
+                    properties:
+                      limit:
+                        type: number
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      has_more:
+                        type: boolean
+                    required:
+                      - limit
+                      - next_cursor
+                      - has_more
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - pagination
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "404":
+          description: NOT_FOUND (induk tidak ada atau di luar scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+    post:
+      tags:
+        - Organization
+      summary: Membuat Site
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SiteCreate"
+      responses:
+        "201":
+          description: Site dibuat
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/Site"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "409":
+          description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
+            aktif)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+  /api/v1/sites/{id}:
+    get:
+      tags:
+        - Organization
+      summary: Detail Site
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Site
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/Site"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "404":
+          description: NOT_FOUND
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+    patch:
+      tags:
+        - Organization
+      summary: Mengubah Site
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+        - schema:
+            type: string
+            pattern: ^(?:W\/)?"?\d{1,9}"?$
+            description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+            example: '"3"'
+          required: true
+          description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+          name: if-match
+          in: header
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SitePatch"
+      responses:
+        "200":
+          description: Site
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/Site"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "409":
+          description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
+            aktif)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "412":
+          description: VERSION_CONFLICT (disertai current_version)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+  /api/v1/sites/{id}/deactivate:
+    post:
+      tags:
+        - Organization
+      summary: Menonaktifkan Site (soft delete)
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+        - schema:
+            type: string
+            pattern: ^(?:W\/)?"?\d{1,9}"?$
+            description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+            example: '"3"'
+          required: false
+          description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+          name: if-match
+          in: header
+      responses:
+        "200":
+          description: Site
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/Site"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "409":
+          description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
+            aktif)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "412":
+          description: VERSION_CONFLICT
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+  /api/v1/sites/{id}/reactivate:
+    post:
+      tags:
+        - Organization
+      summary: Mengaktifkan kembali Site
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+        - schema:
+            type: string
+            pattern: ^(?:W\/)?"?\d{1,9}"?$
+            description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+            example: '"3"'
+          required: false
+          description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+          name: if-match
+          in: header
+      responses:
+        "200":
+          description: Site
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/Site"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "409":
+          description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
+            aktif)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "412":
+          description: VERSION_CONFLICT
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+  /api/v1/sites/{site_id}/departments:
+    get:
+      tags:
+        - Organization
+      summary: Daftar Department
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: site_id
+          in: path
+        - schema:
+            type: string
+            enum:
+              - ACTIVE
+              - INACTIVE
+          required: false
+          name: status
+          in: query
+      responses:
+        "200":
+          description: Daftar Department (master data kecil, tanpa kursor; maksimum 500)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Department"
+                  pagination:
+                    type: object
+                    properties:
+                      limit:
+                        type: number
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      has_more:
+                        type: boolean
+                    required:
+                      - limit
+                      - next_cursor
+                      - has_more
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - pagination
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "404":
+          description: NOT_FOUND (induk tidak ada atau di luar scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+    post:
+      tags:
+        - Organization
+      summary: Membuat Department
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: site_id
+          in: path
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DepartmentCreate"
+      responses:
+        "201":
+          description: Department dibuat
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/Department"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "409":
+          description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
+            aktif)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+  /api/v1/departments/{id}:
+    get:
+      tags:
+        - Organization
+      summary: Detail Department
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Department
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/Department"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "404":
+          description: NOT_FOUND
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+    patch:
+      tags:
+        - Organization
+      summary: Mengubah Department
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+        - schema:
+            type: string
+            pattern: ^(?:W\/)?"?\d{1,9}"?$
+            description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+            example: '"3"'
+          required: true
+          description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+          name: if-match
+          in: header
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DepartmentPatch"
+      responses:
+        "200":
+          description: Department
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/Department"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "409":
+          description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
+            aktif)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "412":
+          description: VERSION_CONFLICT (disertai current_version)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+  /api/v1/departments/{id}/deactivate:
+    post:
+      tags:
+        - Organization
+      summary: Menonaktifkan Department (soft delete)
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+        - schema:
+            type: string
+            pattern: ^(?:W\/)?"?\d{1,9}"?$
+            description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+            example: '"3"'
+          required: false
+          description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+          name: if-match
+          in: header
+      responses:
+        "200":
+          description: Department
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/Department"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "409":
+          description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
+            aktif)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "412":
+          description: VERSION_CONFLICT
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+  /api/v1/departments/{id}/reactivate:
+    post:
+      tags:
+        - Organization
+      summary: Mengaktifkan kembali Department
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+        - schema:
+            type: string
+            pattern: ^(?:W\/)?"?\d{1,9}"?$
+            description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+            example: '"3"'
+          required: false
+          description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+          name: if-match
+          in: header
+      responses:
+        "200":
+          description: Department
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/Department"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "409":
+          description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
+            aktif)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "412":
+          description: VERSION_CONFLICT
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+  /api/v1/departments/{department_id}/divisions:
+    get:
+      tags:
+        - Organization
+      summary: Daftar Division
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: department_id
+          in: path
+        - schema:
+            type: string
+            enum:
+              - ACTIVE
+              - INACTIVE
+          required: false
+          name: status
+          in: query
+      responses:
+        "200":
+          description: Daftar Division (master data kecil, tanpa kursor; maksimum 500)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Division"
+                  pagination:
+                    type: object
+                    properties:
+                      limit:
+                        type: number
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      has_more:
+                        type: boolean
+                    required:
+                      - limit
+                      - next_cursor
+                      - has_more
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - pagination
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "404":
+          description: NOT_FOUND (induk tidak ada atau di luar scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+    post:
+      tags:
+        - Organization
+      summary: Membuat Division
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: department_id
+          in: path
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DivisionCreate"
+      responses:
+        "201":
+          description: Division dibuat
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/Division"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "409":
+          description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
+            aktif)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+  /api/v1/divisions/{id}:
+    get:
+      tags:
+        - Organization
+      summary: Detail Division
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Division
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/Division"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "404":
+          description: NOT_FOUND
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+    patch:
+      tags:
+        - Organization
+      summary: Mengubah Division
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+        - schema:
+            type: string
+            pattern: ^(?:W\/)?"?\d{1,9}"?$
+            description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+            example: '"3"'
+          required: true
+          description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+          name: if-match
+          in: header
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DivisionPatch"
+      responses:
+        "200":
+          description: Division
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/Division"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "409":
+          description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
+            aktif)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "412":
+          description: VERSION_CONFLICT (disertai current_version)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+  /api/v1/divisions/{id}/deactivate:
+    post:
+      tags:
+        - Organization
+      summary: Menonaktifkan Division (soft delete)
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+        - schema:
+            type: string
+            pattern: ^(?:W\/)?"?\d{1,9}"?$
+            description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+            example: '"3"'
+          required: false
+          description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+          name: if-match
+          in: header
+      responses:
+        "200":
+          description: Division
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/Division"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "409":
+          description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
+            aktif)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "412":
+          description: VERSION_CONFLICT
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+  /api/v1/divisions/{id}/reactivate:
+    post:
+      tags:
+        - Organization
+      summary: Mengaktifkan kembali Division
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+        - schema:
+            type: string
+            pattern: ^(?:W\/)?"?\d{1,9}"?$
+            description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+            example: '"3"'
+          required: false
+          description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+          name: if-match
+          in: header
+      responses:
+        "200":
+          description: Division
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/Division"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "409":
+          description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
+            aktif)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "412":
+          description: VERSION_CONFLICT
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+  /api/v1/sites/{site_id}/teams:
+    get:
+      tags:
+        - Organization
+      summary: Daftar Team
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: site_id
+          in: path
+        - schema:
+            type: string
+            enum:
+              - ACTIVE
+              - INACTIVE
+          required: false
+          name: status
+          in: query
+      responses:
+        "200":
+          description: Daftar Team (master data kecil, tanpa kursor; maksimum 500)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Team"
+                  pagination:
+                    type: object
+                    properties:
+                      limit:
+                        type: number
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      has_more:
+                        type: boolean
+                    required:
+                      - limit
+                      - next_cursor
+                      - has_more
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - pagination
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "404":
+          description: NOT_FOUND (induk tidak ada atau di luar scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+    post:
+      tags:
+        - Organization
+      summary: Membuat Team
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: site_id
+          in: path
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TeamCreate"
+      responses:
+        "201":
+          description: Team dibuat
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/Team"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "409":
+          description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
+            aktif)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+  /api/v1/teams/{id}:
+    get:
+      tags:
+        - Organization
+      summary: Detail Team
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Team
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/Team"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "404":
+          description: NOT_FOUND
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+    patch:
+      tags:
+        - Organization
+      summary: Mengubah Team
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+        - schema:
+            type: string
+            pattern: ^(?:W\/)?"?\d{1,9}"?$
+            description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+            example: '"3"'
+          required: true
+          description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+          name: if-match
+          in: header
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TeamPatch"
+      responses:
+        "200":
+          description: Team
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/Team"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "409":
+          description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
+            aktif)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "412":
+          description: VERSION_CONFLICT (disertai current_version)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+  /api/v1/teams/{id}/deactivate:
+    post:
+      tags:
+        - Organization
+      summary: Menonaktifkan Team (soft delete)
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+        - schema:
+            type: string
+            pattern: ^(?:W\/)?"?\d{1,9}"?$
+            description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+            example: '"3"'
+          required: false
+          description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+          name: if-match
+          in: header
+      responses:
+        "200":
+          description: Team
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/Team"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "409":
+          description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
+            aktif)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "412":
+          description: VERSION_CONFLICT
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+  /api/v1/teams/{id}/reactivate:
+    post:
+      tags:
+        - Organization
+      summary: Mengaktifkan kembali Team
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+        - schema:
+            type: string
+            pattern: ^(?:W\/)?"?\d{1,9}"?$
+            description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+            example: '"3"'
+          required: false
+          description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+          name: if-match
+          in: header
+      responses:
+        "200":
+          description: Team
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/Team"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "409":
+          description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
+            aktif)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "412":
+          description: VERSION_CONFLICT
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+  /api/v1/job-positions:
+    get:
+      tags:
+        - Organization
+      summary: Daftar Job Position
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            enum:
+              - ACTIVE
+              - INACTIVE
+          required: false
+          name: status
+          in: query
+      responses:
+        "200":
+          description: Daftar Job Position (master data kecil, tanpa kursor; maksimum 500)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/JobPosition"
+                  pagination:
+                    type: object
+                    properties:
+                      limit:
+                        type: number
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      has_more:
+                        type: boolean
+                    required:
+                      - limit
+                      - next_cursor
+                      - has_more
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - pagination
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "404":
+          description: NOT_FOUND (induk tidak ada atau di luar scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+    post:
+      tags:
+        - Organization
+      summary: Membuat Job Position
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JobPositionCreate"
+      responses:
+        "201":
+          description: Job Position dibuat
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/JobPosition"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "409":
+          description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
+            aktif)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+  /api/v1/job-positions/{id}:
+    get:
+      tags:
+        - Organization
+      summary: Detail Job Position
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Job Position
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/JobPosition"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "404":
+          description: NOT_FOUND
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+    patch:
+      tags:
+        - Organization
+      summary: Mengubah Job Position
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+        - schema:
+            type: string
+            pattern: ^(?:W\/)?"?\d{1,9}"?$
+            description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+            example: '"3"'
+          required: true
+          description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+          name: if-match
+          in: header
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JobPositionPatch"
+      responses:
+        "200":
+          description: Job Position
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/JobPosition"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "409":
+          description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
+            aktif)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "412":
+          description: VERSION_CONFLICT (disertai current_version)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+  /api/v1/job-positions/{id}/deactivate:
+    post:
+      tags:
+        - Organization
+      summary: Menonaktifkan Job Position (soft delete)
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+        - schema:
+            type: string
+            pattern: ^(?:W\/)?"?\d{1,9}"?$
+            description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+            example: '"3"'
+          required: false
+          description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+          name: if-match
+          in: header
+      responses:
+        "200":
+          description: Job Position
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/JobPosition"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "409":
+          description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
+            aktif)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "412":
+          description: VERSION_CONFLICT
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+  /api/v1/job-positions/{id}/reactivate:
+    post:
+      tags:
+        - Organization
+      summary: Mengaktifkan kembali Job Position
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+        - schema:
+            type: string
+            pattern: ^(?:W\/)?"?\d{1,9}"?$
+            description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+            example: '"3"'
+          required: false
+          description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+          name: if-match
+          in: header
+      responses:
+        "200":
+          description: Job Position
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/JobPosition"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "409":
+          description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
+            aktif)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "412":
+          description: VERSION_CONFLICT
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+  /api/v1/equipment-classes:
+    get:
+      tags:
+        - Organization
+      summary: Daftar Equipment Class
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            enum:
+              - ACTIVE
+              - INACTIVE
+          required: false
+          name: status
+          in: query
+      responses:
+        "200":
+          description: Daftar Equipment Class (master data kecil, tanpa kursor; maksimum
+            500)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/EquipmentClass"
+                  pagination:
+                    type: object
+                    properties:
+                      limit:
+                        type: number
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      has_more:
+                        type: boolean
+                    required:
+                      - limit
+                      - next_cursor
+                      - has_more
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - pagination
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "404":
+          description: NOT_FOUND (induk tidak ada atau di luar scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+    post:
+      tags:
+        - Organization
+      summary: Membuat Equipment Class
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EquipmentClassCreate"
+      responses:
+        "201":
+          description: Equipment Class dibuat
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/EquipmentClass"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "409":
+          description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
+            aktif)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+  /api/v1/equipment-classes/{id}:
+    get:
+      tags:
+        - Organization
+      summary: Detail Equipment Class
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Equipment Class
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/EquipmentClass"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "404":
+          description: NOT_FOUND
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+    patch:
+      tags:
+        - Organization
+      summary: Mengubah Equipment Class
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+        - schema:
+            type: string
+            pattern: ^(?:W\/)?"?\d{1,9}"?$
+            description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+            example: '"3"'
+          required: true
+          description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+          name: if-match
+          in: header
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EquipmentClassPatch"
+      responses:
+        "200":
+          description: Equipment Class
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/EquipmentClass"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "409":
+          description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
+            aktif)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "412":
+          description: VERSION_CONFLICT (disertai current_version)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+  /api/v1/equipment-classes/{id}/deactivate:
+    post:
+      tags:
+        - Organization
+      summary: Menonaktifkan Equipment Class (soft delete)
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+        - schema:
+            type: string
+            pattern: ^(?:W\/)?"?\d{1,9}"?$
+            description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+            example: '"3"'
+          required: false
+          description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+          name: if-match
+          in: header
+      responses:
+        "200":
+          description: Equipment Class
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/EquipmentClass"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "409":
+          description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
+            aktif)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "412":
+          description: VERSION_CONFLICT
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+  /api/v1/equipment-classes/{id}/reactivate:
+    post:
+      tags:
+        - Organization
+      summary: Mengaktifkan kembali Equipment Class
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+        - schema:
+            type: string
+            pattern: ^(?:W\/)?"?\d{1,9}"?$
+            description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+            example: '"3"'
+          required: false
+          description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+          name: if-match
+          in: header
+      responses:
+        "200":
+          description: Equipment Class
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/EquipmentClass"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "409":
+          description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
+            aktif)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "412":
+          description: VERSION_CONFLICT
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+  /api/v1/teams/{id}/members:
+    get:
+      tags:
+        - Organization
+      summary: Anggota team (bertanggal, tidak dihapus)
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+        - schema:
+            type: string
+            enum:
+              - "true"
+              - "false"
+          required: false
+          name: include_ended
+          in: query
+      responses:
+        "200":
+          description: Anggota
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/TeamMember"
+                  pagination:
+                    type: object
+                    properties:
+                      limit:
+                        type: number
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      has_more:
+                        type: boolean
+                    required:
+                      - limit
+                      - next_cursor
+                      - has_more
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - pagination
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "404":
+          description: NOT_FOUND
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+    post:
+      tags:
+        - Organization
+      summary: Menambah anggota team
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TeamMemberAdd"
+      responses:
+        "201":
+          description: Anggota ditambahkan
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/TeamMember"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "409":
+          description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
+            aktif)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+  /api/v1/teams/{id}/members/{worker_id}/end:
+    post:
+      tags:
+        - Organization
+      summary: Mengakhiri keanggotaan team
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: worker_id
+          in: path
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TeamMemberEnd"
+      responses:
+        "200":
+          description: Keanggotaan diakhiri
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/TeamMember"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "409":
+          description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
+            aktif)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgErrorResponse"
   /api/v1/spike/push-test:
     post:
       tags:

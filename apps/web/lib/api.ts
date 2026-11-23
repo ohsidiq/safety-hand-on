@@ -171,3 +171,46 @@ export function safeInternalLink(link: string | null): string | null {
 
 /** Nama event jendela agar lencana lonceng diperbarui setelah notifikasi dibaca. */
 export const NOTIFICATIONS_CHANGED = "soh:notifications-changed";
+
+export interface ApiError {
+  status: number;
+  code: string;
+  details: { field?: string; issue: string }[];
+  /** Bidang tambahan galat, mis. current_version (412) atau affected_workers (409). */
+  extra: Record<string, unknown>;
+}
+
+export type SendResult<T> = { ok: true; data: T; etag: string | null } | { ok: false; error: ApiError };
+
+/** Permintaan tulis (POST/PATCH) dengan rincian galat API-000 §7 untuk pesan di UI. */
+export async function apiSend<T>(
+  method: "POST" | "PATCH",
+  path: string,
+  accessToken: string,
+  body?: unknown,
+  opts: { ifMatch?: number; fetcher?: typeof fetch } = {},
+): Promise<SendResult<T>> {
+  const unavailable: SendResult<T> = { ok: false, error: { status: 0, code: "UNAVAILABLE", details: [], extra: {} } };
+  if (!apiBaseUrl()) return unavailable;
+  try {
+    const res = await (opts.fetcher ?? fetch)(apiUrl(path), {
+      method,
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
+        ...(opts.ifMatch !== undefined ? { "If-Match": `"${opts.ifMatch}"` } : {}),
+      },
+      ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+      cache: "no-store",
+    });
+    const parsed = (await res.json().catch(() => ({}))) as {
+      data?: T;
+      error?: { code?: string; message?: string; details?: { field?: string; issue: string }[] } & Record<string, unknown>;
+    };
+    if (res.ok && parsed.data !== undefined) return { ok: true, data: parsed.data, etag: res.headers.get("etag") };
+    const { code, message: _m, details, ...extra } = parsed.error ?? {};
+    return { ok: false, error: { status: res.status, code: code ?? "UNAVAILABLE", details: details ?? [], extra } };
+  } catch {
+    return unavailable;
+  }
+}

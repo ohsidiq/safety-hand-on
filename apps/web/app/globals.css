@@ -538,3 +538,84 @@ button.small {
 .inbox li.unread .inbox-title {
   font-weight: 700;
 }
+
+/* Struktur Organisasi (M2.3) */
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin: 1rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.tab {
+  background: none;
+  color: var(--muted);
+  border: none;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+}
+
+.tab.active {
+  color: var(--text);
+  font-weight: 700;
+  border-bottom-color: var(--text);
+}
+
+.entity {
+  margin: 1.5rem 0;
+}
+
+.h3,
+.entity h3,
+.subpanel h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.toolbar-group,
+.row-actions,
+.inline-form {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.panel {
+  display: block;
+}
+
+.subpanel {
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px dashed var(--border);
+  border-radius: 0.75rem;
+}
+
+.entity-form {
+  display: grid;
+  max-width: 32rem;
+  margin: 1rem 0;
+}
+
+.form label {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.form select,
+.form textarea,
+.inline-form input {
+  font: inherit;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--surface);
+  color: var(--text);
+}
+
+button.danger {
+  background: var(--bad);
+  border-color: var(--bad);
+}

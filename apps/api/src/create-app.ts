@@ -9,6 +9,7 @@ import { registerAuthMe } from "./auth-me.js";
 import { registerDashboard } from "./dashboard.js";
 import { type ErrorCode, errorBody, errorStatus } from "./errors.js";
 import { registerNotifications } from "./notifications.js";
+import { registerOrgStructure } from "./org-structure.js";
 import { type PushSender, registerSpikePush } from "./spike-push.js";
 
 /**
@@ -133,6 +134,7 @@ export function createApp(deps: AppDeps = {}) {
   registerAuditLogs(v1, deps);
   registerDashboard(v1, deps);
   registerNotifications(v1, deps);
+  registerOrgStructure(v1, deps);
   registerSpikePush(v1, deps.pushSender);
 
   app.route("/api/v1", v1);
