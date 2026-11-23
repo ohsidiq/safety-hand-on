@@ -105,9 +105,12 @@ export function WorkersView() {
         </label>
         <button type="submit">Terapkan</button>
         {canCreate ? (
-          <Link className="button-link" href="/workers/new">
-            Tambah pekerja
-          </Link>
+          <>
+            <Link className="button-link" href="/workers/new">
+              Tambah pekerja
+            </Link>
+            <Link href="/workers/import">Impor CSV</Link>
+          </>
         ) : null}
       </form>
       {state === "error" ? <p role="alert">Daftar pekerja tidak dapat dimuat. Coba lagi.</p> : null}

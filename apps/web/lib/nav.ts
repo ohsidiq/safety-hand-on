@@ -120,6 +120,7 @@ export const ACTION_LABEL: Record<string, string> = {
   "team.member_end": "Keanggotaan tim diakhiri",
   "organization.update": "Organisasi diubah",
   "worker.assign": "Penempatan pekerja",
+  "worker.import": "Impor pekerja",
   "worker.resign": "Pekerja berhenti",
   "worker.reactivate": "Pekerja diaktifkan kembali",
   "worker.deactivate": "Pekerja dinonaktifkan",

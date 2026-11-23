@@ -25,7 +25,7 @@ begin
   select id into team_a1 from team where site_id = site_a1 and code = 'TIM-PROD';
   select id into w_a1 from worker w where w.site_id = site_a1
     and not exists (select 1 from team_member tm where tm.worker_id = w.id and tm.team_id = team_a1) order by full_name limit 1;
-  select id into ctr_a from contractor where organization_id = org_a;
+  select id into ctr_a from contractor where organization_id = org_a and code = 'KTR-A';
 
   -- S1 zona waktu IANA wajib valid (ORG-API-006, ER-010)
   begin

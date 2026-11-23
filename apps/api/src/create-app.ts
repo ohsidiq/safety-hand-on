@@ -12,6 +12,7 @@ import type { NationalIdCrypto } from "./national-id.js";
 import { registerNotifications } from "./notifications.js";
 import { registerOrgStructure } from "./org-structure.js";
 import { type PushSender, registerSpikePush } from "./spike-push.js";
+import { registerWorkerImport } from "./worker-import.js";
 import { registerWorkers } from "./workers.js";
 
 /**
@@ -139,6 +140,7 @@ export function createApp(deps: AppDeps = {}) {
   registerDashboard(v1, deps);
   registerNotifications(v1, deps);
   registerOrgStructure(v1, deps);
+  registerWorkerImport(v1, deps);
   registerWorkers(v1, deps);
   registerSpikePush(v1, deps.pushSender);
 

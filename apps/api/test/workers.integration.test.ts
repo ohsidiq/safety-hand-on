@@ -82,8 +82,12 @@ describe.skipIf(!url)("Pekerja API-003 (integrasi)", () => {
     }
     const q = async (sql: string, p: unknown[] = []) => (await db.query<{ id: string }>(sql, p)).rows[0]?.id as string;
     ids.site1 = await q("select scope_id as id from user_role_assignment where user_id = $1 and scope_type = 'SITE'", [u.spv1]);
+    // Site lain yang punya pekerja dan department aktif (uji lain dapat membuat Site kosong)
     ids.site2 = await q(
-      "select id from site where organization_id = $1 and id <> $2 and status = 'ACTIVE' order by code limit 1",
+      `select s.id from site s where s.organization_id = $1 and s.id <> $2 and s.status = 'ACTIVE'
+         and exists (select 1 from worker w where w.site_id = s.id)
+         and exists (select 1 from department d where d.site_id = s.id and d.status = 'ACTIVE')
+       order by s.code limit 1`,
       [ids.orgA, ids.site1],
     );
     ids.dep1 = await q("select id from department where site_id = $1 and status = 'ACTIVE' order by code limit 1", [ids.site1]);

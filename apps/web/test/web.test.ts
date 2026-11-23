@@ -304,3 +304,30 @@ describe("Pekerja di web (UIUX-005 §4, API-003)", () => {
     ).toMatch(/NIK belum diaktifkan/);
   });
 });
+
+describe("Impor pekerja di web (API-003 §6)", () => {
+  it("label galat impor dalam bahasa pengguna; kode tak dikenal tetap aman", async () => {
+    const { importErrorLabel } = await import("../lib/workers");
+    expect(importErrorLabel("SITE_NOT_LINKED_TO_CONTRACTOR")).toMatch(/tidak terhubung/);
+    expect(importErrorLabel("must_be_16_digits")).toMatch(/16 digit/);
+    expect(importErrorLabel("KODE_BARU")).toBe("Tidak dapat disimpan");
+  });
+
+  it("apiSend meneruskan Idempotency-Key", async () => {
+    vi.stubEnv("NEXT_PUBLIC_API_BASE_URL", "https://api.contoh");
+    const { apiSend } = await import("../lib/api");
+    const fetcher = vi.fn(
+      async (_u: string, _i?: RequestInit) => new Response(JSON.stringify({ success: true, data: { ok: 1 } })),
+    );
+    await apiSend(
+      "POST",
+      "/workers/imports",
+      "tok",
+      {},
+      { headers: { "Idempotency-Key": "k-1" }, fetcher: fetcher as unknown as typeof fetch },
+    );
+    const init = fetcher.mock.calls[0]?.[1] as RequestInit;
+    expect((init.headers as Record<string, string>)["Idempotency-Key"]).toBe("k-1");
+    vi.unstubAllEnvs();
+  });
+});

@@ -37,7 +37,10 @@ begin
      or exists (select 1 from worker_assignment a where a.worker_id = w.id and a.effective_until is null
                 and (a.site_id, a.department_id, a.job_position_id) is distinct from (w.site_id, w.department_id, w.job_position_id));
   if n <> 0 then raise exception 'W1 GAGAL: % pekerja tanpa penempatan berjalan yang cocok', n; end if;
-  if exists (select 1 from worker where employment_status = 'CONTRACTOR' and site_id <> site_a1 and organization_id = org_a) then
+  if exists (select 1 from worker w where w.employment_status = 'CONTRACTOR' and w.organization_id = org_a
+             and exists (select 1 from contractor_site cs where cs.contractor_id = w.contractor_id and cs.valid_until is null)
+             and not exists (select 1 from contractor_site cs where cs.contractor_id = w.contractor_id and cs.site_id = w.site_id
+                             and cs.valid_until is null)) then
     raise exception 'W1 GAGAL: pekerja kontraktor seed di luar Site terhubung';
   end if;
   checks := checks + 3;

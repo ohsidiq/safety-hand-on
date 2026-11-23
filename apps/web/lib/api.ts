@@ -188,7 +188,7 @@ export async function apiSend<T>(
   path: string,
   accessToken: string,
   body?: unknown,
-  opts: { ifMatch?: number; fetcher?: typeof fetch } = {},
+  opts: { ifMatch?: number; fetcher?: typeof fetch; headers?: Record<string, string> } = {},
 ): Promise<SendResult<T>> {
   const unavailable: SendResult<T> = { ok: false, error: { status: 0, code: "UNAVAILABLE", details: [], extra: {} } };
   if (!apiBaseUrl()) return unavailable;
@@ -199,6 +199,7 @@ export async function apiSend<T>(
         Authorization: `Bearer ${accessToken}`,
         ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
         ...(opts.ifMatch !== undefined ? { "If-Match": `"${opts.ifMatch}"` } : {}),
+        ...(opts.headers ?? {}),
       },
       ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
       cache: "no-store",
