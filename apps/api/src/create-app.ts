@@ -8,6 +8,7 @@ import type { AuthEnv, AuthVerifier } from "./auth.js";
 import { registerAuthMe } from "./auth-me.js";
 import { registerDashboard } from "./dashboard.js";
 import { type ErrorCode, errorBody, errorStatus } from "./errors.js";
+import { registerNotifications } from "./notifications.js";
 import { type PushSender, registerSpikePush } from "./spike-push.js";
 
 /**
@@ -131,6 +132,7 @@ export function createApp(deps: AppDeps = {}) {
   registerAuthMe(v1, deps);
   registerAuditLogs(v1, deps);
   registerDashboard(v1, deps);
+  registerNotifications(v1, deps);
   registerSpikePush(v1, deps.pushSender);
 
   app.route("/api/v1", v1);

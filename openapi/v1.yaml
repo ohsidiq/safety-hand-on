@@ -429,6 +429,95 @@ components:
         - success
         - error
         - request_id
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        notification_type:
+          type: string
+          example: SYSTEM_ALERT
+        category:
+          type: string
+          enum:
+            - READINESS
+            - EXPIRY
+            - VERIFICATION
+            - INSPECTION
+            - OBSERVATION
+            - CORRECTIVE_ACTION
+            - TRAINING
+            - AI
+            - SYSTEM
+        priority:
+          type: string
+          enum:
+            - LOW
+            - MEDIUM
+            - HIGH
+            - CRITICAL
+        title:
+          type: string
+        body:
+          type: string
+        link:
+          type:
+            - string
+            - "null"
+        entity:
+          type:
+            - object
+            - "null"
+          properties:
+            type:
+              type: string
+            id:
+              type: string
+              format: uuid
+          required:
+            - type
+            - id
+        created_at:
+          type: string
+        read_at:
+          type:
+            - string
+            - "null"
+      required:
+        - id
+        - notification_type
+        - category
+        - priority
+        - title
+        - body
+        - link
+        - entity
+        - created_at
+        - read_at
+    NotificationErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          enum:
+            - false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+          required:
+            - code
+            - message
+        request_id:
+          type: string
+      required:
+        - success
+        - error
+        - request_id
     PushSubscription:
       type: object
       properties:
@@ -733,6 +822,401 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/DashboardErrorResponse"
+  /api/v1/notifications:
+    get:
+      tags:
+        - Notifications
+      summary: Kotak masuk (kursor), terbaru lebih dulu, tanpa yang diarsipkan
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            enum:
+              - "true"
+              - "false"
+          required: false
+          name: unread_only
+          in: query
+        - schema:
+            type: string
+            pattern: ^[A-Z_]{3,64}$
+          required: false
+          name: type
+          in: query
+        - schema:
+            type: string
+            enum:
+              - LOW
+              - MEDIUM
+              - HIGH
+              - CRITICAL
+          required: false
+          name: priority
+          in: query
+        - schema:
+            type: string
+            enum:
+              - READINESS
+              - EXPIRY
+              - VERIFICATION
+              - INSPECTION
+              - OBSERVATION
+              - CORRECTIVE_ACTION
+              - TRAINING
+              - AI
+              - SYSTEM
+          required: false
+          name: category
+          in: query
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+          required: false
+          name: limit
+          in: query
+        - schema:
+            type: string
+            maxLength: 200
+          required: false
+          name: cursor
+          in: query
+      responses:
+        "200":
+          description: Daftar notifikasi
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Notification"
+                  pagination:
+                    type: object
+                    properties:
+                      limit:
+                        type: number
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      has_more:
+                        type: boolean
+                    required:
+                      - limit
+                      - next_cursor
+                      - has_more
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - pagination
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationErrorResponse"
+        "403":
+          description: FORBIDDEN atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationErrorResponse"
+  /api/v1/notifications/unread-count:
+    get:
+      tags:
+        - Notifications
+      summary: Jumlah belum dibaca (untuk lencana)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Jumlah
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    type: object
+                    properties:
+                      unread:
+                        type: integer
+                    required:
+                      - unread
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationErrorResponse"
+        "403":
+          description: FORBIDDEN atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationErrorResponse"
+  /api/v1/notifications/read-all:
+    post:
+      tags:
+        - Notifications
+      summary: Tandai semua dibaca (opsional per kategori)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                category:
+                  type: string
+                  enum:
+                    - READINESS
+                    - EXPIRY
+                    - VERIFICATION
+                    - INSPECTION
+                    - OBSERVATION
+                    - CORRECTIVE_ACTION
+                    - TRAINING
+                    - AI
+                    - SYSTEM
+      responses:
+        "200":
+          description: Jumlah yang ditandai
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    type: object
+                    properties:
+                      updated:
+                        type: integer
+                    required:
+                      - updated
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationErrorResponse"
+        "403":
+          description: FORBIDDEN atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationErrorResponse"
+  /api/v1/notifications/{id}:
+    get:
+      tags:
+        - Notifications
+      summary: Detail notifikasi milik sendiri
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Notifikasi
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/Notification"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationErrorResponse"
+        "403":
+          description: FORBIDDEN atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationErrorResponse"
+        "404":
+          description: NOT_FOUND (bukan milik pemanggil atau tidak ada)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationErrorResponse"
+  /api/v1/notifications/{id}/read:
+    post:
+      tags:
+        - Notifications
+      summary: Tandai dibaca
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Berhasil
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    type: object
+                    properties:
+                      updated:
+                        type: integer
+                    required:
+                      - updated
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationErrorResponse"
+        "403":
+          description: FORBIDDEN atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationErrorResponse"
+        "404":
+          description: NOT_FOUND
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationErrorResponse"
+  /api/v1/notifications/{id}/archive:
+    post:
+      tags:
+        - Notifications
+      summary: Arsipkan
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Berhasil
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    type: object
+                    properties:
+                      updated:
+                        type: integer
+                    required:
+                      - updated
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationErrorResponse"
+        "403":
+          description: FORBIDDEN atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationErrorResponse"
+        "404":
+          description: NOT_FOUND
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationErrorResponse"
   /api/v1/spike/push-test:
     post:
       tags:

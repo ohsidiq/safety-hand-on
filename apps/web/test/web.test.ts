@@ -143,3 +143,46 @@ describe("Jejak Audit di web", () => {
     expect(await apiGet("/audit-logs", "t", fetcher)).toEqual({ ok: false, status: 403, code: "FORBIDDEN" });
   });
 });
+
+describe("notifikasi di web", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("menu Notifikasi tampil bagi pemegang notification.read, setelah Jejak Audit", async () => {
+    const { visibleNav } = await import("../lib/nav");
+    expect(visibleNav(["notification.read", "audit.view"]).map((i) => i.href)).toEqual([
+      "/dashboard",
+      "/notifications",
+      "/audit",
+      "/profile",
+    ]);
+  });
+
+  it("tautan notifikasi hanya rute internal", async () => {
+    const { safeInternalLink } = await import("../lib/api");
+    expect(safeInternalLink("/profile")).toBe("/profile");
+    expect(safeInternalLink("https://evil.example")).toBeNull();
+    expect(safeInternalLink("//evil.example")).toBeNull();
+    expect(safeInternalLink("javascript:alert(1)")).toBeNull();
+    expect(safeInternalLink(null)).toBeNull();
+  });
+
+  it("apiPost mengirim token dan badan JSON, memetakan 404 ke NOT_FOUND", async () => {
+    vi.stubEnv("NEXT_PUBLIC_API_BASE_URL", "https://api.contoh");
+    const { apiPost } = await import("../lib/api");
+    let seen: RequestInit | undefined;
+    const fetcher = (async (_u: string, init?: RequestInit) => {
+      seen = init;
+      return new Response(JSON.stringify({ success: false, error: { code: "NOT_FOUND" } }), { status: 404 });
+    }) as unknown as typeof fetch;
+    expect(await apiPost("/notifications/x/read", "tok", { a: 1 }, fetcher)).toEqual({
+      ok: false,
+      status: 404,
+      code: "NOT_FOUND",
+    });
+    expect(seen?.method).toBe("POST");
+    expect((seen?.headers as Record<string, string> | undefined)?.Authorization).toBe("Bearer tok");
+    expect(seen?.body).toBe('{"a":1}');
+  });
+});

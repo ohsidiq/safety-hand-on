@@ -127,3 +127,47 @@ export async function fetchAuditPage(
   if (!r.ok) return r;
   return { ...r, pagination: (r.body as AuditPage).pagination };
 }
+
+/** POST ke Core API dengan token akses. */
+export async function apiPost<T>(
+  path: string,
+  accessToken: string,
+  body?: unknown,
+  fetcher: typeof fetch = fetch,
+): Promise<ApiResult<T>> {
+  if (!apiBaseUrl()) return { ok: false, status: 0, code: "UNAVAILABLE" };
+  try {
+    const res = await fetcher(apiUrl(path), {
+      method: "POST",
+      headers: { Authorization: `Bearer ${accessToken}`, ...(body !== undefined ? { "Content-Type": "application/json" } : {}) },
+      ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+      cache: "no-store",
+    });
+    const parsed = (await res.json().catch(() => ({}))) as { data?: T; error?: { code?: string } };
+    if (res.ok && parsed.data !== undefined) return { ok: true, data: parsed.data, body: parsed };
+    return { ok: false, status: res.status, code: parsed.error?.code ?? "UNAVAILABLE" };
+  } catch {
+    return { ok: false, status: 0, code: "UNAVAILABLE" };
+  }
+}
+
+export interface NotificationItem {
+  id: string;
+  notification_type: string;
+  category: string;
+  priority: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+  title: string;
+  body: string;
+  link: string | null;
+  entity: { type: string; id: string } | null;
+  created_at: string;
+  read_at: string | null;
+}
+
+/** Tautan notifikasi hanya rute internal aplikasi (bukan URL luar), selaras CHECK di database. */
+export function safeInternalLink(link: string | null): string | null {
+  return link && /^\/[a-z0-9/_-]*$/.test(link) ? link : null;
+}
+
+/** Nama event jendela agar lencana lonceng diperbarui setelah notifikasi dibaca. */
+export const NOTIFICATIONS_CHANGED = "soh:notifications-changed";

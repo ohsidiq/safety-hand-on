@@ -25,7 +25,7 @@ export const NAV: NavItem[] = [
     built: false,
   },
   { href: "/settings", label: "Pengaturan", domain: "Platform", anyOf: ["configuration.manage"], phase: "P0", built: false },
-  { href: "/notifications", label: "Notifikasi", domain: "Platform", anyOf: ["notification.read"], phase: "P0", built: false },
+  { href: "/notifications", label: "Notifikasi", domain: "Platform", anyOf: ["notification.read"], phase: "P0", built: true },
   { href: "/audit", label: "Jejak Audit", domain: "Platform", anyOf: ["audit.view"], phase: "P0", built: true },
   { href: "/profile", label: "Profil", domain: "Akun", anyOf: [], phase: "P0", built: true },
 ];
