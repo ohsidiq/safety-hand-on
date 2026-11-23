@@ -2,6 +2,8 @@
 export const errorStatus = {
   BAD_REQUEST: 400,
   ACCESS_REASON_REQUIRED: 400,
+  DATE_RANGE_REQUIRED: 400,
+  DATE_RANGE_TOO_LARGE: 400,
   UNAUTHORIZED: 401,
   TOKEN_EXPIRED: 401,
   FORBIDDEN: 403,
@@ -27,6 +29,8 @@ export type ErrorCode = keyof typeof errorStatus;
 const messages: Record<ErrorCode, string> = {
   BAD_REQUEST: "Permintaan tidak dapat diproses",
   ACCESS_REASON_REQUIRED: "Alasan akses wajib diisi",
+  DATE_RANGE_REQUIRED: "Rentang waktu from dan to wajib diisi",
+  DATE_RANGE_TOO_LARGE: "Rentang waktu maksimum 92 hari",
   UNAUTHORIZED: "Autentikasi tidak valid",
   TOKEN_EXPIRED: "Sesi kedaluwarsa",
   FORBIDDEN: "Tidak memiliki izin",
