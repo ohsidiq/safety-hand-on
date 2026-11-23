@@ -51,6 +51,15 @@ const messages: Record<ErrorCode, string> = {
   SERVICE_UNAVAILABLE: "Layanan sementara tidak tersedia",
 };
 
-export function errorBody(code: ErrorCode, requestId: string) {
-  return { success: false as const, error: { code, message: messages[code] }, request_id: requestId };
+export interface ErrorDetail {
+  field?: string;
+  issue: string;
+}
+
+export function errorBody(code: ErrorCode, requestId: string, details?: ErrorDetail[]) {
+  return {
+    success: false as const,
+    error: { code, message: messages[code], ...(details?.length ? { details } : {}) },
+    request_id: requestId,
+  };
 }

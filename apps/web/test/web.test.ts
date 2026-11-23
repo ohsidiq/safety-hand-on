@@ -186,3 +186,75 @@ describe("notifikasi di web", () => {
     expect(seen?.body).toBe('{"a":1}');
   });
 });
+
+describe("Struktur Organisasi di web (UIUX-005 §3, API-002)", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("menu tampil untuk pengelola struktur (organization.manage), tidak untuk Supervisor", async () => {
+    const { canSee } = await import("../lib/nav");
+    expect(canSee(["organization.read", "organization.manage"], "/organization")).toBe(true);
+    expect(canSee(["organization.read", "worker.read"], "/organization")).toBe(false);
+  });
+
+  it("validasi nama dan kode sama dengan API-002 §10; kode dinormalkan ke huruf besar", async () => {
+    const { validateNameCode, normalizeCode } = await import("../lib/org");
+    expect(validateNameCode("Site A", "SITE-A")).toBeNull();
+    expect(validateNameCode("A", "SITE-A")).toMatch(/Nama/);
+    expect(validateNameCode("Site A", "site a")).toMatch(/Kode/);
+    expect(normalizeCode("tim hauling a!")).toBe("TIM-HAULING-A");
+  });
+
+  it("pesan galat: masih dipakai pekerja menyebut jumlah, versi lama, duplikat; tanpa detail teknis", async () => {
+    const { orgErrorMessage } = await import("../lib/org");
+    const e = (code: string, issue?: string, extra: Record<string, unknown> = {}) => ({
+      status: 409,
+      code,
+      details: issue ? [{ issue }] : [],
+      extra,
+    });
+    expect(orgErrorMessage(e("CONFLICT", "ACTIVE_WORKERS_EXIST", { affected_workers: 12 }))).toContain("12 pekerja aktif");
+    expect(orgErrorMessage(e("CONFLICT", "POSITION_IN_USE", { affected_workers: 3 }))).toContain("3 pekerja aktif");
+    expect(orgErrorMessage(e("VERSION_CONFLICT"))).toMatch(/Muat ulang/);
+    expect(orgErrorMessage(e("DUPLICATE"))).toMatch(/Kode sudah dipakai/);
+    expect(
+      orgErrorMessage({
+        status: 422,
+        code: "VALIDATION_ERROR",
+        details: [{ field: "timezone", issue: "invalid_iana" }],
+        extra: {},
+      }),
+    ).toMatch(/Zona waktu/);
+  });
+
+  it("apiSend mengirim If-Match dan mengembalikan rincian galat (details, current_version)", async () => {
+    vi.stubEnv("NEXT_PUBLIC_API_BASE_URL", "https://api.contoh");
+    const { apiSend } = await import("../lib/api");
+    const fetcher = vi.fn(
+      async (_url: string, _init?: RequestInit) =>
+        new Response(
+          JSON.stringify({
+            success: false,
+            error: { code: "VERSION_CONFLICT", message: "x", current_version: 4 },
+            request_id: "r",
+          }),
+          { status: 412 },
+        ),
+    );
+    const r = await apiSend(
+      "PATCH",
+      "/sites/1",
+      "tok",
+      { name: "B" },
+      { ifMatch: 3, fetcher: fetcher as unknown as typeof fetch },
+    );
+    const init = fetcher.mock.calls[0]?.[1] as RequestInit;
+    expect((init.headers as Record<string, string>)["If-Match"]).toBe('"3"');
+    expect(init.method).toBe("PATCH");
+    expect(r).toEqual({
+      ok: false,
+      error: { status: 412, code: "VERSION_CONFLICT", details: [], extra: { current_version: 4 } },
+    });
+  });
+});
