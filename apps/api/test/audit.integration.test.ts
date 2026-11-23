@@ -130,7 +130,8 @@ describe.skipIf(!url)("Audit Trail (integrasi)", () => {
 
   it("login: sesi pertama kali dipakai tercatat sekali sebagai auth.login_success dengan IP klien (AUD-007)", async () => {
     const sid = randomUUID();
-    const headers = { "X-Forwarded-For": "198.51.100.23, 10.0.0.1", "User-Agent": "UjiBrowser/1.0" };
+    const agent = `UjiBrowser/${sid}`; // unik per uji: rerun berdekatan tidak saling memengaruhi
+    const headers = { "X-Forwarded-For": "198.51.100.23, 10.0.0.1", "User-Agent": agent };
     expect((await call(u.admin as string, "/auth/me", headers, sid)).status).toBe(200);
     expect((await call(u.admin as string, "/auth/me", headers, sid)).status).toBe(200);
     await drain();
@@ -140,7 +141,7 @@ describe.skipIf(!url)("Audit Trail (integrasi)", () => {
          and a.actor_user_id = $2`,
       [sid, u.admin],
     );
-    expect(r.rows.filter((x) => x.ip === "198.51.100.23" && x.user_agent === "UjiBrowser/1.0")).toHaveLength(1);
+    expect(r.rows.filter((x) => x.ip === "198.51.100.23" && x.user_agent === agent)).toHaveLength(1);
   });
 
   it("paginasi kursor: halaman berikutnya tidak mengulang kejadian", async () => {

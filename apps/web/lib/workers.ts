@@ -155,3 +155,41 @@ export function workerErrorMessage(e: ApiError): string {
       return orgErrorMessage(e);
   }
 }
+
+/** Hasil impor (API-003 §6). Galat per baris tanpa nilai sel. */
+export interface ImportResult {
+  id: string | null;
+  dry_run: boolean;
+  all_or_nothing: boolean;
+  status: "VALIDATED" | "COMPLETED" | "REJECTED";
+  total_rows: number;
+  created: number;
+  failed: number;
+  errors: { row: number; field?: string; code: string }[];
+  replayed: boolean;
+}
+
+const IMPORT_ERROR_LABEL: Record<string, string> = {
+  required: "Wajib diisi",
+  invalid: "Format tidak valid",
+  invalid_length: "Panjang tidak sesuai (2-150 karakter)",
+  invalid_date: "Tanggal tidak valid (YYYY-MM-DD)",
+  invalid_e164: "Telepon harus format internasional, mis. +6281234567890",
+  too_far_in_future: "Tanggal masuk lebih dari 1 hari ke depan",
+  reference_not_found: "Kode tidak ditemukan atau di luar cakupan Anda",
+  inactive: "Data rujukan sudah nonaktif",
+  not_in_department: "Divisi bukan milik department",
+  must_be_16_digits: "NIK harus 16 digit",
+  not_configured: "Penyimpanan NIK belum diaktifkan",
+  must_be_on_or_after_join_date: "Tanggal tidak sesuai",
+  DUPLICATE: "Sudah terdaftar (nomor pekerja atau NIK)",
+  DEPARTMENT_NOT_IN_SITE: "Department tidak ada di Site tersebut",
+  CONTRACTOR_REQUIRED: "Pekerja kontraktor wajib punya kontraktor",
+  CONTRACTOR_NOT_ALLOWED: "Kontraktor hanya untuk status CONTRACTOR",
+  SITE_NOT_LINKED_TO_CONTRACTOR: "Site tidak terhubung ke kontraktor",
+  SCOPE_DENIED: "Di luar cakupan Site Anda",
+};
+
+export function importErrorLabel(code: string): string {
+  return IMPORT_ERROR_LABEL[code] ?? "Tidak dapat disimpan";
+}

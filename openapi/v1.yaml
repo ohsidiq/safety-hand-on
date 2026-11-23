@@ -1086,6 +1086,75 @@ components:
           pattern: ^\d{4}-\d{2}-\d{2}$
       required:
         - valid_until
+    WorkerImportResult:
+      type: object
+      properties:
+        id:
+          type:
+            - string
+            - "null"
+          format: uuid
+          description: null untuk dry_run
+        dry_run:
+          type: boolean
+        all_or_nothing:
+          type: boolean
+        status:
+          type: string
+          enum:
+            - VALIDATED
+            - COMPLETED
+            - REJECTED
+        total_rows:
+          type: integer
+        created:
+          type: integer
+          description: "Untuk dry_run: jumlah baris yang akan dibuat"
+        failed:
+          type: integer
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              row:
+                type: integer
+              field:
+                type: string
+              code:
+                type: string
+            required:
+              - row
+              - code
+        replayed:
+          type: boolean
+          description: true bila hasil diambil dari permintaan sebelumnya (Idempotency-Key)
+      required:
+        - id
+        - dry_run
+        - all_or_nothing
+        - status
+        - total_rows
+        - created
+        - failed
+        - errors
+        - replayed
+    WorkerImportRequest:
+      type: object
+      properties:
+        csv:
+          type: string
+          minLength: 1
+          maxLength: 1000000
+          description: Isi CSV UTF-8 sesuai templat (maks 1.000 baris data)
+        dry_run:
+          type: boolean
+          default: true
+        all_or_nothing:
+          type: boolean
+          default: false
+      required:
+        - csv
     WorkerSummary:
       type: object
       properties:
@@ -5218,6 +5287,98 @@ paths:
                 $ref: "#/components/schemas/ApiErrorResponse"
         "422":
           description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/workers/imports/template:
+    get:
+      tags:
+        - Workers
+      summary: Templat CSV impor pekerja
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Templat CSV
+          content:
+            text/csv:
+              schema:
+                type: string
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/workers/imports:
+    post:
+      tags:
+        - Workers
+      summary: Impor pekerja dari CSV (dry_run, all_or_nothing). Idempotency-Key wajib
+        bila dry_run=false
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: false
+          name: idempotency-key
+          in: header
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkerImportRequest"
+      responses:
+        "200":
+          description: Hasil validasi atau impor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/WorkerImportResult"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: VALIDATION_ERROR (format/kolom), IDEMPOTENCY_MISMATCH,
+            IMPORT_VALIDATION_FAILED (all_or_nothing)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "503":
+          description: SERVICE_UNAVAILABLE
           content:
             application/json:
               schema:

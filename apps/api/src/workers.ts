@@ -228,7 +228,7 @@ async function loadWorker(tx: Tx, where: string, params: unknown[]): Promise<Row
 }
 
 /** Galat database khusus pekerja (API-003 §10). */
-function mapWorkerError(e: { code?: string; message?: string; constraint?: string }): ApiFailure | undefined {
+export function mapWorkerError(e: { code?: string; message?: string; constraint?: string }): ApiFailure | undefined {
   const c = e.constraint ?? "";
   const msg = e.message ?? "";
   if (e.code === "23505") {
@@ -262,18 +262,18 @@ function mapWorkerError(e: { code?: string; message?: string; constraint?: strin
 
 const wopts = (extra: Partial<RunOptions> = {}): RunOptions => ({ map: mapWorkerError, ...extra });
 
-function today(): string {
+export function today(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-function addDays(iso: string, n: number): string {
+export function addDays(iso: string, n: number): string {
   const d = new Date(`${iso}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + n);
   return d.toISOString().slice(0, 10);
 }
 
 /** ER-012 di API: kode galat spesifik sebelum menyentuh database (API-003 §10). */
-function checkContractor(status: string, contractorId: string | null | undefined): ApiFailure | null {
+export function checkContractor(status: string, contractorId: string | null | undefined): ApiFailure | null {
   if (status === "CONTRACTOR" && !contractorId)
     return new ApiFailure("CONTRACTOR_REQUIRED", [{ field: "contractor_id", issue: "required" }]);
   if (status !== "CONTRACTOR" && contractorId)
@@ -320,7 +320,7 @@ async function checkPlacement(
   }
 }
 
-function sealNik(deps: WorkerDeps, orgId: string, value: string | null | undefined): Row | ApiFailure {
+export function sealNik(deps: WorkerDeps, orgId: string, value: string | null | undefined): Row | ApiFailure {
   if (value === undefined) return {};
   if (value === null) return { national_id_encrypted: null, national_id_hash: null };
   const nik = normalizeNationalId(value);

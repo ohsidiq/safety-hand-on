@@ -42,11 +42,15 @@ begin
   insert into equipment_class(organization_id, name, code)
   select v_org, e.name, e.code
   from (values ('Dump Truck', 'DT'), ('Excavator', 'EXC'), ('Light Vehicle', 'LV')) e(name, code);
+  -- dua kontraktor sintetis (FR-PPL003-004): A terhubung Site 1, B terhubung Site 2
   insert into contractor(organization_id, name, code, contract_start, contract_end)
-  values (v_org, 'Kontraktor Sintetis A', 'KTR-A', current_date - 180, current_date + 185);
+  values (v_org, 'Kontraktor Sintetis A', 'KTR-A', current_date - 180, current_date + 185),
+         (v_org, 'Kontraktor Sintetis B', 'KTR-B', current_date - 90, current_date + 275);
   insert into contractor_site(organization_id, contractor_id, site_id, valid_from)
   select v_org, c.id, s.id, current_date - 180
-  from contractor c, site s where c.organization_id = v_org and s.organization_id = v_org and s.code = 'SITE-1';
+  from contractor c, site s
+  where c.organization_id = v_org and s.organization_id = v_org
+    and ((c.code = 'KTR-A' and s.code = 'SITE-1') or (c.code = 'KTR-B' and s.code = 'SITE-2'));
 
   -- pengguna tingkat organisasi (nama sintetis). Company Admin pertama dibuat sistem (granted_by NULL);
   -- penugasan lain diberikan oleh Company Admin.
@@ -79,13 +83,15 @@ begin
   insert into requirement_item(organization_id, job_position, requirement_name)
   select v_org, p, r from unnest(v_pos) p, unnest(v_req) r;
 
-  -- pekerja: ~30% Site 1 berstatus CONTRACTOR (kontraktor sintetis A, terhubung Site 1, ER-012/ER-013),
-  -- sebagian CONTRACT, sisanya PERMANENT. SHO ID dibuat trigger.
+  -- pekerja: ~30% Site 1 berstatus CONTRACTOR (kontraktor A, terhubung Site 1), ~10% Site 2 kontraktor B
+  -- (terhubung Site 2, ER-012/ER-013), sebagian CONTRACT, sisanya PERMANENT. SHO ID dibuat trigger.
   insert into worker(organization_id, site_id, full_name, employee_number, employment_status, contractor_id, join_date,
                      department_id, job_position_id)
   select v_org, s.id, 'Pekerja ' || lpad(g::text, 6, '0'), 'EMP-' || lpad(g::text, 6, '0'),
-         case when s.code = 'SITE-1' and g % 10 < 3 then 'CONTRACTOR' when g % 10 < 3 then 'CONTRACT' else 'PERMANENT' end,
-         case when s.code = 'SITE-1' and g % 10 < 3 then (select id from contractor where organization_id = v_org and code = 'KTR-A') end,
+         case when s.code = 'SITE-1' and g % 10 < 3 then 'CONTRACTOR' when s.code = 'SITE-2' and g % 10 = 0 then 'CONTRACTOR'
+              when g % 10 < 3 then 'CONTRACT' else 'PERMANENT' end,
+         case when s.code = 'SITE-1' and g % 10 < 3 then (select id from contractor where organization_id = v_org and code = 'KTR-A')
+              when s.code = 'SITE-2' and g % 10 = 0 then (select id from contractor where organization_id = v_org and code = 'KTR-B') end,
          current_date - (30 + g % 700),
          (select id from department where site_id = s.id and code = case when g % 4 = 0 then 'MAINT' else 'PROD' end),
          (select id from job_position where organization_id = v_org and name = v_pos[1 + (g % 3)])
