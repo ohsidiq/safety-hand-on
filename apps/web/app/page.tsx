@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ApiStatusBadge } from "./status";
 
 export default function HomePage() {
@@ -13,6 +14,9 @@ export default function HomePage() {
         <h2 id="status-heading">Status sistem</h2>
         <ApiStatusBadge />
       </section>
+      <Link href="/masuk" className="link-button">
+        Masuk ke akun Anda
+      </Link>
     </main>
   );
 }
