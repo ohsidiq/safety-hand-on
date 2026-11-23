@@ -14,7 +14,7 @@ export default function HomePage() {
         <h2 id="status-heading">Status sistem</h2>
         <ApiStatusBadge />
       </section>
-      <Link href="/masuk" className="link-button">
+      <Link href="/login" className="link-button">
         Masuk ke akun Anda
       </Link>
     </main>

@@ -14,7 +14,7 @@ export function LoginForm() {
 
   useEffect(() => {
     supabase?.auth.getSession().then(({ data }) => {
-      if (data.session) router.replace("/akun");
+      if (data.session) router.replace("/dashboard");
     });
   }, [supabase, router]);
 
@@ -37,7 +37,7 @@ export function LoginForm() {
       setError(loginErrorMessage(err));
       return;
     }
-    router.replace("/akun");
+    router.replace("/dashboard");
   }
 
   async function onGoogle() {
@@ -45,7 +45,7 @@ export function LoginForm() {
     setError("");
     const { error: err } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/akun` },
+      options: { redirectTo: `${window.location.origin}/dashboard` },
     });
     if (err) setError("Masuk dengan Google belum tersedia.");
   }

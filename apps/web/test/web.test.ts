@@ -89,3 +89,57 @@ describe("login dan /auth/me", () => {
     expect(await fetchMe("t", reply(500, { error: { code: "INTERNAL_ERROR" } }))).toEqual({ ok: false, code: "UNAVAILABLE" });
   });
 });
+
+describe("menu per peran (UIUX-002 §5, IA-006, IA-008)", () => {
+  it("Company Admin melihat Beranda, Jejak Audit, Profil; menu yang belum dibangun tidak tampil", async () => {
+    const { visibleNav } = await import("../lib/nav");
+    const hrefs = visibleNav(["user.manage", "audit.view", "worker.read", "dashboard.view"]).map((i) => i.href);
+    expect(hrefs).toEqual(["/dashboard", "/audit", "/profile"]);
+  });
+
+  it("Supervisor (tanpa audit.view) tidak melihat Jejak Audit", async () => {
+    const { visibleNav, canSee } = await import("../lib/nav");
+    const perms = ["worker.read", "observation.create"];
+    expect(visibleNav(perms).map((i) => i.href)).toEqual(["/dashboard", "/profile"]);
+    expect(canSee(perms, "/audit")).toBe(false);
+  });
+
+  it("item fase yang belum dirilis tidak tampil walau permission ada", async () => {
+    const { visibleNav } = await import("../lib/nav");
+    const items = [
+      { href: "/x", label: "X", domain: "Readiness" as const, anyOf: ["a"], phase: "P1" as const, built: true },
+      { href: "/y", label: "Y", domain: "Platform" as const, anyOf: ["a"], phase: "P0" as const, built: true },
+    ];
+    expect(visibleNav(["a"], items).map((i) => i.href)).toEqual(["/y"]);
+  });
+});
+
+describe("Jejak Audit di web", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("rentang tanggal menjadi [from, to) UTC; terbalik atau lebih dari 92 hari ditolak", async () => {
+    const { rangeFromDates } = await import("../lib/audit-range");
+    const r = rangeFromDates("2026-11-01", "2026-11-07");
+    expect(r).not.toBeNull();
+    expect(Date.parse(r?.to ?? "") - Date.parse(r?.from ?? "")).toBe(7 * 24 * 60 * 60 * 1000);
+    expect(rangeFromDates("2026-11-07", "2026-11-01")).toBeNull();
+    expect(rangeFromDates("2026-01-01", "2026-06-01")).toBeNull();
+    expect(rangeFromDates("bukan", "2026-11-01")).toBeNull();
+  });
+
+  it("kueri audit hanya memuat filter yang diisi", async () => {
+    const { auditQuery } = await import("../lib/api");
+    const q = new URLSearchParams(auditQuery({ from: "a", to: "b", action: "auth.login_success" }).split("?")[1]);
+    expect(Object.fromEntries(q)).toEqual({ from: "a", to: "b", limit: "25", action: "auth.login_success" });
+  });
+
+  it("apiGet memetakan 403 menjadi kode FORBIDDEN tanpa melempar", async () => {
+    vi.stubEnv("NEXT_PUBLIC_API_BASE_URL", "https://api.contoh");
+    const { apiGet } = await import("../lib/api");
+    const fetcher = (async () =>
+      new Response(JSON.stringify({ success: false, error: { code: "FORBIDDEN" } }), { status: 403 })) as unknown as typeof fetch;
+    expect(await apiGet("/audit-logs", "t", fetcher)).toEqual({ ok: false, status: 403, code: "FORBIDDEN" });
+  });
+});
