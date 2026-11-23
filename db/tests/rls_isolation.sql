@@ -26,12 +26,17 @@ begin
 
   -- T1 meta: setiap tabel ber-organization_id wajib RLS aktif, dipaksa, dan punya kebijakan
   for t in
-    select c.relname, c.relrowsecurity, c.relforcerowsecurity,
+    select c.relname, c.relispartition, c.relrowsecurity, c.relforcerowsecurity,
            (select count(*) from pg_policy p where p.polrelid = c.oid) as policies
     from pg_class c join pg_namespace ns on ns.oid = c.relnamespace
-    where ns.nspname = 'public' and c.relkind = 'r'
+    where ns.nspname = 'public' and c.relkind in ('r', 'p')
       and exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'organization_id' and not a.attisdropped)
   loop
+    -- partisi (mis. audit_log_YYYYMM) cukup RLS aktif dan dipaksa tanpa kebijakan: tolak semua akses langsung
+    if t.relispartition and t.relrowsecurity and t.relforcerowsecurity then
+      checks := checks + 1;
+      continue;
+    end if;
     if not t.relrowsecurity or not t.relforcerowsecurity or t.policies = 0 then
       raise exception 'T1 GAGAL: tabel % tanpa RLS aktif/dipaksa/kebijakan (rls=%, force=%, kebijakan=%)',
         t.relname, t.relrowsecurity, t.relforcerowsecurity, t.policies;
@@ -45,7 +50,7 @@ begin
   perform set_config('app.user_id', u_mgr_a::text, true);
   for t in
     select c.relname from pg_class c join pg_namespace ns on ns.oid = c.relnamespace
-    where ns.nspname = 'public' and c.relkind = 'r'
+    where ns.nspname = 'public' and c.relkind in ('r', 'p')
       and exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'organization_id' and not a.attisdropped)
       and has_table_privilege('app_authenticated', c.oid, 'select')
   loop
@@ -133,7 +138,7 @@ begin
   perform set_config('app.user_id', '', true);
   for t in
     select c.relname from pg_class c join pg_namespace ns on ns.oid = c.relnamespace
-    where ns.nspname = 'public' and c.relkind = 'r'
+    where ns.nspname = 'public' and c.relkind in ('r', 'p')
       and exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'organization_id' and not a.attisdropped)
       and has_table_privilege('app_authenticated', c.oid, 'select')
   loop
@@ -153,7 +158,7 @@ begin
   end;
 
   -- T8 audit append-only
-  insert into audit_log(organization_id, action, entity) values (org_a, 'UJI', 'rls');
+  insert into audit_log(organization_id, actor_kind, action, entity_type) values (org_a, 'SYSTEM', 'uji.rls', 'rls');
   begin
     update audit_log set action = 'UBAH' where organization_id = org_a;
     raise exception 'T8 GAGAL: audit_log dapat diubah';

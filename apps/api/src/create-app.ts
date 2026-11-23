@@ -3,6 +3,7 @@ import type { Db } from "@soh/db";
 import { checkDatabase } from "@soh/db";
 import { cors } from "hono/cors";
 import { secureHeaders } from "hono/secure-headers";
+import { registerAuditLogs } from "./audit-logs.js";
 import type { AuthEnv, AuthVerifier } from "./auth.js";
 import { registerAuthMe } from "./auth-me.js";
 import { type ErrorCode, errorBody, errorStatus } from "./errors.js";
@@ -91,7 +92,14 @@ export function createApp(deps: AppDeps = {}) {
     }),
   );
 
-  const v1 = new OpenAPIHono<Env>();
+  // Hook validasi juga dipasang di sub-aplikasi v1: rute terdaftar di sini, bukan di `app`.
+  const v1 = new OpenAPIHono<Env>({
+    defaultHook: (result, c) => {
+      if (!result.success) {
+        return c.json(errorBody("VALIDATION_ERROR", c.get("requestId")), 422);
+      }
+    },
+  });
 
   v1.openapi(liveRoute, (c) => c.json({ success: true, data: { status: "UP" as const }, request_id: c.get("requestId") }, 200));
 
@@ -120,6 +128,7 @@ export function createApp(deps: AppDeps = {}) {
   });
 
   registerAuthMe(v1, deps);
+  registerAuditLogs(v1, deps);
   registerSpikePush(v1, deps.pushSender);
 
   app.route("/api/v1", v1);

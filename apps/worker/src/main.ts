@@ -1,4 +1,5 @@
 import { createPool } from "@soh/db";
+import { drainAudit, ensureAuditPartitions } from "./audit.js";
 import { handlers } from "./handlers.js";
 import { processBatch } from "./outbox.js";
 
@@ -14,7 +15,20 @@ for (const sig of ["SIGINT", "SIGTERM"] as const) {
   });
 }
 
+let lastPartitionCheck = 0;
+
 async function tick() {
+  if (Date.now() - lastPartitionCheck > 6 * 60 * 60 * 1000) {
+    const created = await ensureAuditPartitions(db);
+    if (created > 0) console.log(JSON.stringify({ level: "info", msg: "audit partitions created", created }));
+    lastPartitionCheck = Date.now();
+  }
+  const audit = await drainAudit(db);
+  if (audit.moved > 0) console.log(JSON.stringify({ level: "info", msg: "audit batch", ...audit }));
+  if (audit.failed > 0) {
+    // AUD-009: kegagalan pencatatan memicu alert dan kejadian tidak hilang (tetap di antrean gagal)
+    console.error(JSON.stringify({ level: "error", msg: "audit events moved to failed queue", failed: audit.failed }));
+  }
   const r = await processBatch(db, handlers, { batchSize });
   if (r.claimed > 0) {
     console.log(JSON.stringify({ level: "info", msg: "outbox batch", ...r }));

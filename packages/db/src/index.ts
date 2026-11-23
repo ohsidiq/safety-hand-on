@@ -75,8 +75,15 @@ async function inTransaction<T>(db: Db, setup: (tx: Tx) => Promise<void>, fn: (t
   }
 }
 
+/** Konteks permintaan untuk Audit Trail (SRS-PLT03 §5): dibaca fungsi audit lewat GUC transaksi. */
+export interface RequestContext {
+  requestId?: string | undefined;
+  ip?: string | undefined;
+  userAgent?: string | undefined;
+}
+
 /** Menjalankan `fn` sebagai pengguna aplikasi tertentu, di bawah RLS. */
-export function withUser<T>(db: Db, userId: string, fn: (tx: Tx) => Promise<T>): Promise<T> {
+export function withUser<T>(db: Db, userId: string, fn: (tx: Tx) => Promise<T>, ctx?: RequestContext): Promise<T> {
   if (!UUID_RE.test(userId)) {
     return Promise.reject(new Error("userId harus UUID"));
   }
@@ -84,7 +91,11 @@ export function withUser<T>(db: Db, userId: string, fn: (tx: Tx) => Promise<T>):
     db,
     async (tx) => {
       await tx.query("set local role app_authenticated");
-      await tx.query("select set_config('app.user_id', $1, true)", [userId]);
+      await tx.query(
+        `select set_config('app.user_id', $1, true), set_config('app.request_id', $2, true),
+                set_config('app.ip', $3, true), set_config('app.user_agent', $4, true)`,
+        [userId, (ctx?.requestId ?? "").slice(0, 100), (ctx?.ip ?? "").slice(0, 64), (ctx?.userAgent ?? "").slice(0, 500)],
+      );
     },
     fn,
   );

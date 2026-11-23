@@ -173,6 +173,168 @@ components:
         - success
         - error
         - request_id
+    AuditListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          enum:
+            - true
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuditEvent"
+        pagination:
+          type: object
+          properties:
+            limit:
+              type: number
+            next_cursor:
+              type:
+                - string
+                - "null"
+            has_more:
+              type: boolean
+          required:
+            - limit
+            - next_cursor
+            - has_more
+        request_id:
+          type: string
+      required:
+        - success
+        - data
+        - pagination
+        - request_id
+    AuditEvent:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        occurred_at:
+          type: string
+        actor_kind:
+          type: string
+          enum:
+            - USER
+            - SYSTEM
+            - SUPPORT
+        actor:
+          type:
+            - object
+            - "null"
+          properties:
+            user_id:
+              type: string
+              format: uuid
+            full_name:
+              type:
+                - string
+                - "null"
+            role_code:
+              type:
+                - string
+                - "null"
+            scope_type:
+              type:
+                - string
+                - "null"
+          required:
+            - user_id
+            - full_name
+            - role_code
+            - scope_type
+        action:
+          type: string
+          example: access.role_assigned
+        entity_type:
+          type: string
+        entity_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        site_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        changed_fields:
+          type:
+            - array
+            - "null"
+          items:
+            type: string
+        changes:
+          type:
+            - object
+            - "null"
+          additionalProperties: {}
+        sensitive_access:
+          type: boolean
+        access_reason:
+          type:
+            - string
+            - "null"
+        result:
+          type: string
+          enum:
+            - SUCCESS
+            - DENIED
+            - FAILED
+        request_id:
+          type:
+            - string
+            - "null"
+        ip:
+          type:
+            - string
+            - "null"
+          description: Hanya untuk Company Admin dan Auditor
+        user_agent:
+          type:
+            - string
+            - "null"
+          description: Hanya untuk Company Admin dan Auditor
+      required:
+        - id
+        - occurred_at
+        - actor_kind
+        - actor
+        - action
+        - entity_type
+        - entity_id
+        - site_id
+        - changed_fields
+        - changes
+        - sensitive_access
+        - access_reason
+        - result
+        - request_id
+    AuditErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          enum:
+            - false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+          required:
+            - code
+            - message
+        request_id:
+          type: string
+      required:
+        - success
+        - error
+        - request_id
     PushSubscription:
       type: object
       properties:
@@ -267,6 +429,189 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/audit-logs:
+    get:
+      tags:
+        - Audit
+      summary: Daftar jejak audit organisasi (kursor, filter)
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            description: Awal rentang (ISO 8601, UTC). Wajib
+            example: 2026-11-01T00:00:00Z
+          required: false
+          description: Awal rentang (ISO 8601, UTC). Wajib
+          name: from
+          in: query
+        - schema:
+            type: string
+            description: Akhir rentang (ISO 8601, UTC). Wajib, maksimum 92 hari
+          required: false
+          description: Akhir rentang (ISO 8601, UTC). Wajib, maksimum 92 hari
+          name: to
+          in: query
+        - schema:
+            type: string
+            format: uuid
+          required: false
+          name: actor_user_id
+          in: query
+        - schema:
+            type: string
+            maxLength: 500
+            description: Satu atau beberapa kode aksi, dipisah koma
+          required: false
+          description: Satu atau beberapa kode aksi, dipisah koma
+          name: action
+          in: query
+        - schema:
+            type: string
+            pattern: ^[a-z_]{1,64}$
+          required: false
+          name: entity_type
+          in: query
+        - schema:
+            type: string
+            format: uuid
+          required: false
+          name: entity_id
+          in: query
+        - schema:
+            type: string
+            format: uuid
+          required: false
+          name: site_id
+          in: query
+        - schema:
+            type: string
+            enum:
+              - SUCCESS
+              - DENIED
+              - FAILED
+          required: false
+          name: result
+          in: query
+        - schema:
+            type: string
+            enum:
+              - "true"
+              - "false"
+          required: false
+          name: sensitive_access
+          in: query
+        - schema:
+            type: string
+            enum:
+              - USER
+              - SYSTEM
+              - SUPPORT
+          required: false
+          name: actor_kind
+          in: query
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+          required: false
+          name: limit
+          in: query
+        - schema:
+            type: string
+            maxLength: 200
+          required: false
+          name: cursor
+          in: query
+      responses:
+        "200":
+          description: Daftar kejadian audit, terbaru lebih dulu
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditListResponse"
+        "400":
+          description: DATE_RANGE_REQUIRED atau DATE_RANGE_TOO_LARGE
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditErrorResponse"
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditErrorResponse"
+        "403":
+          description: FORBIDDEN (tanpa audit.view) atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditErrorResponse"
+  /api/v1/audit-logs/{id}:
+    get:
+      tags:
+        - Audit
+      summary: Detail satu kejadian audit
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Kejadian audit
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/AuditEvent"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditErrorResponse"
+        "403":
+          description: FORBIDDEN (tanpa audit.view) atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau milik organisasi lain)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditErrorResponse"
   /api/v1/spike/push-test:
     post:
       tags:
