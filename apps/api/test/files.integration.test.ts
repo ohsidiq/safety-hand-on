@@ -93,7 +93,7 @@ describe.skipIf(!url)("Alur file (integrasi)", () => {
     app = createApp({ db, auth: issuer.verifier, storage });
     appNoStorage = createApp({ db, auth: issuer.verifier });
     const org = (await db.query<{ id: string }>("select id from organization order by name limit 1")).rows[0]?.id as string;
-    for (const who of ["admin", "hseo1", "medis", "spv1", "hsemgr"]) {
+    for (const who of ["admin", "hseo1", "spv1", "hsemgr"]) {
       u[who] = (
         await db.query<{ id: string }>("select id from user_profile where organization_id = $1 and email like $2", [
           org,
@@ -101,6 +101,19 @@ describe.skipIf(!url)("Alur file (integrasi)", () => {
         ])
       ).rows[0]?.id as string;
     }
+    // Medical Officer khusus uji ini: uji auth mengubah status akun `medis` secara paralel
+    const tag = Math.random().toString(36).slice(2, 8);
+    u.medis = (
+      await db.query<{ id: string }>(
+        "insert into user_profile (organization_id, email, full_name, status) values ($1, $2, 'Medis Uji Berkas', 'ACTIVE') returning id",
+        [org, `medis-berkas-${tag}@uji.contoh`],
+      )
+    ).rows[0]?.id as string;
+    await db.query(
+      `insert into user_role_assignment (user_id, organization_id, role_code, scope_type, granted_by)
+       values ($1, $2, 'MEDICAL_OFFICER', 'ORGANIZATION', $3)`,
+      [u.medis, org, u.admin],
+    );
   });
 
   afterAll(async () => {
@@ -158,7 +171,8 @@ describe.skipIf(!url)("Alur file (integrasi)", () => {
     expect(p.bucket).toBe("soh-medical");
     storage.put(p.bucket, p.object_path, PDF);
     expect((await call("medis", `/files/${r.body.data.file_id}/complete`, "POST")).body.data.classification).toBe("SENSITIVE");
-    expect((await call("medis", `/files/${r.body.data.file_id}/download-url`)).body.data.expires_in).toBe(60);
+    const mdl = await call("medis", `/files/${r.body.data.file_id}/download-url`);
+    expect(mdl.body).toMatchObject({ data: { expires_in: 60 } });
     const sens = await db.query<{ s: boolean }>(
       "select (payload->>'sensitive_access')::boolean as s from audit_outbox where payload->>'entity_id' = $1 and payload->>'action' = 'file.download'",
       [r.body.data.file_id],
