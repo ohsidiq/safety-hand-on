@@ -2,7 +2,7 @@ import { type OpenAPIHono, z } from "@hono/zod-openapi";
 import type { Db, Tx } from "@soh/db";
 import { withUser } from "@soh/db";
 import type { Context, MiddlewareHandler } from "hono";
-import { type AuthEnv, type AuthVerifier, authenticate, requirePermission } from "./auth.js";
+import { type AuthEnv, type AuthVerifier, authenticate, requirePermission, requirePermissionOrSelf } from "./auth.js";
 import { type ErrorCode, type ErrorDetail, errorBody, errorStatus } from "./errors.js";
 
 /** Perlengkapan bersama rute domain (API-000 §7, §10): amplop respons, galat, If-Match, transaksi withUser. */
@@ -149,6 +149,24 @@ export async function run<T>(c: Ctx, deps: Deps, fn: (tx: Tx) => Promise<T>, opt
 export const guard = (deps: Deps, permission: string): MiddlewareHandler<AuthEnv>[] => [
   authenticate(deps),
   requirePermission(permission),
+];
+
+/** Guard yang juga menerima permission tingkat SELF (mis. WORKER competency.update SELF). */
+export const guardSelf = (deps: Deps, permission: string): MiddlewareHandler<AuthEnv>[] => [
+  authenticate(deps),
+  requirePermissionOrSelf(permission),
+];
+
+/** Lolos bila salah satu permission ada (FULL/TEAM), atau permission tingkat SELF pada selfAlso. */
+export const guardAny = (deps: Deps, permissions: string[], selfAlso: string[] = []): MiddlewareHandler<AuthEnv>[] => [
+  authenticate(deps),
+  async (c, next) => {
+    const id = c.get("identity");
+    const okFull = permissions.some((p) => id?.permissions.has(p));
+    const okSelf = selfAlso.some((p) => id?.selfPermissions?.has(p));
+    if (!okFull && !okSelf) return c.json(errorBody("FORBIDDEN", c.get("requestId")), 403);
+    await next();
+  },
 ];
 
 /** Memperbarui satu baris dengan pemeriksaan keberadaan (404), versi (412), dan scope tulis (403). */

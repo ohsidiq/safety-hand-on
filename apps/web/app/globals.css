@@ -439,6 +439,16 @@ button.small {
   color: #166534;
 }
 
+.badge-warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.badge-neutral {
+  background: #e5e7eb;
+  color: #374151;
+}
+
 .badge-denied,
 .badge-failed {
   background: #fee2e2;

@@ -371,3 +371,43 @@ describe("Unggah berkas privat (API-000 §14)", () => {
     expect(putHeaders.Authorization).toBeUndefined();
   });
 });
+
+describe("kompetensi (M3.2)", () => {
+  it("validasi klien: kompetensi wajib, mulai tidak di masa depan, rentang tanggal, sertifikat", async () => {
+    const { validateCompetencyInput } = await import("../lib/competencies");
+    const base = { competency_id: "c", valid_from: "2026-11-01", valid_until: "", issue_date: "", expiry_date: "" };
+    expect(validateCompetencyInput(base, "2026-11-24", false)).toBeNull();
+    expect(validateCompetencyInput({ ...base, competency_id: "" }, "2026-11-24", false)).toBe("Pilih kompetensi.");
+    expect(validateCompetencyInput({ ...base, valid_from: "2026-12-01" }, "2026-11-24", false)).toMatch(/masa depan/);
+    expect(validateCompetencyInput({ ...base, valid_until: "2026-10-01" }, "2026-11-24", false)).toMatch(/lebih awal/);
+    expect(validateCompetencyInput(base, "2026-11-24", true)).toMatch(/terbit/);
+    expect(validateCompetencyInput({ ...base, issue_date: "2026-11-01", expiry_date: "2026-01-01" }, "2026-11-24", true)).toMatch(
+      /kedaluwarsa/,
+    );
+  });
+
+  it("masa berlaku bawaan dari master dan pesan galat pemisahan tugas", async () => {
+    const { suggestUntil, competencyErrorMessage, VALIDITY_LABEL } = await import("../lib/competencies");
+    expect(suggestUntil("2026-01-31", 36)).toBe("2029-01-31");
+    expect(suggestUntil("2026-01-31", 1)).toBe("2026-02-28");
+    expect(suggestUntil("2026-01-01", 12)).toBe("2027-01-01");
+    expect(suggestUntil("2026-01-01", null)).toBe("");
+    expect(competencyErrorMessage({ status: 403, code: "SEPARATION_OF_DUTIES", details: [], extra: {} })).toMatch(/orang lain/);
+    expect(
+      competencyErrorMessage({
+        status: 422,
+        code: "VALIDATION_ERROR",
+        details: [{ field: "valid_from", issue: "in_future" }],
+        extra: {},
+      }),
+    ).toMatch(/masa depan/);
+    expect(VALIDITY_LABEL.EXPIRING_SOON).toBe("Segera berakhir");
+  });
+
+  it("menu Kompetensi hanya untuk pemverifikasi atau pengelola master", async () => {
+    const { canSee } = await import("../lib/nav");
+    expect(canSee(["competency.verify"], "/competencies")).toBe(true);
+    expect(canSee(["readiness_profile.manage"], "/competencies")).toBe(true);
+    expect(canSee(["competency.read", "competency.update"], "/competencies")).toBe(false);
+  });
+});

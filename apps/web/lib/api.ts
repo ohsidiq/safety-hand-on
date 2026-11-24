@@ -33,6 +33,8 @@ export interface Me {
   language: "id" | "en";
   role_assignments: { id: string; role_code: string; scope_type: string; scope_id: string | null; valid_until: string | null }[];
   permissions: string[];
+  /** Permission tingkat SELF (mis. pekerja mencatat kompetensinya sendiri). Server versi lama: tidak ada. */
+  self_permissions?: string[];
   mfa_enabled: boolean;
   must_change_credential: boolean;
 }
