@@ -6,6 +6,7 @@ import { secureHeaders } from "hono/secure-headers";
 import { registerAuditLogs } from "./audit-logs.js";
 import type { AuthEnv, AuthVerifier } from "./auth.js";
 import { registerAuthMe } from "./auth-me.js";
+import { registerAuthorizations } from "./authorizations.js";
 import { registerCompetencies } from "./competencies.js";
 import { registerDashboard } from "./dashboard.js";
 import { type ErrorCode, errorBody, errorStatus } from "./errors.js";
@@ -146,6 +147,7 @@ export function createApp(deps: AppDeps = {}) {
   registerNotifications(v1, deps);
   // sebelum struktur organisasi: /competencies/pending-verification harus cocok sebelum /competencies/{id}
   registerCompetencies(v1, deps);
+  registerAuthorizations(v1, deps);
   registerOrgStructure(v1, deps);
   registerFiles(v1, deps);
   registerWorkerImport(v1, deps);

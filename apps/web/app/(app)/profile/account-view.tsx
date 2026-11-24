@@ -5,6 +5,7 @@ import { apiGet } from "@/lib/api";
 import { ROLE_LABEL, SCOPE_LABEL } from "@/lib/nav";
 import { useMe, useSession } from "@/lib/session";
 import { EMPLOYMENT_LABEL, WORKER_STATUS_LABEL, type Worker } from "@/lib/workers";
+import { AuthorizationSection } from "../authorizations/authorization-section";
 import { CompetencySection } from "../competencies/competency-section";
 
 /** Data pekerja milik akun (B-18, PB-009 worker.read S). Hanya baca; NIK tidak pernah ditampilkan. */
@@ -74,6 +75,14 @@ export function AccountView() {
           workerId={me.worker_id}
           title="Kompetensi saya"
           canEdit={(me.self_permissions ?? []).includes("competency.update")}
+          canVerify={false}
+        />
+      ) : null}
+      {me.worker_id && (me.self_permissions ?? []).includes("authorization.read") ? (
+        <AuthorizationSection
+          workerId={me.worker_id}
+          title="Otorisasi Kerja saya"
+          canEdit={(me.self_permissions ?? []).includes("authorization.update")}
           canVerify={false}
         />
       ) : null}

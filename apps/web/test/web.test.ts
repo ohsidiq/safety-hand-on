@@ -411,3 +411,41 @@ describe("kompetensi (M3.2)", () => {
     expect(canSee(["competency.read", "competency.update"], "/competencies")).toBe(false);
   });
 });
+
+describe("Otorisasi Kerja (M3.3)", () => {
+  it("aksi pembekuan sah per status; REVOKED tanpa aksi dan dilabeli Dicabut", async () => {
+    const { suspensionActions, authStatusLabel } = await import("../lib/authorizations");
+    expect(suspensionActions("NONE")).toEqual(["suspend", "revoke"]);
+    expect(suspensionActions("SUSPENDED")).toEqual(["reinstate", "revoke"]);
+    expect(suspensionActions("REVOKED")).toEqual([]);
+    expect(authStatusLabel({ validity_status: "SUSPENDED", suspension_status: "REVOKED" })).toBe("Dicabut");
+    expect(authStatusLabel({ validity_status: "SUSPENDED", suspension_status: "SUSPENDED" })).toBe("Dibekukan");
+  });
+
+  it("validasi: lingkup wajib bila jenis mensyaratkan, tanggal", async () => {
+    const { validateAuthorizationInput } = await import("../lib/authorizations");
+    const type = {
+      id: "t",
+      name: "Pekerjaan Panas",
+      code: "AUTH-HOTWORK",
+      description: null,
+      requires_work_scope: true,
+      default_validity_months: 12,
+      status: "ACTIVE" as const,
+      version: 1,
+    };
+    const base = { type, valid_from: "2026-11-01", valid_until: "", work_scope: "" };
+    expect(validateAuthorizationInput(base, "2026-11-24")).toMatch(/lingkup/);
+    expect(validateAuthorizationInput({ ...base, work_scope: "Las pipa" }, "2026-11-24")).toBeNull();
+    expect(validateAuthorizationInput({ ...base, type: undefined }, "2026-11-24")).toBe("Pilih jenis otorisasi.");
+    expect(validateAuthorizationInput({ ...base, work_scope: "x", valid_from: "2026-12-01" }, "2026-11-24")).toMatch(
+      /masa depan/,
+    );
+  });
+
+  it("menu Otorisasi Kerja untuk pemverifikasi atau pengelola jenis", async () => {
+    const { canSee } = await import("../lib/nav");
+    expect(canSee(["authorization.verify"], "/authorizations")).toBe(true);
+    expect(canSee(["authorization.read", "authorization.update"], "/authorizations")).toBe(false);
+  });
+});

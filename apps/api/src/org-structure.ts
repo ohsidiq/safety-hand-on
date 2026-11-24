@@ -137,6 +137,18 @@ const Competency = z
   })
   .openapi("Competency");
 
+const AuthorizationType = z
+  .object({
+    id: z.uuid(),
+    name: z.string(),
+    code: z.string(),
+    description: z.string().nullable(),
+    requires_work_scope: z.boolean(),
+    default_validity_months: z.number().int().nullable(),
+    ...Meta,
+  })
+  .openapi("AuthorizationType");
+
 const RESOURCES: ResourceDef[] = [
   {
     entity: "site",
@@ -269,6 +281,41 @@ const RESOURCES: ResourceDef[] = [
     readPerm: "organization.read",
     managePerm: "readiness_profile.manage",
     readSelfAlso: ["competency.update"],
+  },
+  {
+    // API-006 §2: jenis Otorisasi Kerja (bukan Permit To Work, B-04)
+    entity: "authorization_type",
+    tag: "Work Authorization",
+    label: "Jenis Otorisasi Kerja",
+    table: "authorization_type",
+    itemBase: "/authorization-types",
+    collectionPath: "/authorization-types",
+    columns: `id, name, code, description, requires_work_scope, default_validity_months, ${META_COLS}`,
+    item: AuthorizationType,
+    create: z
+      .object({
+        name: Name,
+        code: Code,
+        description: OptText(1000),
+        requires_work_scope: z.boolean().optional(),
+        default_validity_months: ValidityMonths,
+      })
+      .openapi("AuthorizationTypeCreate"),
+    patch: z
+      .object({
+        name: Name.optional(),
+        code: Code.optional(),
+        description: OptText(1000),
+        requires_work_scope: z.boolean().optional(),
+        default_validity_months: ValidityMonths,
+      })
+      .openapi("AuthorizationTypePatch"),
+    writable: ["name", "code", "description", "requires_work_scope", "default_validity_months"],
+    // 409 AUTHORIZATION_TYPE_IN_USE menyusul bersama Requirement Profile (M4)
+    inUseIssue: "AUTHORIZATION_TYPE_IN_USE",
+    readPerm: "organization.read",
+    managePerm: "readiness_profile.manage",
+    readSelfAlso: ["authorization.update"],
   },
 ];
 

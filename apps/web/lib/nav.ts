@@ -34,6 +34,15 @@ export const NAV: NavItem[] = [
     phase: "P0",
     built: true,
   },
+  // SRS-WF005: Otorisasi Kerja (bukan Permit To Work): antrean verifikasi dan jenis
+  {
+    href: "/authorizations",
+    label: "Otorisasi Kerja",
+    domain: "Readiness",
+    anyOf: ["authorization.verify", "readiness_profile.manage"],
+    phase: "P0",
+    built: true,
+  },
   {
     href: "/users",
     label: "Pengguna dan Akses",
@@ -146,4 +155,17 @@ export const ACTION_LABEL: Record<string, string> = {
   "competency.certificate_download": "Sertifikat diunduh",
   "competency.deactivate": "Master kompetensi dinonaktifkan",
   "competency.reactivate": "Master kompetensi diaktifkan kembali",
+  "authorization.create": "Otorisasi Kerja diajukan",
+  "authorization.update": "Otorisasi Kerja diubah",
+  "authorization.verify": "Otorisasi Kerja diverifikasi",
+  "authorization.reject": "Otorisasi Kerja ditolak",
+  "authorization.resubmit": "Otorisasi Kerja diajukan ulang",
+  "authorization.suspend": "Otorisasi Kerja dibekukan",
+  "authorization.reinstate": "Otorisasi Kerja dipulihkan",
+  "authorization.revoke": "Otorisasi Kerja dicabut",
+  "authorization.document_access": "Dokumen Otorisasi Kerja dibuka",
+  "authorization_type.create": "Jenis otorisasi dibuat",
+  "authorization_type.update": "Jenis otorisasi diubah",
+  "authorization_type.deactivate": "Jenis otorisasi dinonaktifkan",
+  "authorization_type.reactivate": "Jenis otorisasi diaktifkan kembali",
 };

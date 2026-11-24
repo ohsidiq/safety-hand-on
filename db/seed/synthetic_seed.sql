@@ -163,8 +163,36 @@ begin
   cross join lateral (select random() as p,
                              current_date - 730 + (case when random() < 0.15 then -(1 + floor(random() * 60))::int
                                                         when random() < 0.30 then (1 + floor(random() * 28))::int
-                                                        else (31 + floor(random() * 300))::int end) as vf) x
+                                                        else (31 + floor(random() * 300))::int end) as vf
+                      where w.id is not null) x  -- merujuk w: acak per baris, bukan sekali untuk semua
   where w.organization_id = v_org and w.site_id = (select id from site where organization_id = v_org and code = 'SITE-1');
+
+  -- jenis Otorisasi Kerja sintetis (WF005, bukan Permit To Work) dan otorisasi pekerja Site 1:
+  -- sebagian menunggu, sebagian terverifikasi, satu dibekukan HSE Manager
+  insert into authorization_type(organization_id, name, code, description, requires_work_scope, default_validity_months)
+  values (v_org, 'Kerja di Ketinggian', 'AUTH-HEIGHT', 'Bekerja di atas 2 meter (sintetis)', false, 24),
+         (v_org, 'Ruang Terbatas', 'AUTH-CONFINED', 'Masuk ruang terbatas (sintetis)', false, 12),
+         (v_org, 'Pekerjaan Panas', 'AUTH-HOTWORK', 'Pengelasan dan pemotongan (sintetis)', true, 12);
+  insert into worker_authorization(organization_id, site_id, worker_id, authorization_type_id, authorization_number, valid_from,
+                                   valid_until, verification_status, verified_by, verified_at, created_by)
+  select w.organization_id, w.site_id, w.id, t.id, 'KT-SINTETIS-' || w.sho_id, x.vf, x.vf + 730,
+         case when x.p < 0.25 then 'PENDING' else 'VERIFIED' end,
+         case when x.p < 0.25 then null else (select id from user_profile where organization_id = v_org and email like 'hsemgr@%') end,
+         case when x.p < 0.25 then null else now() end,
+         (select u.id from user_profile u where u.organization_id = v_org and u.email like 'hseo1@%')
+  from worker w
+  join authorization_type t on t.organization_id = v_org and t.code = 'AUTH-HEIGHT'
+  cross join lateral (select random() as p,
+                             current_date - 730 + (case when random() < 0.15 then -(1 + floor(random() * 60))::int
+                                                        when random() < 0.30 then (1 + floor(random() * 28))::int
+                                                        else (31 + floor(random() * 300))::int end) as vf
+                      where w.id is not null) x
+  where w.organization_id = v_org and w.site_id = (select id from site where organization_id = v_org and code = 'SITE-1')
+    and random() < 0.6;
+  update worker_authorization set suspension_status = 'SUSPENDED', suspension_reason = 'Pemeriksaan ulang (sintetis)',
+         suspended_at = now(), suspended_by = (select id from user_profile where organization_id = v_org and email like 'hsemgr@%')
+   where id = (select id from worker_authorization where organization_id = v_org and verification_status = 'VERIFIED'
+               order by worker_id limit 1);
 
   return v_org;
 end $$;
