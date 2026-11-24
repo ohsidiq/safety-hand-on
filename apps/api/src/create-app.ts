@@ -8,10 +8,12 @@ import type { AuthEnv, AuthVerifier } from "./auth.js";
 import { registerAuthMe } from "./auth-me.js";
 import { registerDashboard } from "./dashboard.js";
 import { type ErrorCode, errorBody, errorStatus } from "./errors.js";
+import { registerFiles } from "./files.js";
 import type { NationalIdCrypto } from "./national-id.js";
 import { registerNotifications } from "./notifications.js";
 import { registerOrgStructure } from "./org-structure.js";
 import { type PushSender, registerSpikePush } from "./spike-push.js";
+import type { FileStorage } from "./storage.js";
 import { registerWorkerImport } from "./worker-import.js";
 import { registerWorkers } from "./workers.js";
 
@@ -33,6 +35,8 @@ export interface AppDeps {
   auth?: AuthVerifier | undefined;
   /** Sandi NIK (API-003 WF-API-005). Kosong = NIK tidak dapat disimpan (503), data pekerja lain tetap berjalan. */
   nationalId?: NationalIdCrypto | undefined;
+  /** Penyimpanan berkas privat (API-000 §14). Kosong = endpoint file menjawab 503. */
+  storage?: FileStorage | undefined;
 }
 
 type Env = AuthEnv;
@@ -140,6 +144,7 @@ export function createApp(deps: AppDeps = {}) {
   registerDashboard(v1, deps);
   registerNotifications(v1, deps);
   registerOrgStructure(v1, deps);
+  registerFiles(v1, deps);
   registerWorkerImport(v1, deps);
   registerWorkers(v1, deps);
   registerSpikePush(v1, deps.pushSender);

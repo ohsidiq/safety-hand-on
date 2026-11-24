@@ -5,6 +5,7 @@ import { createApp } from "./create-app.js";
 import { createPoolSafe } from "./db.js";
 import { nationalIdCryptoFromEnv } from "./national-id.js";
 import { pushSenderFromEnv } from "./push-sender.js";
+import { storageFromEnv } from "./storage.js";
 
 // Server lokal untuk pengembangan. Di Vercel dipakai src/index.ts.
 const port = Number(process.env.API_PORT ?? 8787);
@@ -15,6 +16,7 @@ const app = createApp({
   pushSender: pushSenderFromEnv(),
   auth: authVerifierFromEnv(),
   nationalId: nationalIdCryptoFromEnv(),
+  storage: storageFromEnv(),
 });
 
 serve({ fetch: app.fetch, port }, (info) => {

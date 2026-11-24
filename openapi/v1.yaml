@@ -1086,6 +1086,93 @@ components:
           pattern: ^\d{4}-\d{2}-\d{2}$
       required:
         - valid_until
+    FileCreate:
+      type: object
+      properties:
+        original_name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        mime_type:
+          type: string
+          enum:
+            - application/pdf
+            - image/jpeg
+            - image/png
+            - image/webp
+        size_bytes:
+          type: integer
+          exclusiveMinimum: 0
+        purpose:
+          type: string
+          enum:
+            - COMPETENCY_CERTIFICATE
+            - AUTHORIZATION_DOCUMENT
+            - SIMPER_DOCUMENT
+            - MEDICAL_DOCUMENT
+      required:
+        - original_name
+        - mime_type
+        - size_bytes
+        - purpose
+    FileObject:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        original_name:
+          type: string
+        mime_type:
+          type: string
+        size_bytes:
+          type: integer
+        purpose:
+          type: string
+          enum:
+            - COMPETENCY_CERTIFICATE
+            - AUTHORIZATION_DOCUMENT
+            - SIMPER_DOCUMENT
+            - MEDICAL_DOCUMENT
+        classification:
+          type: string
+          enum:
+            - INTERNAL
+            - CONFIDENTIAL
+            - SENSITIVE
+        scan_status:
+          type: string
+          enum:
+            - PENDING
+            - CLEAN
+            - INFECTED
+            - FAILED
+        scan_detail:
+          type:
+            - string
+            - "null"
+        checksum_sha256:
+          type:
+            - string
+            - "null"
+        uploaded_at:
+          type: string
+        scanned_at:
+          type:
+            - string
+            - "null"
+      required:
+        - id
+        - original_name
+        - mime_type
+        - size_bytes
+        - purpose
+        - classification
+        - scan_status
+        - scan_detail
+        - checksum_sha256
+        - uploaded_at
+        - scanned_at
     WorkerImportResult:
       type: object
       properties:
@@ -5287,6 +5374,291 @@ paths:
                 $ref: "#/components/schemas/ApiErrorResponse"
         "422":
           description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/files:
+    post:
+      tags:
+        - Files
+      summary: Mendaftarkan berkas dan mendapatkan URL unggah bertanda tangan
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FileCreate"
+      responses:
+        "201":
+          description: Berkas terdaftar (PENDING)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    type: object
+                    properties:
+                      file_id:
+                        type: string
+                        format: uuid
+                      upload_url:
+                        type: string
+                        description: PUT isi berkas ke URL ini (berlaku singkat)
+                      expires_at:
+                        type: string
+                    required:
+                      - file_id
+                      - upload_url
+                      - expires_at
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: INVALID_STATE_TRANSITION (sudah diperiksa) atau CONFLICT
+            MISSING_OBJECT (belum diunggah)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: VALIDATION_ERROR (jenis/ukuran tidak diizinkan) atau FILE_NOT_CLEAN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "503":
+          description: SERVICE_UNAVAILABLE (penyimpanan belum dikonfigurasi)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/files/{id}/complete:
+    post:
+      tags:
+        - Files
+      summary: "Menandai unggahan selesai: pemeriksaan isi lalu CLEAN atau FAILED"
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Hasil pemeriksaan
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/FileObject"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: INVALID_STATE_TRANSITION (sudah diperiksa) atau CONFLICT
+            MISSING_OBJECT (belum diunggah)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: VALIDATION_ERROR (jenis/ukuran tidak diizinkan) atau FILE_NOT_CLEAN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "503":
+          description: SERVICE_UNAVAILABLE (penyimpanan belum dikonfigurasi)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/files/{id}:
+    get:
+      tags:
+        - Files
+      summary: Metadata berkas
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Metadata
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/FileObject"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/files/{id}/download-url:
+    get:
+      tags:
+        - Files
+      summary: URL unduh bertanda tangan berumur pendek (teraudit)
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: URL unduh
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    type: object
+                    properties:
+                      url:
+                        type: string
+                      expires_in:
+                        type: integer
+                    required:
+                      - url
+                      - expires_in
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: INVALID_STATE_TRANSITION (sudah diperiksa) atau CONFLICT
+            MISSING_OBJECT (belum diunggah)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: VALIDATION_ERROR (jenis/ukuran tidak diizinkan) atau FILE_NOT_CLEAN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "503":
+          description: SERVICE_UNAVAILABLE (penyimpanan belum dikonfigurasi)
           content:
             application/json:
               schema:
