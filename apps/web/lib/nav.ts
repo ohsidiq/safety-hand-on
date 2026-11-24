@@ -25,6 +25,15 @@ export const NAV: NavItem[] = [
     phase: "P0",
     built: true,
   },
+  // SRS-WF003: antrean verifikasi (HSE Manager) dan master kompetensi (Company Admin, HSE Manager)
+  {
+    href: "/competencies",
+    label: "Kompetensi",
+    domain: "Readiness",
+    anyOf: ["competency.verify", "readiness_profile.manage"],
+    phase: "P0",
+    built: true,
+  },
   {
     href: "/users",
     label: "Pengguna dan Akses",
@@ -128,4 +137,13 @@ export const ACTION_LABEL: Record<string, string> = {
   "worker.suspend": "Pekerja diskors",
   "worker.update": "Data pekerja diubah",
   "worker.create": "Pekerja dibuat",
+  "competency.create": "Kompetensi dicatat",
+  "competency.update": "Kompetensi diubah",
+  "competency.verify": "Kompetensi diverifikasi",
+  "competency.reject": "Kompetensi ditolak",
+  "competency.resubmit": "Kompetensi diajukan ulang",
+  "competency.certificate_add": "Sertifikat ditambahkan",
+  "competency.certificate_download": "Sertifikat diunduh",
+  "competency.deactivate": "Master kompetensi dinonaktifkan",
+  "competency.reactivate": "Master kompetensi diaktifkan kembali",
 };

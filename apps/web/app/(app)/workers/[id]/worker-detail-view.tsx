@@ -17,6 +17,7 @@ import {
   type Worker,
   workerErrorMessage,
 } from "@/lib/workers";
+import { CompetencySection } from "../../competencies/competency-section";
 import { EMPTY_PLACEMENT, type Placement, PlacementFields } from "../placement-fields";
 
 /** Detail pekerja (UIUX-005 §4): ringkasan, ubah data, aksi status beralasan, riwayat penempatan. */
@@ -180,6 +181,9 @@ export function WorkerDetailView({ id }: { id: string }) {
           </table>
         </div>
       </section>
+      {can("competency.read") ? (
+        <CompetencySection workerId={worker.id} canEdit={can("competency.update")} canVerify={can("competency.verify")} />
+      ) : null}
     </>
   );
 }

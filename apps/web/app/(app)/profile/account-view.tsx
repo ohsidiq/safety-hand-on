@@ -5,6 +5,7 @@ import { apiGet } from "@/lib/api";
 import { ROLE_LABEL, SCOPE_LABEL } from "@/lib/nav";
 import { useMe, useSession } from "@/lib/session";
 import { EMPLOYMENT_LABEL, WORKER_STATUS_LABEL, type Worker } from "@/lib/workers";
+import { CompetencySection } from "../competencies/competency-section";
 
 /** Data pekerja milik akun (B-18, PB-009 worker.read S). Hanya baca; NIK tidak pernah ditampilkan. */
 function MyWorker() {
@@ -67,6 +68,14 @@ export function AccountView() {
           <MyWorker />
           <p className="muted small-text">Perubahan data hubungi admin perusahaan.</p>
         </section>
+      ) : null}
+      {me.worker_id && (me.self_permissions ?? []).includes("competency.read") ? (
+        <CompetencySection
+          workerId={me.worker_id}
+          title="Kompetensi saya"
+          canEdit={(me.self_permissions ?? []).includes("competency.update")}
+          canVerify={false}
+        />
       ) : null}
       <section className="card" aria-labelledby="peran">
         <h2 id="peran">Peran</h2>

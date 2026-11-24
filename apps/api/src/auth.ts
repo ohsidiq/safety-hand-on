@@ -98,8 +98,10 @@ export function authVerifierFromEnv(
 export interface Identity {
   userId: string;
   organizationId: string | null;
-  /** Permission efektif (constraint FULL/TEAM). LIMITED/SELF ditolak bawaan sampai aturannya dibangun. */
+  /** Permission efektif (constraint FULL/TEAM). LIMITED ditolak bawaan sampai aturannya dibangun. */
   permissions: ReadonlySet<string>;
+  /** Permission tingkat SELF (hanya atas data pekerja miliknya; RLS menegakkan batasnya). Dipakai rute yang mendukung SELF. */
+  selfPermissions?: ReadonlySet<string>;
   /** Konteks permintaan untuk audit (request_id, IP, perangkat). */
   ctx: RequestContext;
 }
@@ -133,8 +135,9 @@ export async function loadIdentity(
       if (p.rows[0]?.status === "ACTIVE" && opts.sessionId) {
         await tx.query("select app.audit_session_seen($1)", [opts.sessionId]);
       }
-      const perms = await tx.query<{ permission_code: string }>(
-        "select distinct permission_code from app.my_permissions() where constraint_level in ('FULL', 'TEAM')",
+      const perms = await tx.query<{ permission_code: string; constraint_level: string }>(
+        `select distinct permission_code, constraint_level from app.my_permissions()
+          where constraint_level in ('FULL', 'TEAM') or (constraint_level = 'SELF' and app.my_worker_id() is not null)`,
       );
       const row = p.rows[0];
       return {
@@ -142,7 +145,8 @@ export async function loadIdentity(
         identity: {
           userId,
           organizationId: row?.organization_id ?? null,
-          permissions: new Set(perms.rows.map((r) => r.permission_code)),
+          permissions: new Set(perms.rows.filter((r) => r.constraint_level !== "SELF").map((r) => r.permission_code)),
+          selfPermissions: new Set(perms.rows.filter((r) => r.constraint_level === "SELF").map((r) => r.permission_code)),
           ctx,
         },
       };
@@ -205,6 +209,15 @@ export function authenticate(deps: { auth?: AuthVerifier | undefined; db?: Db | 
 export function requirePermission(permission: string): MiddlewareHandler<AuthEnv> {
   return async (c, next) => {
     if (!c.get("identity")?.permissions.has(permission)) return deny(c, "FORBIDDEN");
+    await next();
+  };
+}
+
+/** Seperti requirePermission, tetapi permission tingkat SELF juga diterima (scope data pekerja sendiri ditegakkan RLS). */
+export function requirePermissionOrSelf(permission: string): MiddlewareHandler<AuthEnv> {
+  return async (c, next) => {
+    const id = c.get("identity");
+    if (!id?.permissions.has(permission) && !id?.selfPermissions?.has(permission)) return deny(c, "FORBIDDEN");
     await next();
   };
 }

@@ -6,6 +6,7 @@ import {
   type Deps,
   ErrorResponse,
   guard,
+  guardAny,
   IfMatch,
   IfMatchValue,
   json,
@@ -81,6 +82,11 @@ interface ResourceDef {
   /** Kueri jumlah pekerja aktif terdampak ($1 = id), untuk alasan penolakan di UI (UIUX-005 §3). */
   affectedSql?: string;
   prepareCreate?: (tx: Tx, body: Row, orgId: string) => Promise<void>;
+  /** Permission baca (bawaan organization.read) dan kelola (bawaan organization.manage). */
+  readPerm?: string;
+  managePerm?: string;
+  /** Permission tingkat SELF yang juga boleh membaca (mis. pekerja memilih master saat mencatat kompetensinya). */
+  readSelfAlso?: string[];
 }
 
 const META_COLS = "status, version, created_at, updated_at";
@@ -118,6 +124,18 @@ const JobPosition = z
 const EquipmentClass = z
   .object({ id: z.uuid(), name: z.string(), code: z.string(), description: z.string().nullable(), ...Meta })
   .openapi("EquipmentClass");
+
+const ValidityMonths = z.number().int().min(1).max(600).nullable().optional();
+const Competency = z
+  .object({
+    id: z.uuid(),
+    name: z.string(),
+    code: z.string(),
+    description: z.string().nullable(),
+    default_validity_months: z.number().int().nullable(),
+    ...Meta,
+  })
+  .openapi("Competency");
 
 const RESOURCES: ResourceDef[] = [
   {
@@ -224,6 +242,34 @@ const RESOURCES: ResourceDef[] = [
     writable: ["name", "code", "description"],
     inUseIssue: "ACTIVE_WORKERS_EXIST",
   },
+  {
+    // API-004 §2: master kompetensi dikelola readiness_profile.manage; baca organization.read
+    entity: "competency",
+    tag: "Competency",
+    label: "Kompetensi",
+    table: "competency",
+    itemBase: "/competencies",
+    collectionPath: "/competencies",
+    columns: `id, name, code, description, default_validity_months, ${META_COLS}`,
+    item: Competency,
+    create: z
+      .object({ name: Name, code: Code, description: OptText(1000), default_validity_months: ValidityMonths })
+      .openapi("CompetencyCreate"),
+    patch: z
+      .object({
+        name: Name.optional(),
+        code: Code.optional(),
+        description: OptText(1000),
+        default_validity_months: ValidityMonths,
+      })
+      .openapi("CompetencyPatch"),
+    writable: ["name", "code", "description", "default_validity_months"],
+    // 409 COMPETENCY_IN_USE (Requirement Profile ACTIVE) menyusul bersama Requirement Profile (M4)
+    inUseIssue: "COMPETENCY_IN_USE",
+    readPerm: "organization.read",
+    managePerm: "readiness_profile.manage",
+    readSelfAlso: ["competency.update"],
+  },
 ];
 
 // ---------------------------------------------------------------- pendaftaran
@@ -310,6 +356,8 @@ function registerOrganization(v1: V1, deps: Deps) {
 }
 
 function registerResource(v1: V1, deps: Deps, def: ResourceDef) {
+  const readGuard = guardAny(deps, [def.readPerm ?? "organization.read"], def.readSelfAlso ?? []);
+  const manageGuard = guard(deps, def.managePerm ?? "organization.manage");
   const itemPath = `${def.itemBase}/{id}`;
   const IdParam = z.object({ id: z.uuid() });
   const parentParam = def.parent ? z.object({ [def.parent.param]: z.uuid() }) : undefined;
@@ -320,7 +368,7 @@ function registerResource(v1: V1, deps: Deps, def: ResourceDef) {
     tags: [def.tag],
     summary: `Daftar ${def.label}`,
     security,
-    middleware: guard(deps, "organization.read"),
+    middleware: readGuard,
     request: {
       ...(parentParam ? { params: parentParam } : {}),
       query: z.object({ status: Status.optional() }),
@@ -338,7 +386,7 @@ function registerResource(v1: V1, deps: Deps, def: ResourceDef) {
     tags: [def.tag],
     summary: `Membuat ${def.label}`,
     security,
-    middleware: guard(deps, "organization.manage"),
+    middleware: manageGuard,
     request: {
       ...(parentParam ? { params: parentParam } : {}),
       body: { content: { "application/json": { schema: def.create } }, required: true },
@@ -351,7 +399,7 @@ function registerResource(v1: V1, deps: Deps, def: ResourceDef) {
     tags: [def.tag],
     summary: `Detail ${def.label}`,
     security,
-    middleware: guard(deps, "organization.read"),
+    middleware: readGuard,
     request: { params: IdParam },
     responses: { 200: json(ok(def.item), def.label), ...baseErrors, 404: json(ErrorResponse, "NOT_FOUND") },
   });
@@ -361,7 +409,7 @@ function registerResource(v1: V1, deps: Deps, def: ResourceDef) {
     tags: [def.tag],
     summary: `Mengubah ${def.label}`,
     security,
-    middleware: guard(deps, "organization.manage"),
+    middleware: manageGuard,
     request: {
       params: IdParam,
       headers: IfMatch,
@@ -380,7 +428,7 @@ function registerResource(v1: V1, deps: Deps, def: ResourceDef) {
       tags: [def.tag],
       summary: action === "deactivate" ? `Menonaktifkan ${def.label} (soft delete)` : `Mengaktifkan kembali ${def.label}`,
       security,
-      middleware: guard(deps, "organization.manage"),
+      middleware: manageGuard,
       request: {
         params: IdParam,
         headers: z.object({ "if-match": IfMatchValue.optional() }),

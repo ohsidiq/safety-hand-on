@@ -181,7 +181,10 @@ export function registerFiles(v1: V1, deps: FileDeps) {
     const b = c.req.valid("json");
     const identity = c.get("identity");
     const p = PURPOSES[b.purpose];
-    if (!identity.permissions.has(p.permission)) return respondFailure(c, new ApiFailure("FORBIDDEN"));
+    // SELF (mis. WORKER competency.update SELF) boleh mengunggah dokumen untuk datanya sendiri; dokumen medis tidak
+    const allowed =
+      identity.permissions.has(p.permission) || (b.purpose !== "MEDICAL_DOCUMENT" && identity.selfPermissions?.has(p.permission));
+    if (!allowed) return respondFailure(c, new ApiFailure("FORBIDDEN"));
     const limit = MIME_LIMITS[b.mime_type] ?? 0;
     if (b.size_bytes > limit)
       return respondFailure(c, new ApiFailure("VALIDATION_ERROR", [{ field: "size_bytes", issue: `max_${limit}` }]));

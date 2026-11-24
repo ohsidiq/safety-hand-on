@@ -144,6 +144,28 @@ begin
                                             where s.organization_id = v_org and s.code = 'SITE-1' and t.code = 'TIM-PROD'), v_admin
   from user_profile u where u.organization_id = v_org and u.email like 'spvtim1@%';
 
+  -- master kompetensi sintetis (WF003) dan kompetensi pekerja: dibuat HSE Officer Site, sebagian diverifikasi
+  -- HSE Manager (pemisahan tugas, B-05), sebagian menunggu, sebagian kedaluwarsa atau segera berakhir
+  insert into competency(organization_id, name, code, description, default_validity_months)
+  values (v_org, 'K3 Umum', 'CMP-K3-UMUM', 'Kompetensi keselamatan umum (sintetis)', 36),
+         (v_org, 'Operator Alat Berat', 'CMP-OPR-AB', 'Sertifikat operator alat berat (sintetis)', 36),
+         (v_org, 'Pengelasan', 'CMP-LAS', 'Sertifikat juru las (sintetis)', 24);
+  insert into worker_competency(organization_id, site_id, worker_id, competency_id, valid_from, valid_until, source,
+                                verification_status, verified_by, verified_at, created_by)
+  select w.organization_id, w.site_id, w.id, c.id, x.vf, x.vf + 730,
+         'CERTIFICATE',
+         case when x.p < 0.20 then 'PENDING' else 'VERIFIED' end,
+         case when x.p < 0.20 then null else (select id from user_profile where organization_id = v_org and email like 'hsemgr@%') end,
+         case when x.p < 0.20 then null else now() end,
+         (select u.id from user_profile u where u.organization_id = v_org and u.email like 'hseo1@%')
+  from worker w
+  join competency c on c.organization_id = v_org and c.code = 'CMP-K3-UMUM'
+  cross join lateral (select random() as p,
+                             current_date - 730 + (case when random() < 0.15 then -(1 + floor(random() * 60))::int
+                                                        when random() < 0.30 then (1 + floor(random() * 28))::int
+                                                        else (31 + floor(random() * 300))::int end) as vf) x
+  where w.organization_id = v_org and w.site_id = (select id from site where organization_id = v_org and code = 'SITE-1');
+
   return v_org;
 end $$;
 
