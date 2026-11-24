@@ -5,6 +5,7 @@ import { createApp } from "./create-app.js";
 import { createPoolSafe } from "./db.js";
 import { nationalIdCryptoFromEnv } from "./national-id.js";
 import { pushSenderFromEnv } from "./push-sender.js";
+import { storageFromEnv } from "./storage.js";
 
 /**
  * Entrypoint Vercel (Hono zero-config): ekspor default aplikasi Hono. Detektor Vercel mensyaratkan
@@ -22,6 +23,7 @@ const app = createApp({
   pushSender: pushSenderFromEnv(),
   auth: authVerifierFromEnv(),
   nationalId: nationalIdCryptoFromEnv(),
+  storage: storageFromEnv(),
 });
 if (!(app instanceof Hono)) {
   throw new Error("Core API harus berupa aplikasi Hono");

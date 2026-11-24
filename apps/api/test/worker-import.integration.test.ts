@@ -60,7 +60,7 @@ describe.skipIf(!url)("Impor pekerja (integrasi)", () => {
     issuer = await makeIssuer();
     app = createApp({ db, auth: issuer.verifier, nationalId: createNationalIdCrypto(randomBytes(32), randomBytes(32)) });
     const org = (await db.query<{ id: string }>("select id from organization order by name limit 1")).rows[0]?.id as string;
-    for (const who of ["admin", "spv1", "hseo1"]) {
+    for (const who of ["admin", "spv1"]) {
       u[who] = (
         await db.query<{ id: string }>("select id from user_profile where organization_id = $1 and email like $2", [
           org,
@@ -68,14 +68,30 @@ describe.skipIf(!url)("Impor pekerja (integrasi)", () => {
         ])
       ).rows[0]?.id as string;
     }
-    const codes = await db.query<{ code: string }>(
-      `select s.code from user_role_assignment ura join site s on s.id = ura.scope_id where ura.user_id = $1 and ura.scope_type = 'SITE'`,
-      [u.hseo1],
+    // HSE Officer khusus uji ini (uji auth menambah penugasan hseo1 secara paralel), scope Site Supervisor spv1
+    const site = (
+      await db.query<{ id: string; code: string }>(
+        `select s.id, s.code from user_role_assignment ura join site s on s.id = ura.scope_id
+         where ura.user_id = $1 and ura.scope_type = 'SITE' and ura.revoked_at is null limit 1`,
+        [u.spv1],
+      )
+    ).rows[0] as { id: string; code: string };
+    site1 = site.code;
+    u.hseo1 = (
+      await db.query<{ id: string }>(
+        "insert into user_profile (organization_id, email, full_name, status) values ($1, $2, 'HSE Uji Impor', 'ACTIVE') returning id",
+        [org, `hseo-impor-${tag.toLowerCase()}@uji.contoh`],
+      )
+    ).rows[0]?.id as string;
+    await db.query(
+      `insert into user_role_assignment (user_id, organization_id, role_code, scope_type, scope_id, granted_by)
+       values ($1, $2, 'HSE_OFFICER', 'SITE', $3, $4)`,
+      [u.hseo1, org, site.id, u.admin],
     );
-    site1 = codes.rows[0]?.code as string;
     site2 = (
       await db.query<{ code: string }>(
-        "select code from site where organization_id = $1 and code <> $2 and status = 'ACTIVE' order by code limit 1",
+        // Site seed di luar scope hseo1 (uji lain dapat membuat Site baru secara paralel)
+        "select code from site where organization_id = $1 and code <> $2 and status = 'ACTIVE' and code like 'SITE-%' order by code limit 1",
         [org, site1],
       )
     ).rows[0]?.code as string;

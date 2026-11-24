@@ -331,3 +331,43 @@ describe("Impor pekerja di web (API-003 §6)", () => {
     vi.unstubAllEnvs();
   });
 });
+
+describe("Unggah berkas privat (API-000 §14)", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("validasi jenis dan ukuran di klien", async () => {
+    const { checkFile } = await import("../lib/files");
+    expect(checkFile({ type: "application/pdf", size: 1000 })).toBeNull();
+    expect(checkFile({ type: "application/zip", size: 1000 })).toMatch(/PDF/);
+    expect(checkFile({ type: "application/pdf", size: 11 * 1024 * 1024 })).toMatch(/10 MB/);
+    expect(checkFile({ type: "image/png", size: 15 * 1024 * 1024 })).toBeNull();
+  });
+
+  it("tiga langkah: daftar, PUT langsung ke penyimpanan (tanpa token API), complete", async () => {
+    vi.stubEnv("NEXT_PUBLIC_API_BASE_URL", "https://api.contoh");
+    const { uploadFile } = await import("../lib/files");
+    const calls: { url: string; init?: RequestInit }[] = [];
+    const fetcher = vi.fn(async (url: string, init?: RequestInit) => {
+      calls.push({ url, ...(init ? { init } : {}) });
+      if (url.endsWith("/files"))
+        return new Response(JSON.stringify({ success: true, data: { file_id: "f1", upload_url: "https://store/up?token=x" } }), {
+          status: 201,
+        });
+      if (url.startsWith("https://store/")) return new Response("{}", { status: 200 });
+      return new Response(JSON.stringify({ success: true, data: { id: "f1", scan_status: "CLEAN", scan_detail: null } }));
+    });
+    const file = new File([new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d])], "a.pdf", { type: "application/pdf" });
+    const r = await uploadFile("tok", file, "COMPETENCY_CERTIFICATE", fetcher as unknown as typeof fetch);
+    expect(r).toEqual({ ok: true, file: { id: "f1", scan_status: "CLEAN", scan_detail: null } });
+    expect(calls.map((c) => c.url)).toEqual([
+      "https://api.contoh/api/v1/files",
+      "https://store/up?token=x",
+      "https://api.contoh/api/v1/files/f1/complete",
+    ]);
+    const putInit = calls[1]?.init as RequestInit;
+    const putHeaders = putInit.headers as Record<string, string>;
+    expect(putHeaders.Authorization).toBeUndefined();
+  });
+});
