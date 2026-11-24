@@ -822,6 +822,254 @@ components:
         - file_id
         - file_name
         - created_at
+    WorkerAuthorization:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        worker_id:
+          type: string
+          format: uuid
+        site_id:
+          type: string
+          format: uuid
+        worker_name:
+          type:
+            - string
+            - "null"
+        sho_id:
+          type:
+            - string
+            - "null"
+        authorization_type:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            name:
+              type:
+                - string
+                - "null"
+            code:
+              type:
+                - string
+                - "null"
+            requires_work_scope:
+              type:
+                - boolean
+                - "null"
+          required:
+            - id
+            - name
+            - code
+            - requires_work_scope
+        authorization_number:
+          type:
+            - string
+            - "null"
+        issuer:
+          type:
+            - string
+            - "null"
+        work_scope:
+          type:
+            - string
+            - "null"
+        restriction_note:
+          type:
+            - string
+            - "null"
+        valid_from:
+          type: string
+        valid_until:
+          type:
+            - string
+            - "null"
+        has_document:
+          type: boolean
+        verification_status:
+          type: string
+          enum:
+            - PENDING
+            - VERIFIED
+            - REJECTED
+        suspension_status:
+          type: string
+          enum:
+            - NONE
+            - SUSPENDED
+            - REVOKED
+        validity_status:
+          type: string
+          enum:
+            - VALID
+            - EXPIRING_SOON
+            - EXPIRED
+            - PENDING_VERIFICATION
+            - REJECTED
+            - SUSPENDED
+        verified_by_name:
+          type:
+            - string
+            - "null"
+        verified_at:
+          type:
+            - string
+            - "null"
+        verification_comment:
+          type:
+            - string
+            - "null"
+        rejection_reason:
+          type:
+            - string
+            - "null"
+        suspended_by_name:
+          type:
+            - string
+            - "null"
+        suspended_at:
+          type:
+            - string
+            - "null"
+        suspension_reason:
+          type:
+            - string
+            - "null"
+        created_by:
+          type: string
+          format: uuid
+        created_by_name:
+          type:
+            - string
+            - "null"
+        created_at:
+          type: string
+        updated_at:
+          type: string
+        version:
+          type: integer
+        can_verify:
+          type: boolean
+      required:
+        - id
+        - worker_id
+        - site_id
+        - worker_name
+        - sho_id
+        - authorization_type
+        - authorization_number
+        - issuer
+        - work_scope
+        - restriction_note
+        - valid_from
+        - valid_until
+        - has_document
+        - verification_status
+        - suspension_status
+        - validity_status
+        - verified_by_name
+        - verified_at
+        - verification_comment
+        - rejection_reason
+        - suspended_by_name
+        - suspended_at
+        - suspension_reason
+        - created_by
+        - created_by_name
+        - created_at
+        - updated_at
+        - version
+        - can_verify
+    WorkerAuthorizationCreate:
+      type: object
+      properties:
+        authorization_type_id:
+          type: string
+          format: uuid
+        valid_from:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}$
+        valid_until:
+          type:
+            - string
+            - "null"
+          pattern: ^\d{4}-\d{2}-\d{2}$
+        authorization_number:
+          type:
+            - string
+            - "null"
+          maxLength: 100
+        issuer:
+          type:
+            - string
+            - "null"
+          maxLength: 150
+        work_scope:
+          type:
+            - string
+            - "null"
+          maxLength: 500
+        restriction_note:
+          type:
+            - string
+            - "null"
+          maxLength: 500
+        file_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+      required:
+        - authorization_type_id
+        - valid_from
+    WorkerAuthorizationPatch:
+      type: object
+      properties:
+        valid_from:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}$
+        valid_until:
+          type:
+            - string
+            - "null"
+          pattern: ^\d{4}-\d{2}-\d{2}$
+        authorization_number:
+          type:
+            - string
+            - "null"
+          maxLength: 100
+        issuer:
+          type:
+            - string
+            - "null"
+          maxLength: 150
+        work_scope:
+          type:
+            - string
+            - "null"
+          maxLength: 500
+        restriction_note:
+          type:
+            - string
+            - "null"
+          maxLength: 500
+        file_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+    WorkerAuthorizationAction:
+      type: object
+      properties:
+        comment:
+          type: string
+          maxLength: 500
+        reason:
+          type: string
+          maxLength: 500
     Organization:
       type: object
       properties:
@@ -1388,6 +1636,101 @@ components:
             - string
             - "null"
           maxLength: 1000
+        default_validity_months:
+          type:
+            - integer
+            - "null"
+          minimum: 1
+          maximum: 600
+    AuthorizationType:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        code:
+          type: string
+        description:
+          type:
+            - string
+            - "null"
+        requires_work_scope:
+          type: boolean
+        default_validity_months:
+          type:
+            - integer
+            - "null"
+        status:
+          type: string
+          enum:
+            - ACTIVE
+            - INACTIVE
+        version:
+          type: integer
+        created_at:
+          type: string
+        updated_at:
+          type: string
+      required:
+        - id
+        - name
+        - code
+        - description
+        - requires_work_scope
+        - default_validity_months
+        - status
+        - version
+        - created_at
+        - updated_at
+    AuthorizationTypeCreate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 150
+        code:
+          type: string
+          pattern: ^[A-Z0-9][A-Z0-9-]{1,29}$
+          description: Huruf besar, angka, tanda hubung; 2-30 karakter
+          example: SITE-A
+        description:
+          type:
+            - string
+            - "null"
+          maxLength: 1000
+        requires_work_scope:
+          type: boolean
+        default_validity_months:
+          type:
+            - integer
+            - "null"
+          minimum: 1
+          maximum: 600
+      required:
+        - name
+        - code
+    AuthorizationTypePatch:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 150
+        code:
+          type: string
+          pattern: ^[A-Z0-9][A-Z0-9-]{1,29}$
+          description: Huruf besar, angka, tanda hubung; 2-30 karakter
+          example: SITE-A
+        description:
+          type:
+            - string
+            - "null"
+          maxLength: 1000
+        requires_work_scope:
+          type: boolean
         default_validity_months:
           type:
             - integer
@@ -3462,6 +3805,876 @@ paths:
                 $ref: "#/components/schemas/ApiErrorResponse"
         "404":
           description: NOT_FOUND (sertifikat tanpa berkas atau di luar scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: FILE_NOT_CLEAN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "503":
+          description: SERVICE_UNAVAILABLE (penyimpanan)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/authorizations/pending-verification:
+    get:
+      tags:
+        - Work Authorization
+      summary: Antrean verifikasi Otorisasi Kerja (PENDING, terlama dahulu)
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: false
+          name: site_id
+          in: query
+        - schema:
+            type: string
+            format: uuid
+          required: false
+          name: authorization_type_id
+          in: query
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+          required: false
+          name: limit
+          in: query
+      responses:
+        "200":
+          description: Antrean
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/WorkerAuthorization"
+                  pagination:
+                    type: object
+                    properties:
+                      limit:
+                        type: number
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      has_more:
+                        type: boolean
+                    required:
+                      - limit
+                      - next_cursor
+                      - has_more
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - pagination
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/workers/{worker_id}/authorizations:
+    get:
+      tags:
+        - Work Authorization
+      summary: Otorisasi Kerja pekerja (semua riwayat, terbaru dahulu)
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: worker_id
+          in: path
+      responses:
+        "200":
+          description: Otorisasi
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/WorkerAuthorization"
+                  pagination:
+                    type: object
+                    properties:
+                      limit:
+                        type: number
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      has_more:
+                        type: boolean
+                    required:
+                      - limit
+                      - next_cursor
+                      - has_more
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - pagination
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    post:
+      tags:
+        - Work Authorization
+      summary: Mengajukan Otorisasi Kerja pekerja (PENDING)
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: worker_id
+          in: path
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkerAuthorizationCreate"
+      responses:
+        "201":
+          description: Diajukan
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/WorkerAuthorization"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: INVALID_STATE_TRANSITION, DUPLICATE
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "412":
+          description: VERSION_CONFLICT (disertai current_version)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: VALIDATION_ERROR, INVALID_DATE_RANGE, WORK_SCOPE_REQUIRED,
+            REASON_REQUIRED, FILE_NOT_CLEAN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/worker-authorizations/{id}:
+    get:
+      tags:
+        - Work Authorization
+      summary: Detail Otorisasi Kerja pekerja
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Otorisasi
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/WorkerAuthorization"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    patch:
+      tags:
+        - Work Authorization
+      summary: Mengubah Otorisasi Kerja (data inti pada record terverifikasi/ditolak
+        -> PENDING)
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+        - schema:
+            type: string
+            pattern: ^(?:W\/)?"?\d{1,9}"?$
+            description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+            example: '"3"'
+          required: true
+          description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+          name: if-match
+          in: header
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkerAuthorizationPatch"
+      responses:
+        "200":
+          description: Otorisasi
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/WorkerAuthorization"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: INVALID_STATE_TRANSITION, DUPLICATE
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "412":
+          description: VERSION_CONFLICT (disertai current_version)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: VALIDATION_ERROR, INVALID_DATE_RANGE, WORK_SCOPE_REQUIRED,
+            REASON_REQUIRED, FILE_NOT_CLEAN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/worker-authorizations/{id}/verify:
+    post:
+      tags:
+        - Work Authorization
+      summary: Memverifikasi Otorisasi Kerja (bukan pembuat)
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+        - schema:
+            type: string
+            pattern: ^(?:W\/)?"?\d{1,9}"?$
+            description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+            example: '"3"'
+          required: true
+          description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+          name: if-match
+          in: header
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkerAuthorizationAction"
+      responses:
+        "200":
+          description: Hasil
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/WorkerAuthorization"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED, SEPARATION_OF_DUTIES
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: INVALID_STATE_TRANSITION, DUPLICATE
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "412":
+          description: VERSION_CONFLICT (disertai current_version)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: VALIDATION_ERROR, INVALID_DATE_RANGE, WORK_SCOPE_REQUIRED,
+            REASON_REQUIRED, FILE_NOT_CLEAN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/worker-authorizations/{id}/reject:
+    post:
+      tags:
+        - Work Authorization
+      summary: Menolak Otorisasi Kerja (alasan wajib)
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+        - schema:
+            type: string
+            pattern: ^(?:W\/)?"?\d{1,9}"?$
+            description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+            example: '"3"'
+          required: true
+          description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+          name: if-match
+          in: header
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkerAuthorizationAction"
+      responses:
+        "200":
+          description: Hasil
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/WorkerAuthorization"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED, SEPARATION_OF_DUTIES
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: INVALID_STATE_TRANSITION, DUPLICATE
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "412":
+          description: VERSION_CONFLICT (disertai current_version)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: VALIDATION_ERROR, INVALID_DATE_RANGE, WORK_SCOPE_REQUIRED,
+            REASON_REQUIRED, FILE_NOT_CLEAN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/worker-authorizations/{id}/suspend:
+    post:
+      tags:
+        - Work Authorization
+      summary: Membekukan Otorisasi Kerja (HSE Manager, alasan wajib)
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+        - schema:
+            type: string
+            pattern: ^(?:W\/)?"?\d{1,9}"?$
+            description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+            example: '"3"'
+          required: true
+          description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+          name: if-match
+          in: header
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkerAuthorizationAction"
+      responses:
+        "200":
+          description: Hasil
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/WorkerAuthorization"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED, SEPARATION_OF_DUTIES
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: INVALID_STATE_TRANSITION, DUPLICATE
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "412":
+          description: VERSION_CONFLICT (disertai current_version)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: VALIDATION_ERROR, INVALID_DATE_RANGE, WORK_SCOPE_REQUIRED,
+            REASON_REQUIRED, FILE_NOT_CLEAN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/worker-authorizations/{id}/revoke:
+    post:
+      tags:
+        - Work Authorization
+      summary: Mencabut Otorisasi Kerja, bersifat akhir (HSE Manager, alasan wajib)
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+        - schema:
+            type: string
+            pattern: ^(?:W\/)?"?\d{1,9}"?$
+            description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+            example: '"3"'
+          required: true
+          description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+          name: if-match
+          in: header
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkerAuthorizationAction"
+      responses:
+        "200":
+          description: Hasil
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/WorkerAuthorization"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED, SEPARATION_OF_DUTIES
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: INVALID_STATE_TRANSITION, DUPLICATE
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "412":
+          description: VERSION_CONFLICT (disertai current_version)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: VALIDATION_ERROR, INVALID_DATE_RANGE, WORK_SCOPE_REQUIRED,
+            REASON_REQUIRED, FILE_NOT_CLEAN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/worker-authorizations/{id}/reinstate:
+    post:
+      tags:
+        - Work Authorization
+      summary: Memulihkan Otorisasi Kerja yang dibekukan (HSE Manager, alasan wajib)
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+        - schema:
+            type: string
+            pattern: ^(?:W\/)?"?\d{1,9}"?$
+            description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+            example: '"3"'
+          required: true
+          description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+          name: if-match
+          in: header
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkerAuthorizationAction"
+      responses:
+        "200":
+          description: Hasil
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/WorkerAuthorization"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED, SEPARATION_OF_DUTIES
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: INVALID_STATE_TRANSITION, DUPLICATE
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "412":
+          description: VERSION_CONFLICT (disertai current_version)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: VALIDATION_ERROR, INVALID_DATE_RANGE, WORK_SCOPE_REQUIRED,
+            REASON_REQUIRED, FILE_NOT_CLEAN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/worker-authorizations/{id}/document-url:
+    get:
+      tags:
+        - Work Authorization
+      summary: URL dokumen Otorisasi Kerja bertanda tangan berumur pendek (teraudit)
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: URL unduh
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    type: object
+                    properties:
+                      url:
+                        type: string
+                      expires_in:
+                        type: integer
+                    required:
+                      - url
+                      - expires_in
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND (tanpa dokumen atau di luar scope)
           content:
             application/json:
               schema:
@@ -6665,6 +7878,445 @@ paths:
                       - true
                   data:
                     $ref: "#/components/schemas/Competency"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
+            aktif)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "412":
+          description: VERSION_CONFLICT
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/authorization-types:
+    get:
+      tags:
+        - Work Authorization
+      summary: Daftar Jenis Otorisasi Kerja
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            enum:
+              - ACTIVE
+              - INACTIVE
+          required: false
+          name: status
+          in: query
+      responses:
+        "200":
+          description: Daftar Jenis Otorisasi Kerja (master data kecil, tanpa kursor;
+            maksimum 500)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AuthorizationType"
+                  pagination:
+                    type: object
+                    properties:
+                      limit:
+                        type: number
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      has_more:
+                        type: boolean
+                    required:
+                      - limit
+                      - next_cursor
+                      - has_more
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - pagination
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND (induk tidak ada atau di luar scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    post:
+      tags:
+        - Work Authorization
+      summary: Membuat Jenis Otorisasi Kerja
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthorizationTypeCreate"
+      responses:
+        "201":
+          description: Jenis Otorisasi Kerja dibuat
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/AuthorizationType"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
+            aktif)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/authorization-types/{id}:
+    get:
+      tags:
+        - Work Authorization
+      summary: Detail Jenis Otorisasi Kerja
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Jenis Otorisasi Kerja
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/AuthorizationType"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    patch:
+      tags:
+        - Work Authorization
+      summary: Mengubah Jenis Otorisasi Kerja
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+        - schema:
+            type: string
+            pattern: ^(?:W\/)?"?\d{1,9}"?$
+            description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+            example: '"3"'
+          required: true
+          description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+          name: if-match
+          in: header
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthorizationTypePatch"
+      responses:
+        "200":
+          description: Jenis Otorisasi Kerja
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/AuthorizationType"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
+            aktif)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "412":
+          description: VERSION_CONFLICT (disertai current_version)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/authorization-types/{id}/deactivate:
+    post:
+      tags:
+        - Work Authorization
+      summary: Menonaktifkan Jenis Otorisasi Kerja (soft delete)
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+        - schema:
+            type: string
+            pattern: ^(?:W\/)?"?\d{1,9}"?$
+            description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+            example: '"3"'
+          required: false
+          description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+          name: if-match
+          in: header
+      responses:
+        "200":
+          description: Jenis Otorisasi Kerja
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/AuthorizationType"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
+            aktif)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "412":
+          description: VERSION_CONFLICT
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/authorization-types/{id}/reactivate:
+    post:
+      tags:
+        - Work Authorization
+      summary: Mengaktifkan kembali Jenis Otorisasi Kerja
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+        - schema:
+            type: string
+            pattern: ^(?:W\/)?"?\d{1,9}"?$
+            description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+            example: '"3"'
+          required: false
+          description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+          name: if-match
+          in: header
+      responses:
+        "200":
+          description: Jenis Otorisasi Kerja
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/AuthorizationType"
                   request_id:
                     type: string
                 required:

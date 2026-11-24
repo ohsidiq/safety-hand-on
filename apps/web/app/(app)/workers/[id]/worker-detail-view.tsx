@@ -17,6 +17,7 @@ import {
   type Worker,
   workerErrorMessage,
 } from "@/lib/workers";
+import { AuthorizationSection } from "../../authorizations/authorization-section";
 import { CompetencySection } from "../../competencies/competency-section";
 import { EMPTY_PLACEMENT, type Placement, PlacementFields } from "../placement-fields";
 
@@ -183,6 +184,13 @@ export function WorkerDetailView({ id }: { id: string }) {
       </section>
       {can("competency.read") ? (
         <CompetencySection workerId={worker.id} canEdit={can("competency.update")} canVerify={can("competency.verify")} />
+      ) : null}
+      {can("authorization.read") ? (
+        <AuthorizationSection
+          workerId={worker.id}
+          canEdit={can("authorization.update")}
+          canVerify={can("authorization.verify")}
+        />
       ) : null}
     </>
   );
