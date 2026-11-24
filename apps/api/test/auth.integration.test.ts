@@ -105,18 +105,25 @@ describe.skipIf(!url)("Autentikasi + /auth/me (integrasi)", () => {
   });
 
   it("pencabutan role berlaku pada permintaan berikutnya (AUTH-API-007)", async () => {
+    // pengguna khusus uji ini: menambah peran pada akun seed bersama akan bocor ke uji lain yang berjalan paralel
+    const tmp = (
+      await db.query<{ id: string }>(
+        "insert into user_profile (organization_id, email, full_name, status) values ($1, $2, 'Uji Pencabutan', 'ACTIVE') returning id",
+        [orgA, `uji-cabut-${Math.random().toString(36).slice(2, 8)}@uji.contoh`],
+      )
+    ).rows[0]?.id as string;
     const ins = await db.query<{ id: string }>(
       `insert into user_role_assignment(user_id, organization_id, role_code, scope_type, granted_by)
        values ($1, $2, 'HSE_MANAGER', 'ORGANIZATION', $3) returning id`,
-      [u.hseo1, orgA, u.admin],
+      [tmp, orgA, u.admin],
     );
     const id = ins.rows[0]?.id as string;
     try {
-      let { data } = await (await me(u.hseo1 as string)).json();
+      let { data } = await (await me(tmp)).json();
       expect(data.role_assignments.map((r: { role_code: string }) => r.role_code)).toContain("HSE_MANAGER");
       expect(data.permissions).toContain("competency.verify");
       await db.query("update user_role_assignment set revoked_at = now(), revoked_by = $2 where id = $1", [id, u.admin]);
-      ({ data } = await (await me(u.hseo1 as string)).json());
+      ({ data } = await (await me(tmp)).json());
       expect(data.role_assignments.map((r: { role_code: string }) => r.role_code)).not.toContain("HSE_MANAGER");
       expect(data.permissions).not.toContain("competency.verify");
     } finally {
