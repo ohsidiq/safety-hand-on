@@ -75,7 +75,8 @@ describe.skipIf(!url)("Impor pekerja (integrasi)", () => {
     site1 = codes.rows[0]?.code as string;
     site2 = (
       await db.query<{ code: string }>(
-        "select code from site where organization_id = $1 and code <> $2 and status = 'ACTIVE' order by code limit 1",
+        // Site seed di luar scope hseo1 (uji lain dapat membuat Site baru secara paralel)
+        "select code from site where organization_id = $1 and code <> $2 and status = 'ACTIVE' and code like 'SITE-%' order by code limit 1",
         [org, site1],
       )
     ).rows[0]?.code as string;
