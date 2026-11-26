@@ -32,6 +32,10 @@ const Me = z
     language: z.enum(["id", "en"]),
     role_assignments: z.array(RoleAssignment),
     permissions: z.array(z.string()).openapi({ example: ["worker.read", "readiness.read"] }),
+    limited_permissions: z.array(z.string()).openapi({
+      description: "Permission tingkat LIMITED (mis. medical.update = pencatatan administratif)",
+      example: ["medical.update"],
+    }),
     self_permissions: z
       .array(z.string())
       .openapi({ description: "Permission tingkat SELF (hanya atas data pekerja sendiri)", example: ["competency.update"] }),
@@ -106,6 +110,7 @@ export function registerAuthMe(v1: OpenAPIHono<AuthEnv>, deps: { auth?: AuthVeri
         role_assignments: roles.rows.map((r) => ({ ...r, valid_until: r.valid_until?.toISOString() ?? null })),
         permissions: [...identity.permissions].sort(),
         self_permissions: [...(identity.selfPermissions ?? [])].sort(),
+        limited_permissions: [...(identity.limitedPermissions ?? [])].sort(),
         mfa_enabled: profile?.mfa_enabled ?? false,
         must_change_credential: false, // kredensial PIN pekerja belum ada (login lapangan menyusul)
       };

@@ -87,6 +87,8 @@ interface ResourceDef {
   managePerm?: string;
   /** Permission tingkat SELF yang juga boleh membaca (mis. pekerja memilih master saat mencatat kompetensinya). */
   readSelfAlso?: string[];
+  /** Permission FULL/TEAM lain yang juga boleh membaca (mis. medical.verify membaca jenis pemeriksaan). */
+  readAlso?: string[];
 }
 
 const META_COLS = "status, version, created_at, updated_at";
@@ -159,6 +161,17 @@ const SimperType = z
     ...Meta,
   })
   .openapi("SimperType");
+
+const MedicalExamType = z
+  .object({
+    id: z.uuid(),
+    name: z.string(),
+    code: z.string(),
+    description: z.string().nullable(),
+    default_validity_months: z.number().int().nullable(),
+    ...Meta,
+  })
+  .openapi("MedicalExamType");
 
 const RESOURCES: ResourceDef[] = [
   {
@@ -356,6 +369,33 @@ const RESOURCES: ResourceDef[] = [
     managePerm: "readiness_profile.manage",
     readSelfAlso: ["simper.update"],
   },
+  {
+    // API-005 §3: jenis pemeriksaan medis (tanpa data medis pekerja)
+    entity: "medical_exam_type",
+    tag: "Medical",
+    label: "Jenis pemeriksaan medis",
+    table: "medical_exam_type",
+    itemBase: "/medical-exam-types",
+    collectionPath: "/medical-exam-types",
+    columns: `id, name, code, description, default_validity_months, ${META_COLS}`,
+    item: MedicalExamType,
+    create: z
+      .object({ name: Name, code: Code, description: OptText(1000), default_validity_months: ValidityMonths })
+      .openapi("MedicalExamTypeCreate"),
+    patch: z
+      .object({
+        name: Name.optional(),
+        code: Code.optional(),
+        description: OptText(1000),
+        default_validity_months: ValidityMonths,
+      })
+      .openapi("MedicalExamTypePatch"),
+    writable: ["name", "code", "description", "default_validity_months"],
+    inUseIssue: "MEDICAL_EXAM_TYPE_IN_USE",
+    readPerm: "organization.read",
+    readAlso: ["medical.verify"],
+    managePerm: "readiness_profile.manage",
+  },
 ];
 
 // ---------------------------------------------------------------- pendaftaran
@@ -442,7 +482,7 @@ function registerOrganization(v1: V1, deps: Deps) {
 }
 
 function registerResource(v1: V1, deps: Deps, def: ResourceDef) {
-  const readGuard = guardAny(deps, [def.readPerm ?? "organization.read"], def.readSelfAlso ?? []);
+  const readGuard = guardAny(deps, [def.readPerm ?? "organization.read", ...(def.readAlso ?? [])], def.readSelfAlso ?? []);
   const manageGuard = guard(deps, def.managePerm ?? "organization.manage");
   const itemPath = `${def.itemBase}/{id}`;
   const IdParam = z.object({ id: z.uuid() });

@@ -164,7 +164,9 @@ describe.skipIf(!url)("Alur file (integrasi)", () => {
   });
 
   it("dokumen medis: bucket terpisah, Sensitif, unduh 60 detik; hanya pemegang medical.update", async () => {
-    expect((await register("hseo1", { purpose: "MEDICAL_DOCUMENT" })).status).toBe(403);
+    // M3.5: HSE Officer (medical.update LIMITED, pencatat administratif) boleh mengunggah; Supervisor tidak
+    expect((await register("spv1", { purpose: "MEDICAL_DOCUMENT" })).status).toBe(403);
+    expect((await register("hseo1", { purpose: "MEDICAL_DOCUMENT" })).status).toBe(201);
     const r = await register("medis", { purpose: "MEDICAL_DOCUMENT", original_name: "mcu.pdf" });
     expect(r.status).toBe(201);
     const p = await pathOf(r.body.data.file_id);

@@ -102,6 +102,11 @@ export interface Identity {
   permissions: ReadonlySet<string>;
   /** Permission tingkat SELF (hanya atas data pekerja miliknya; RLS menegakkan batasnya). Dipakai rute yang mendukung SELF. */
   selfPermissions?: ReadonlySet<string>;
+  /**
+   * Permission tingkat LIMITED. Hanya dipakai rute yang aturan LIMITED-nya sudah dibangun (mis. medical.update LIMITED =
+   * data administratif saja; medical.read_detail LIMITED = hanya dengan otorisasi tercatat). RLS menegakkan batasnya.
+   */
+  limitedPermissions?: ReadonlySet<string>;
   /** Konteks permintaan untuk audit (request_id, IP, perangkat). */
   ctx: RequestContext;
 }
@@ -137,7 +142,7 @@ export async function loadIdentity(
       }
       const perms = await tx.query<{ permission_code: string; constraint_level: string }>(
         `select distinct permission_code, constraint_level from app.my_permissions()
-          where constraint_level in ('FULL', 'TEAM') or (constraint_level = 'SELF' and app.my_worker_id() is not null)`,
+          where constraint_level in ('FULL', 'TEAM', 'LIMITED') or (constraint_level = 'SELF' and app.my_worker_id() is not null)`,
       );
       const row = p.rows[0];
       return {
@@ -145,7 +150,12 @@ export async function loadIdentity(
         identity: {
           userId,
           organizationId: row?.organization_id ?? null,
-          permissions: new Set(perms.rows.filter((r) => r.constraint_level !== "SELF").map((r) => r.permission_code)),
+          permissions: new Set(
+            perms.rows
+              .filter((r) => r.constraint_level === "FULL" || r.constraint_level === "TEAM")
+              .map((r) => r.permission_code),
+          ),
+          limitedPermissions: new Set(perms.rows.filter((r) => r.constraint_level === "LIMITED").map((r) => r.permission_code)),
           selfPermissions: new Set(perms.rows.filter((r) => r.constraint_level === "SELF").map((r) => r.permission_code)),
           ctx,
         },
