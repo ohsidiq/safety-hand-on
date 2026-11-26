@@ -194,6 +194,41 @@ begin
    where id = (select id from worker_authorization where organization_id = v_org and verification_status = 'VERIFIED'
                order by worker_id limit 1);
 
+  -- SIMPER sintetis (WF006): jenis, SIMPER pekerja Site 1 (sebagian), otorisasi per kelas alat dalam masa berlaku induk
+  insert into simper_type(organization_id, name, code, description, default_validity_months)
+  values (v_org, 'SIMPER Unit Produksi', 'SIMPER-PROD', 'Izin mengoperasikan alat produksi (sintetis)', 12),
+         (v_org, 'SIMPER Kendaraan Ringan', 'SIMPER-LV', 'Izin mengemudikan kendaraan ringan (sintetis)', 24);
+  insert into simper(organization_id, site_id, worker_id, simper_type_id, simper_number, valid_from, valid_until,
+                     verification_status, verified_by, verified_at, created_by)
+  select w.organization_id, w.site_id, w.id, t.id, 'SMP-SINTETIS-' || w.sho_id, x.vf, x.vf + 365,
+         case when x.p < 0.25 then 'PENDING' else 'VERIFIED' end,
+         case when x.p < 0.25 then null else (select id from user_profile where organization_id = v_org and email like 'hsemgr@%') end,
+         case when x.p < 0.25 then null else now() end,
+         (select u.id from user_profile u where u.organization_id = v_org and u.email like 'hseo1@%')
+  from worker w
+  join simper_type t on t.organization_id = v_org and t.code = 'SIMPER-PROD'
+  cross join lateral (select random() as p,
+                             current_date - 365 + (case when random() < 0.15 then -(1 + floor(random() * 30))::int
+                                                        when random() < 0.30 then (1 + floor(random() * 28))::int
+                                                        else (31 + floor(random() * 200))::int end) as vf
+                      where w.id is not null) x
+  where w.organization_id = v_org and w.site_id = (select id from site where organization_id = v_org and code = 'SITE-1')
+    and random() < 0.5;
+  -- kelas alat: Dump Truck untuk semua; Excavator untuk sebagian. Otorisasi dibuat sebelum status induk akhir agar
+  -- pemicu (induk kembali PENDING) tidak mengubah status hasil seed
+  create temp table _seed_simper_status on commit drop as
+    select id, verification_status, verified_by, verified_at from simper where organization_id = v_org;
+  insert into simper_authorization(organization_id, simper_id, equipment_class_id, valid_from, valid_until, created_by)
+  select s.organization_id, s.id, c.id, s.valid_from, s.valid_until, s.created_by
+  from simper s join equipment_class c on c.organization_id = v_org and c.code = 'DT' where s.organization_id = v_org;
+  insert into simper_authorization(organization_id, simper_id, equipment_class_id, valid_from, valid_until, restriction_note, created_by)
+  select s.organization_id, s.id, c.id, s.valid_from, s.valid_until, 'Hanya siang hari (sintetis)', s.created_by
+  from simper s join equipment_class c on c.organization_id = v_org and c.code = 'EXC'
+  where s.organization_id = v_org and s.id in (select id from simper where organization_id = v_org order by worker_id limit 3);
+  update simper s set verification_status = t.verification_status, verified_by = t.verified_by, verified_at = t.verified_at
+    from _seed_simper_status t where t.id = s.id and t.verification_status <> 'PENDING';
+  drop table _seed_simper_status;
+
   return v_org;
 end $$;
 

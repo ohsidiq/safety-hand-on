@@ -19,6 +19,7 @@ import {
 } from "@/lib/workers";
 import { AuthorizationSection } from "../../authorizations/authorization-section";
 import { CompetencySection } from "../../competencies/competency-section";
+import { SimperSection } from "../../simpers/simper-section";
 import { EMPTY_PLACEMENT, type Placement, PlacementFields } from "../placement-fields";
 
 /** Detail pekerja (UIUX-005 §4): ringkasan, ubah data, aksi status beralasan, riwayat penempatan. */
@@ -191,6 +192,9 @@ export function WorkerDetailView({ id }: { id: string }) {
           canEdit={can("authorization.update")}
           canVerify={can("authorization.verify")}
         />
+      ) : null}
+      {can("simper.read") ? (
+        <SimperSection workerId={worker.id} canEdit={can("simper.update")} canVerify={can("simper.verify")} />
       ) : null}
     </>
   );

@@ -14,6 +14,7 @@ import { registerFiles } from "./files.js";
 import type { NationalIdCrypto } from "./national-id.js";
 import { registerNotifications } from "./notifications.js";
 import { registerOrgStructure } from "./org-structure.js";
+import { registerSimpers } from "./simpers.js";
 import { type PushSender, registerSpikePush } from "./spike-push.js";
 import type { FileStorage } from "./storage.js";
 import { registerWorkerImport } from "./worker-import.js";
@@ -148,6 +149,7 @@ export function createApp(deps: AppDeps = {}) {
   // sebelum struktur organisasi: /competencies/pending-verification harus cocok sebelum /competencies/{id}
   registerCompetencies(v1, deps);
   registerAuthorizations(v1, deps);
+  registerSimpers(v1, deps);
   registerOrgStructure(v1, deps);
   registerFiles(v1, deps);
   registerWorkerImport(v1, deps);

@@ -149,6 +149,17 @@ const AuthorizationType = z
   })
   .openapi("AuthorizationType");
 
+const SimperType = z
+  .object({
+    id: z.uuid(),
+    name: z.string(),
+    code: z.string(),
+    description: z.string().nullable(),
+    default_validity_months: z.number().int().nullable(),
+    ...Meta,
+  })
+  .openapi("SimperType");
+
 const RESOURCES: ResourceDef[] = [
   {
     entity: "site",
@@ -316,6 +327,34 @@ const RESOURCES: ResourceDef[] = [
     readPerm: "organization.read",
     managePerm: "readiness_profile.manage",
     readSelfAlso: ["authorization.update"],
+  },
+  {
+    // API-007 §2: jenis SIMPER; kelas alat tetap di /equipment-classes
+    entity: "simper_type",
+    tag: "SIMPER",
+    label: "Jenis SIMPER",
+    table: "simper_type",
+    itemBase: "/simper-types",
+    collectionPath: "/simper-types",
+    columns: `id, name, code, description, default_validity_months, ${META_COLS}`,
+    item: SimperType,
+    create: z
+      .object({ name: Name, code: Code, description: OptText(1000), default_validity_months: ValidityMonths })
+      .openapi("SimperTypeCreate"),
+    patch: z
+      .object({
+        name: Name.optional(),
+        code: Code.optional(),
+        description: OptText(1000),
+        default_validity_months: ValidityMonths,
+      })
+      .openapi("SimperTypePatch"),
+    writable: ["name", "code", "description", "default_validity_months"],
+    // 409 SIMPER_TYPE_IN_USE menyusul bersama Requirement Profile (M4)
+    inUseIssue: "SIMPER_TYPE_IN_USE",
+    readPerm: "organization.read",
+    managePerm: "readiness_profile.manage",
+    readSelfAlso: ["simper.update"],
   },
 ];
 
