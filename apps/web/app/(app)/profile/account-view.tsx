@@ -7,6 +7,7 @@ import { useMe, useSession } from "@/lib/session";
 import { EMPLOYMENT_LABEL, WORKER_STATUS_LABEL, type Worker } from "@/lib/workers";
 import { AuthorizationSection } from "../authorizations/authorization-section";
 import { CompetencySection } from "../competencies/competency-section";
+import { SimperSection } from "../simpers/simper-section";
 
 /** Data pekerja milik akun (B-18, PB-009 worker.read S). Hanya baca; NIK tidak pernah ditampilkan. */
 function MyWorker() {
@@ -83,6 +84,14 @@ export function AccountView() {
           workerId={me.worker_id}
           title="Otorisasi Kerja saya"
           canEdit={(me.self_permissions ?? []).includes("authorization.update")}
+          canVerify={false}
+        />
+      ) : null}
+      {me.worker_id && (me.self_permissions ?? []).includes("simper.read") ? (
+        <SimperSection
+          workerId={me.worker_id}
+          title="SIMPER saya"
+          canEdit={(me.self_permissions ?? []).includes("simper.update")}
           canVerify={false}
         />
       ) : null}

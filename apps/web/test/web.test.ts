@@ -449,3 +449,53 @@ describe("Otorisasi Kerja (M3.3)", () => {
     expect(canSee(["authorization.read", "authorization.update"], "/authorizations")).toBe(false);
   });
 });
+
+describe("SIMPER (M3.4)", () => {
+  it("otorisasi kelas alat harus di dalam masa berlaku SIMPER", async () => {
+    const { classAuthWithinSimper } = await import("../lib/simpers");
+    const simper = { valid_from: "2026-01-01", valid_until: "2026-12-31" };
+    expect(classAuthWithinSimper({ valid_from: "2026-01-01", valid_until: "2026-12-31" }, simper)).toBeNull();
+    expect(classAuthWithinSimper({ valid_from: "2025-12-31", valid_until: "2026-06-01" }, simper)).toMatch(/sebelum SIMPER/);
+    expect(classAuthWithinSimper({ valid_from: "2026-02-01", valid_until: "" }, simper)).toMatch(/setelah SIMPER/);
+    expect(classAuthWithinSimper({ valid_from: "2026-02-01", valid_until: "" }, { ...simper, valid_until: "" })).toBeNull();
+    expect(classAuthWithinSimper({ valid_from: "2026-03-01", valid_until: "2026-02-01" }, simper)).toMatch(/lebih awal/);
+  });
+
+  it("aksi status kelas alat, ringkasan kelas aktif, pesan galat khusus", async () => {
+    const { classAuthActions, activeClasses, simperErrorMessage } = await import("../lib/simpers");
+    expect(classAuthActions("ACTIVE")).toEqual(["suspend", "revoke"]);
+    expect(classAuthActions("REVOKED")).toEqual([]);
+    const auth = (name: string, status: "ACTIVE" | "SUSPENDED" | "REVOKED") => ({
+      id: name,
+      simper_id: "s",
+      equipment_class: { id: name, name, code: name },
+      valid_from: "2026-01-01",
+      valid_until: null,
+      restriction_note: null,
+      status,
+      status_reason: null,
+      version: 1,
+    });
+    expect(activeClasses({ equipment_authorizations: [auth("Dump Truck", "ACTIVE"), auth("Excavator", "REVOKED")] })).toBe(
+      "Dump Truck",
+    );
+    expect(activeClasses({ equipment_authorizations: [] })).toMatch(/Tidak ada/);
+    expect(simperErrorMessage({ status: 422, code: "AUTHORIZATION_OUTSIDE_SIMPER_VALIDITY", details: [], extra: {} })).toMatch(
+      /masa berlaku SIMPER/,
+    );
+    expect(
+      simperErrorMessage({
+        status: 409,
+        code: "DUPLICATE",
+        details: [{ field: "equipment_class_id", issue: "already_authorized" }],
+        extra: {},
+      }),
+    ).toMatch(/Kelas alat ini/);
+  });
+
+  it("menu SIMPER untuk pemverifikasi atau pengelola jenis", async () => {
+    const { canSee } = await import("../lib/nav");
+    expect(canSee(["simper.verify"], "/simpers")).toBe(true);
+    expect(canSee(["simper.read", "simper.update"], "/simpers")).toBe(false);
+  });
+});
