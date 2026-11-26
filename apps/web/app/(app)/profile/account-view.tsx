@@ -7,6 +7,7 @@ import { useMe, useSession } from "@/lib/session";
 import { EMPLOYMENT_LABEL, WORKER_STATUS_LABEL, type Worker } from "@/lib/workers";
 import { AuthorizationSection } from "../authorizations/authorization-section";
 import { CompetencySection } from "../competencies/competency-section";
+import { MedicalSection } from "../medical/medical-section";
 import { SimperSection } from "../simpers/simper-section";
 
 /** Data pekerja milik akun (B-18, PB-009 worker.read S). Hanya baca; NIK tidak pernah ditampilkan. */
@@ -93,6 +94,17 @@ export function AccountView() {
           title="SIMPER saya"
           canEdit={(me.self_permissions ?? []).includes("simper.update")}
           canVerify={false}
+        />
+      ) : null}
+      {me.worker_id && (me.self_permissions ?? []).includes("medical.read_status") ? (
+        <MedicalSection
+          workerId={me.worker_id}
+          title="Medical saya"
+          canStatus
+          canRecord={false}
+          canDetail={(me.self_permissions ?? []).includes("medical.read_detail")}
+          canDetermine={false}
+          self
         />
       ) : null}
       <section className="card" aria-labelledby="peran">

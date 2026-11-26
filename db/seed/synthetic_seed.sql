@@ -229,6 +229,37 @@ begin
     from _seed_simper_status t where t.id = s.id and t.verification_status <> 'PENDING';
   drop table _seed_simper_status;
 
+  -- Medical sintetis (WF004): TANPA diagnosis. Dicatat HSE Officer (administratif), ditetapkan Medical Officer.
+  -- Sebaran: sebagian besar FIT, beberapa FIT_WITH_RESTRICTION (pembatasan operasional), satu TEMPORARILY_UNFIT,
+  -- satu UNFIT, sebagian belum ditetapkan.
+  insert into medical_exam_type(organization_id, name, code, default_validity_months)
+  values (v_org, 'MCU Awal', 'MCU-PRE', 12), (v_org, 'MCU Berkala', 'MCU-PERIODIC', 12);
+  insert into medical_record(organization_id, site_id, worker_id, exam_type_id, examination_date, expiry_date, provider, created_by)
+  select w.organization_id, w.site_id, w.id, t.id, x.ed, x.ed + 365, 'Klinik Sintetis Sejahtera',
+         (select u.id from user_profile u where u.organization_id = v_org and u.email like 'hseo1@%')
+  from worker w
+  join medical_exam_type t on t.organization_id = v_org and t.code = 'MCU-PERIODIC'
+  cross join lateral (select current_date - 365 + (case when random() < 0.15 then -(1 + floor(random() * 30))::int
+                                                        when random() < 0.30 then (1 + floor(random() * 28))::int
+                                                        else (31 + floor(random() * 200))::int end) as ed
+                      where w.id is not null) x
+  where w.organization_id = v_org and w.site_id = (select id from site where organization_id = v_org and code = 'SITE-1');
+  with ranked as (
+    select m.id, row_number() over (order by m.worker_id) as rn, count(*) over () as n from medical_record m where m.organization_id = v_org
+  )
+  update medical_record m set
+    verification_status = 'VERIFIED', verified_at = now(),
+    verified_by = (select id from user_profile where organization_id = v_org and email like 'medis@%'),
+    fitness_status = case when r.rn = 1 then 'UNFIT' when r.rn = 2 then 'TEMPORARILY_UNFIT'
+                          when r.rn in (3, 4) then 'FIT_WITH_RESTRICTION' else 'FIT' end,
+    unfit_until = case when r.rn = 2 then current_date + 30 end
+  from ranked r where r.id = m.id and r.rn <= r.n - 2;  -- dua terakhir belum ditetapkan
+  insert into medical_restriction(organization_id, medical_record_id, restriction_code, operational_description, valid_from,
+                                  valid_until, created_by)
+  select m.organization_id, m.id, 'NO_WORK_AT_HEIGHT', 'Tidak bekerja di ketinggian di atas 2 meter', m.examination_date,
+         m.examination_date + 180, m.verified_by
+  from medical_record m where m.organization_id = v_org and m.fitness_status = 'FIT_WITH_RESTRICTION';
+
   return v_org;
 end $$;
 

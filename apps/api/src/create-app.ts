@@ -11,6 +11,7 @@ import { registerCompetencies } from "./competencies.js";
 import { registerDashboard } from "./dashboard.js";
 import { type ErrorCode, errorBody, errorStatus } from "./errors.js";
 import { registerFiles } from "./files.js";
+import { registerMedical } from "./medical.js";
 import type { NationalIdCrypto } from "./national-id.js";
 import { registerNotifications } from "./notifications.js";
 import { registerOrgStructure } from "./org-structure.js";
@@ -150,6 +151,7 @@ export function createApp(deps: AppDeps = {}) {
   registerCompetencies(v1, deps);
   registerAuthorizations(v1, deps);
   registerSimpers(v1, deps);
+  registerMedical(v1, deps);
   registerOrgStructure(v1, deps);
   registerFiles(v1, deps);
   registerWorkerImport(v1, deps);

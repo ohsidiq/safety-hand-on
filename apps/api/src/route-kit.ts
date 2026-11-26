@@ -157,6 +157,20 @@ export const guardSelf = (deps: Deps, permission: string): MiddlewareHandler<Aut
   requirePermissionOrSelf(permission),
 ];
 
+/**
+ * Guard untuk permission yang aturan LIMITED/SELF-nya sudah dibangun di RLS (Medical): FULL/TEAM, LIMITED, atau SELF.
+ * Batas sebenarnya (record mana) ditegakkan RLS dan pemicu.
+ */
+export const guardScoped = (deps: Deps, permission: string): MiddlewareHandler<AuthEnv>[] => [
+  authenticate(deps),
+  async (c, next) => {
+    const id = c.get("identity");
+    const ok = id?.permissions.has(permission) || id?.limitedPermissions?.has(permission) || id?.selfPermissions?.has(permission);
+    if (!ok) return c.json(errorBody("FORBIDDEN", c.get("requestId")), 403);
+    await next();
+  },
+];
+
 /** Lolos bila salah satu permission ada (FULL/TEAM), atau permission tingkat SELF pada selfAlso. */
 export const guardAny = (deps: Deps, permissions: string[], selfAlso: string[] = []): MiddlewareHandler<AuthEnv>[] => [
   authenticate(deps),

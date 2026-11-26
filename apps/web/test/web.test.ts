@@ -499,3 +499,36 @@ describe("SIMPER (M3.4)", () => {
     expect(canSee(["simper.read", "simper.update"], "/simpers")).toBe(false);
   });
 });
+
+describe("Medical (M3.5)", () => {
+  it("aturan penetapan: pembatasan untuk FIT_WITH_RESTRICTION, tanggal untuk tidak fit sementara", async () => {
+    const { validateDetermination } = await import("../lib/medical");
+    const base = { fitness: "" as const, unfit_until: "", restriction_code: "", restriction_until: "" };
+    expect(validateDetermination(base, "2026-11-26")).toMatch(/Pilih status/);
+    expect(validateDetermination({ ...base, fitness: "FIT" }, "2026-11-26")).toBeNull();
+    expect(validateDetermination({ ...base, fitness: "FIT_WITH_RESTRICTION" }, "2026-11-26")).toMatch(/pembatasan/);
+    expect(
+      validateDetermination({ ...base, fitness: "FIT_WITH_RESTRICTION", restriction_code: "NO_WORK_AT_HEIGHT" }, "2026-11-26"),
+    ).toBeNull();
+    expect(validateDetermination({ ...base, fitness: "TEMPORARILY_UNFIT" }, "2026-11-26")).toMatch(/tidak fit sampai/);
+    expect(validateDetermination({ ...base, fitness: "TEMPORARILY_UNFIT", unfit_until: "2026-11-01" }, "2026-11-26")).toMatch(
+      /lewat/,
+    );
+  });
+
+  it("kode pembatasan hanya batasan kerja (tanpa istilah diagnosis) dan pesan galat akses", async () => {
+    const { RESTRICTION_CODES, medicalErrorMessage, MEDICAL_VALIDITY_LABEL } = await import("../lib/medical");
+    for (const r of RESTRICTION_CODES) {
+      expect(r.code).toMatch(/^[A-Z][A-Z0-9_]{2,49}$/);
+      expect(r.description).toMatch(/^(Tidak|Hanya)/);
+    }
+    expect(medicalErrorMessage({ status: 400, code: "ACCESS_REASON_REQUIRED", details: [], extra: {} })).toMatch(/alasan akses/);
+    expect(MEDICAL_VALIDITY_LABEL.SUSPENDED).toBe("Tidak fit");
+  });
+
+  it("menu Medical hanya untuk Medical Officer atau pengelola jenis; Supervisor tidak", async () => {
+    const { canSee } = await import("../lib/nav");
+    expect(canSee(["medical.verify"], "/medical")).toBe(true);
+    expect(canSee(["medical.read_status"], "/medical")).toBe(false);
+  });
+});

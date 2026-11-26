@@ -35,6 +35,8 @@ export interface Me {
   permissions: string[];
   /** Permission tingkat SELF (mis. pekerja mencatat kompetensinya sendiri). Server versi lama: tidak ada. */
   self_permissions?: string[];
+  /** Permission tingkat LIMITED (mis. medical.update = pencatatan administratif MCU). */
+  limited_permissions?: string[];
   mfa_enabled: boolean;
   must_change_credential: boolean;
 }
@@ -66,10 +68,18 @@ export async function fetchMe(accessToken: string, fetcher: typeof fetch = fetch
 export type ApiResult<T> = { ok: true; data: T; body: unknown } | { ok: false; status: number; code: string };
 
 /** GET ke Core API dengan token akses. Galat dikembalikan sebagai kode API-000, bukan dilempar. */
-export async function apiGet<T>(path: string, accessToken: string, fetcher: typeof fetch = fetch): Promise<ApiResult<T>> {
+export async function apiGet<T>(
+  path: string,
+  accessToken: string,
+  fetcher: typeof fetch = fetch,
+  headers: Record<string, string> = {},
+): Promise<ApiResult<T>> {
   if (!apiBaseUrl()) return { ok: false, status: 0, code: "UNAVAILABLE" };
   try {
-    const res = await fetcher(apiUrl(path), { headers: { Authorization: `Bearer ${accessToken}` }, cache: "no-store" });
+    const res = await fetcher(apiUrl(path), {
+      headers: { Authorization: `Bearer ${accessToken}`, ...headers },
+      cache: "no-store",
+    });
     const body = (await res.json().catch(() => ({}))) as { data?: T; error?: { code?: string } };
     if (res.ok && body.data !== undefined) return { ok: true, data: body.data, body };
     return { ok: false, status: res.status, code: body.error?.code ?? "UNAVAILABLE" };

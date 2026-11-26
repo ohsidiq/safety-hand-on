@@ -182,8 +182,12 @@ export function registerFiles(v1: V1, deps: FileDeps) {
     const identity = c.get("identity");
     const p = PURPOSES[b.purpose];
     // SELF (mis. WORKER competency.update SELF) boleh mengunggah dokumen untuk datanya sendiri; dokumen medis tidak
+    // dokumen medis: medical.update penuh atau LIMITED (pencatat administratif, HSE Officer/Site Admin)
     const allowed =
-      identity.permissions.has(p.permission) || (b.purpose !== "MEDICAL_DOCUMENT" && identity.selfPermissions?.has(p.permission));
+      identity.permissions.has(p.permission) ||
+      (b.purpose === "MEDICAL_DOCUMENT"
+        ? identity.limitedPermissions?.has(p.permission)
+        : identity.selfPermissions?.has(p.permission));
     if (!allowed) return respondFailure(c, new ApiFailure("FORBIDDEN"));
     const limit = MIME_LIMITS[b.mime_type] ?? 0;
     if (b.size_bytes > limit)

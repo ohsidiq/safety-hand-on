@@ -102,6 +102,14 @@ components:
           example:
             - worker.read
             - readiness.read
+        limited_permissions:
+          type: array
+          items:
+            type: string
+          description: Permission tingkat LIMITED (mis. medical.update = pencatatan
+            administratif)
+          example:
+            - medical.update
         self_permissions:
           type: array
           items:
@@ -121,6 +129,7 @@ components:
         - language
         - role_assignments
         - permissions
+        - limited_permissions
         - self_permissions
         - mfa_enabled
         - must_change_credential
@@ -1413,6 +1422,385 @@ components:
         reason:
           type: string
           maxLength: 500
+    MedicalRecord:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        worker_id:
+          type: string
+          format: uuid
+        site_id:
+          type: string
+          format: uuid
+        worker_name:
+          type:
+            - string
+            - "null"
+        sho_id:
+          type:
+            - string
+            - "null"
+        exam_type:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            name:
+              type:
+                - string
+                - "null"
+            code:
+              type:
+                - string
+                - "null"
+          required:
+            - id
+            - name
+            - code
+        examination_date:
+          type: string
+        expiry_date:
+          type: string
+        provider:
+          type:
+            - string
+            - "null"
+        has_document:
+          type: boolean
+        fitness_status:
+          type:
+            - string
+            - "null"
+          enum:
+            - FIT
+            - FIT_WITH_RESTRICTION
+            - TEMPORARILY_UNFIT
+            - UNFIT
+            - null
+        unfit_until:
+          type:
+            - string
+            - "null"
+        verification_status:
+          type: string
+          enum:
+            - PENDING
+            - VERIFIED
+            - REJECTED
+        verified_by_name:
+          type:
+            - string
+            - "null"
+        verified_at:
+          type:
+            - string
+            - "null"
+        determination_comment:
+          type:
+            - string
+            - "null"
+        rejection_reason:
+          type:
+            - string
+            - "null"
+        created_by:
+          type: string
+          format: uuid
+        created_by_name:
+          type:
+            - string
+            - "null"
+        created_at:
+          type: string
+        updated_at:
+          type: string
+        version:
+          type: integer
+        restrictions:
+          type: array
+          items:
+            allOf:
+              - $ref: "#/components/schemas/MedicalRestriction"
+              - type: object
+                properties:
+                  status:
+                    type: string
+                    enum:
+                      - ACTIVE
+                      - LIFTED
+                  lift_reason:
+                    type:
+                      - string
+                      - "null"
+                required:
+                  - status
+                  - lift_reason
+        can_determine:
+          type: boolean
+      required:
+        - id
+        - worker_id
+        - site_id
+        - worker_name
+        - sho_id
+        - exam_type
+        - examination_date
+        - expiry_date
+        - provider
+        - has_document
+        - fitness_status
+        - unfit_until
+        - verification_status
+        - verified_by_name
+        - verified_at
+        - determination_comment
+        - rejection_reason
+        - created_by
+        - created_by_name
+        - created_at
+        - updated_at
+        - version
+        - restrictions
+        - can_determine
+    MedicalRestriction:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        restriction_code:
+          type: string
+        operational_description:
+          type: string
+        valid_from:
+          type: string
+        valid_until:
+          type:
+            - string
+            - "null"
+      required:
+        - id
+        - restriction_code
+        - operational_description
+        - valid_from
+        - valid_until
+    MedicalStatus:
+      type: object
+      properties:
+        worker_id:
+          type: string
+          format: uuid
+        fitness_status:
+          type:
+            - string
+            - "null"
+          enum:
+            - FIT
+            - FIT_WITH_RESTRICTION
+            - TEMPORARILY_UNFIT
+            - UNFIT
+            - null
+        validity_status:
+          type: string
+          enum:
+            - VALID
+            - EXPIRING_SOON
+            - EXPIRED
+            - MISSING
+            - PENDING_VERIFICATION
+            - SUSPENDED
+        expiry_date:
+          type:
+            - string
+            - "null"
+        unfit_until:
+          type:
+            - string
+            - "null"
+        restrictions:
+          type: array
+          items:
+            $ref: "#/components/schemas/MedicalRestriction"
+        has_pending:
+          type: boolean
+      required:
+        - worker_id
+        - fitness_status
+        - validity_status
+        - expiry_date
+        - unfit_until
+        - restrictions
+        - has_pending
+    MedicalRecordCreate:
+      type: object
+      properties:
+        exam_type_id:
+          type: string
+          format: uuid
+        examination_date:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}$
+        expiry_date:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}$
+        provider:
+          type:
+            - string
+            - "null"
+          maxLength: 150
+        file_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+      required:
+        - exam_type_id
+        - examination_date
+        - expiry_date
+    MedicalRecordPatch:
+      type: object
+      properties:
+        exam_type_id:
+          type: string
+          format: uuid
+        examination_date:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}$
+        expiry_date:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}$
+        provider:
+          type:
+            - string
+            - "null"
+          maxLength: 150
+        file_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+    MedicalDetermination:
+      type: object
+      properties:
+        fitness_status:
+          type: string
+          enum:
+            - FIT
+            - FIT_WITH_RESTRICTION
+            - TEMPORARILY_UNFIT
+            - UNFIT
+        unfit_until:
+          type:
+            - string
+            - "null"
+          pattern: ^\d{4}-\d{2}-\d{2}$
+        restrictions:
+          type: array
+          items:
+            type: object
+            properties:
+              restriction_code:
+                type: string
+                pattern: ^[A-Z][A-Z0-9_]{2,49}$
+              operational_description:
+                type: string
+                minLength: 5
+                maxLength: 300
+              valid_from:
+                type: string
+                pattern: ^\d{4}-\d{2}-\d{2}$
+              valid_until:
+                type:
+                  - string
+                  - "null"
+                pattern: ^\d{4}-\d{2}-\d{2}$
+            required:
+              - restriction_code
+              - operational_description
+              - valid_from
+          maxItems: 10
+          default: []
+        comment:
+          type: string
+          maxLength: 500
+      required:
+        - fitness_status
+    MedicalReject:
+      type: object
+      properties:
+        reason:
+          type: string
+          maxLength: 500
+    MedicalLift:
+      type: object
+      properties:
+        reason:
+          type: string
+          maxLength: 500
+    MedicalAccessGrant:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        medical_record_id:
+          type: string
+          format: uuid
+        grantee_user_id:
+          type: string
+          format: uuid
+        grantee_name:
+          type:
+            - string
+            - "null"
+        granted_by_name:
+          type:
+            - string
+            - "null"
+        reason:
+          type: string
+        starts_at:
+          type: string
+        expires_at:
+          type: string
+        revoked_at:
+          type:
+            - string
+            - "null"
+        active:
+          type: boolean
+      required:
+        - id
+        - medical_record_id
+        - grantee_user_id
+        - grantee_name
+        - granted_by_name
+        - reason
+        - starts_at
+        - expires_at
+        - revoked_at
+        - active
+    MedicalAccessGrantCreate:
+      type: object
+      properties:
+        grantee_user_id:
+          type: string
+          format: uuid
+        reason:
+          type: string
+          minLength: 10
+          maxLength: 500
+        hours:
+          type: integer
+          minimum: 1
+          maximum: 24
+          default: 24
+      required:
+        - grantee_user_id
+        - reason
     Organization:
       type: object
       properties:
@@ -2146,6 +2534,94 @@ components:
         - name
         - code
     SimperTypePatch:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 150
+        code:
+          type: string
+          pattern: ^[A-Z0-9][A-Z0-9-]{1,29}$
+          description: Huruf besar, angka, tanda hubung; 2-30 karakter
+          example: SITE-A
+        description:
+          type:
+            - string
+            - "null"
+          maxLength: 1000
+        default_validity_months:
+          type:
+            - integer
+            - "null"
+          minimum: 1
+          maximum: 600
+    MedicalExamType:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        code:
+          type: string
+        description:
+          type:
+            - string
+            - "null"
+        default_validity_months:
+          type:
+            - integer
+            - "null"
+        status:
+          type: string
+          enum:
+            - ACTIVE
+            - INACTIVE
+        version:
+          type: integer
+        created_at:
+          type: string
+        updated_at:
+          type: string
+      required:
+        - id
+        - name
+        - code
+        - description
+        - default_validity_months
+        - status
+        - version
+        - created_at
+        - updated_at
+    MedicalExamTypeCreate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 150
+        code:
+          type: string
+          pattern: ^[A-Z0-9][A-Z0-9-]{1,29}$
+          description: Huruf besar, angka, tanda hubung; 2-30 karakter
+          example: SITE-A
+        description:
+          type:
+            - string
+            - "null"
+          maxLength: 1000
+        default_validity_months:
+          type:
+            - integer
+            - "null"
+          minimum: 1
+          maximum: 600
+      required:
+        - name
+        - code
+    MedicalExamTypePatch:
       type: object
       properties:
         name:
@@ -6494,6 +6970,1158 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/medical-records/pending-determination:
+    get:
+      tags:
+        - Medical
+      summary: Antrean penetapan Fit to Work (Medical Officer)
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: false
+          name: site_id
+          in: query
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+          required: false
+          name: limit
+          in: query
+      responses:
+        "200":
+          description: Antrean
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/MedicalRecord"
+                  pagination:
+                    type: object
+                    properties:
+                      limit:
+                        type: number
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      has_more:
+                        type: boolean
+                    required:
+                      - limit
+                      - next_cursor
+                      - has_more
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - pagination
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/workers/{worker_id}/medical-status:
+    get:
+      tags:
+        - Medical
+      summary: Status Fit to Work dan pembatasan operasional (tanpa detail medis)
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: worker_id
+          in: path
+      responses:
+        "200":
+          description: Status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/MedicalStatus"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/workers/{worker_id}/medical-restrictions:
+    get:
+      tags:
+        - Medical
+      summary: Pembatasan operasional aktif pekerja
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: worker_id
+          in: path
+      responses:
+        "200":
+          description: Pembatasan
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/MedicalRestriction"
+                  pagination:
+                    type: object
+                    properties:
+                      limit:
+                        type: number
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      has_more:
+                        type: boolean
+                    required:
+                      - limit
+                      - next_cursor
+                      - has_more
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - pagination
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/workers/{worker_id}/medical-records:
+    get:
+      tags:
+        - Medical
+      summary: Riwayat record medis (detail; X-Access-Reason wajib, teraudit)
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: worker_id
+          in: path
+        - schema:
+            type: string
+            maxLength: 500
+            description: Alasan akses detail medis (wajib, minimal 10 karakter), kecuali
+              pekerja membaca miliknya
+          required: false
+          description: Alasan akses detail medis (wajib, minimal 10 karakter), kecuali
+            pekerja membaca miliknya
+          name: x-access-reason
+          in: header
+      responses:
+        "200":
+          description: Riwayat
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/MedicalRecord"
+                  pagination:
+                    type: object
+                    properties:
+                      limit:
+                        type: number
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      has_more:
+                        type: boolean
+                    required:
+                      - limit
+                      - next_cursor
+                      - has_more
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - pagination
+                  - request_id
+        "400":
+          description: ACCESS_REASON_REQUIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    post:
+      tags:
+        - Medical
+      summary: Mencatat MCU (administratif; Fit to Work kosong sampai ditetapkan
+        Medical Officer)
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: worker_id
+          in: path
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MedicalRecordCreate"
+      responses:
+        "201":
+          description: Dicatat
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/MedicalRecord"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: INVALID_STATE_TRANSITION, DUPLICATE
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "412":
+          description: VERSION_CONFLICT
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: VALIDATION_ERROR, INVALID_DATE_RANGE, RESTRICTION_REQUIRED,
+            RESTRICTION_NOT_ALLOWED, UNFIT_UNTIL_REQUIRED, REASON_REQUIRED,
+            FILE_NOT_CLEAN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/medical-records/{id}:
+    get:
+      tags:
+        - Medical
+      summary: Detail satu record medis (X-Access-Reason wajib, teraudit)
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+        - schema:
+            type: string
+            maxLength: 500
+            description: Alasan akses detail medis (wajib, minimal 10 karakter), kecuali
+              pekerja membaca miliknya
+          required: false
+          description: Alasan akses detail medis (wajib, minimal 10 karakter), kecuali
+            pekerja membaca miliknya
+          name: x-access-reason
+          in: header
+      responses:
+        "200":
+          description: Detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/MedicalRecord"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "400":
+          description: ACCESS_REASON_REQUIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    patch:
+      tags:
+        - Medical
+      summary: Mengubah data administratif MCU (record ditetapkan kembali PENDING,
+        penetapan dikosongkan)
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+        - schema:
+            type: string
+            pattern: ^(?:W\/)?"?\d{1,9}"?$
+            description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+            example: '"3"'
+          required: true
+          description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+          name: if-match
+          in: header
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MedicalRecordPatch"
+      responses:
+        "200":
+          description: Diubah
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/MedicalRecord"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: INVALID_STATE_TRANSITION, DUPLICATE
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "412":
+          description: VERSION_CONFLICT
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: VALIDATION_ERROR, INVALID_DATE_RANGE, RESTRICTION_REQUIRED,
+            RESTRICTION_NOT_ALLOWED, UNFIT_UNTIL_REQUIRED, REASON_REQUIRED,
+            FILE_NOT_CLEAN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/medical-records/{id}/document-url:
+    get:
+      tags:
+        - Medical
+      summary: URL dokumen MCU bertanda tangan 60 detik (X-Access-Reason wajib,
+        teraudit)
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+        - schema:
+            type: string
+            maxLength: 500
+            description: Alasan akses detail medis (wajib, minimal 10 karakter), kecuali
+              pekerja membaca miliknya
+          required: false
+          description: Alasan akses detail medis (wajib, minimal 10 karakter), kecuali
+            pekerja membaca miliknya
+          name: x-access-reason
+          in: header
+      responses:
+        "200":
+          description: URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    type: object
+                    properties:
+                      url:
+                        type: string
+                      expires_in:
+                        type: integer
+                    required:
+                      - url
+                      - expires_in
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "400":
+          description: ACCESS_REASON_REQUIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: FILE_NOT_CLEAN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "503":
+          description: SERVICE_UNAVAILABLE
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/medical-records/{id}/determination:
+    post:
+      tags:
+        - Medical
+      summary: Penetapan Fit to Work (Medical Officer, bukan pembuat record)
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+        - schema:
+            type: string
+            pattern: ^(?:W\/)?"?\d{1,9}"?$
+            description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+            example: '"3"'
+          required: true
+          description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+          name: if-match
+          in: header
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MedicalDetermination"
+      responses:
+        "200":
+          description: Ditetapkan
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/MedicalRecord"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SEPARATION_OF_DUTIES
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: INVALID_STATE_TRANSITION, DUPLICATE
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "412":
+          description: VERSION_CONFLICT
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: VALIDATION_ERROR, INVALID_DATE_RANGE, RESTRICTION_REQUIRED,
+            RESTRICTION_NOT_ALLOWED, UNFIT_UNTIL_REQUIRED, REASON_REQUIRED,
+            FILE_NOT_CLEAN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/medical-records/{id}/reject:
+    post:
+      tags:
+        - Medical
+      summary: Menolak record MCU (Medical Officer, alasan wajib)
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+        - schema:
+            type: string
+            pattern: ^(?:W\/)?"?\d{1,9}"?$
+            description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+            example: '"3"'
+          required: true
+          description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+          name: if-match
+          in: header
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MedicalReject"
+      responses:
+        "200":
+          description: Ditolak
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/MedicalRecord"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SEPARATION_OF_DUTIES
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: INVALID_STATE_TRANSITION, DUPLICATE
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "412":
+          description: VERSION_CONFLICT
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: VALIDATION_ERROR, INVALID_DATE_RANGE, RESTRICTION_REQUIRED,
+            RESTRICTION_NOT_ALLOWED, UNFIT_UNTIL_REQUIRED, REASON_REQUIRED,
+            FILE_NOT_CLEAN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/medical-restrictions/{id}/lift:
+    post:
+      tags:
+        - Medical
+      summary: Mengakhiri pembatasan operasional lebih awal (Medical Officer, alasan
+        wajib)
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MedicalLift"
+      responses:
+        "200":
+          description: Diakhiri
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      status:
+                        type: string
+                        enum:
+                          - LIFTED
+                    required:
+                      - id
+                      - status
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: INVALID_STATE_TRANSITION, DUPLICATE
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "412":
+          description: VERSION_CONFLICT
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: VALIDATION_ERROR, INVALID_DATE_RANGE, RESTRICTION_REQUIRED,
+            RESTRICTION_NOT_ALLOWED, UNFIT_UNTIL_REQUIRED, REASON_REQUIRED,
+            FILE_NOT_CLEAN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/medical-access-grantees:
+    get:
+      tags:
+        - Medical
+      summary: Pengguna yang dapat menerima otorisasi akses detail medis (HSE Manager)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Penerima
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        full_name:
+                          type: string
+                      required:
+                        - id
+                        - full_name
+                  pagination:
+                    type: object
+                    properties:
+                      limit:
+                        type: number
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      has_more:
+                        type: boolean
+                    required:
+                      - limit
+                      - next_cursor
+                      - has_more
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - pagination
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/medical-records/{id}/access-grants:
+    get:
+      tags:
+        - Medical
+      summary: Otorisasi akses detail pada record
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Otorisasi
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/MedicalAccessGrant"
+                  pagination:
+                    type: object
+                    properties:
+                      limit:
+                        type: number
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      has_more:
+                        type: boolean
+                    required:
+                      - limit
+                      - next_cursor
+                      - has_more
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - pagination
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    post:
+      tags:
+        - Medical
+      summary: Memberi otorisasi akses detail berbatas waktu (<= 24 jam) kepada HSE
+        Manager
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MedicalAccessGrantCreate"
+      responses:
+        "201":
+          description: Diberikan
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/MedicalAccessGrant"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: INVALID_STATE_TRANSITION, DUPLICATE
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "412":
+          description: VERSION_CONFLICT
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: VALIDATION_ERROR, INVALID_DATE_RANGE, RESTRICTION_REQUIRED,
+            RESTRICTION_NOT_ALLOWED, UNFIT_UNTIL_REQUIRED, REASON_REQUIRED,
+            FILE_NOT_CLEAN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/medical-access-grants/{id}/revoke:
+    post:
+      tags:
+        - Medical
+      summary: Mencabut otorisasi akses detail
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Dicabut
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/MedicalAccessGrant"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: INVALID_STATE_TRANSITION, DUPLICATE
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "412":
+          description: VERSION_CONFLICT
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: VALIDATION_ERROR, INVALID_DATE_RANGE, RESTRICTION_REQUIRED,
+            RESTRICTION_NOT_ALLOWED, UNFIT_UNTIL_REQUIRED, REASON_REQUIRED,
+            FILE_NOT_CLEAN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
   /api/v1/organization:
     get:
       tags:
@@ -10558,6 +12186,445 @@ paths:
                       - true
                   data:
                     $ref: "#/components/schemas/SimperType"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
+            aktif)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "412":
+          description: VERSION_CONFLICT
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/medical-exam-types:
+    get:
+      tags:
+        - Medical
+      summary: Daftar Jenis pemeriksaan medis
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            enum:
+              - ACTIVE
+              - INACTIVE
+          required: false
+          name: status
+          in: query
+      responses:
+        "200":
+          description: Daftar Jenis pemeriksaan medis (master data kecil, tanpa kursor;
+            maksimum 500)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/MedicalExamType"
+                  pagination:
+                    type: object
+                    properties:
+                      limit:
+                        type: number
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      has_more:
+                        type: boolean
+                    required:
+                      - limit
+                      - next_cursor
+                      - has_more
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - pagination
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND (induk tidak ada atau di luar scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    post:
+      tags:
+        - Medical
+      summary: Membuat Jenis pemeriksaan medis
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MedicalExamTypeCreate"
+      responses:
+        "201":
+          description: Jenis pemeriksaan medis dibuat
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/MedicalExamType"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
+            aktif)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/medical-exam-types/{id}:
+    get:
+      tags:
+        - Medical
+      summary: Detail Jenis pemeriksaan medis
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Jenis pemeriksaan medis
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/MedicalExamType"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    patch:
+      tags:
+        - Medical
+      summary: Mengubah Jenis pemeriksaan medis
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+        - schema:
+            type: string
+            pattern: ^(?:W\/)?"?\d{1,9}"?$
+            description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+            example: '"3"'
+          required: true
+          description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+          name: if-match
+          in: header
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MedicalExamTypePatch"
+      responses:
+        "200":
+          description: Jenis pemeriksaan medis
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/MedicalExamType"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
+            aktif)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "412":
+          description: VERSION_CONFLICT (disertai current_version)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/medical-exam-types/{id}/deactivate:
+    post:
+      tags:
+        - Medical
+      summary: Menonaktifkan Jenis pemeriksaan medis (soft delete)
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+        - schema:
+            type: string
+            pattern: ^(?:W\/)?"?\d{1,9}"?$
+            description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+            example: '"3"'
+          required: false
+          description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+          name: if-match
+          in: header
+      responses:
+        "200":
+          description: Jenis pemeriksaan medis
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/MedicalExamType"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND (tidak ada atau di luar organisasi/scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: DUPLICATE (kode sudah dipakai) atau CONFLICT (masih dipakai pekerja
+            aktif)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "412":
+          description: VERSION_CONFLICT
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/medical-exam-types/{id}/reactivate:
+    post:
+      tags:
+        - Medical
+      summary: Mengaktifkan kembali Jenis pemeriksaan medis
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+        - schema:
+            type: string
+            pattern: ^(?:W\/)?"?\d{1,9}"?$
+            description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+            example: '"3"'
+          required: false
+          description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+          name: if-match
+          in: header
+      responses:
+        "200":
+          description: Jenis pemeriksaan medis
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/MedicalExamType"
                   request_id:
                     type: string
                 required:

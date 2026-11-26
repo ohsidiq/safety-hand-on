@@ -19,6 +19,7 @@ import {
 } from "@/lib/workers";
 import { AuthorizationSection } from "../../authorizations/authorization-section";
 import { CompetencySection } from "../../competencies/competency-section";
+import { MedicalSection } from "../../medical/medical-section";
 import { SimperSection } from "../../simpers/simper-section";
 import { EMPTY_PLACEMENT, type Placement, PlacementFields } from "../placement-fields";
 
@@ -32,6 +33,7 @@ export function WorkerDetailView({ id }: { id: string }) {
   const [mode, setMode] = useState<"view" | "edit" | "assign" | StatusAction>("view");
   const [message, setMessage] = useState<string | null>(null);
   const can = (p: string) => me.permissions.includes(p);
+  const canLimited = (p: string) => (me.limited_permissions ?? []).includes(p);
   const allowed = can("worker.read");
 
   const load = useCallback(async () => {
@@ -195,6 +197,15 @@ export function WorkerDetailView({ id }: { id: string }) {
       ) : null}
       {can("simper.read") ? (
         <SimperSection workerId={worker.id} canEdit={can("simper.update")} canVerify={can("simper.verify")} />
+      ) : null}
+      {can("medical.read_status") || canLimited("medical.update") || canLimited("medical.read_detail") ? (
+        <MedicalSection
+          workerId={worker.id}
+          canStatus={can("medical.read_status")}
+          canRecord={can("medical.update") || canLimited("medical.update")}
+          canDetail={can("medical.read_detail") || canLimited("medical.read_detail")}
+          canDetermine={can("medical.verify")}
+        />
       ) : null}
     </>
   );
