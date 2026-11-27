@@ -17,7 +17,11 @@ describe("Core API: kerangka v1", () => {
     const res = await app.request("/api/v1/health/ready");
     expect(res.status).toBe(503);
     const body = await res.json();
-    expect(body).toEqual({ success: false, data: { status: "DOWN" }, request_id: expect.any(String) });
+    expect(body).toEqual({
+      success: false,
+      data: { status: "DOWN", schema: { state: "UNKNOWN", expected: expect.stringMatching(/^\d{4}$/), applied: null } },
+      request_id: expect.any(String),
+    });
   });
 
   it("memakai X-Request-Id dari klien bila formatnya aman", async () => {

@@ -41,7 +41,7 @@ describe.skipIf(!url)("Core API + RLS (integrasi)", () => {
   it("/health/ready melapor UP bila migrasi sudah diterapkan", async () => {
     const res = await createApp({ db }).request("/api/v1/health/ready");
     expect(res.status).toBe(200);
-    expect(await res.json()).toMatchObject({ data: { status: "UP" } });
+    expect(await res.json()).toMatchObject({ data: { status: "UP", schema: { state: "IN_SYNC" } } });
   });
 
   it("withUser: manajer organisasi A tidak melihat satu pun pekerja organisasi B", async () => {

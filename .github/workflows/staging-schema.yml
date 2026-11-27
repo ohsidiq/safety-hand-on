@@ -1,0 +1,31 @@
+name: Sinkron skema staging
+
+# Menandai merah bila kode yang ter-deploy membutuhkan migrasi yang belum diterapkan ke Supabase staging
+# (pernah terjadi tiga kali: 0017, 0020, 0021). GitHub mengirim email saat workflow gagal.
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17,47 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: staging-schema
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Database staging sesuai kode ter-deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Periksa /health/ready (tunggu deploy setelah merge, sekali saat terjadwal)
+        env:
+          HEALTH_URL: ${{ vars.STAGING_HEALTH_URL || 'https://soh-api.vercel.app/api/v1/health/ready' }}
+          MODE: ${{ github.event_name == 'push' && 'wait' || 'once' }}
+          WAIT_MINUTES: "20"
+        run: bash scripts/check-staging-schema.sh
