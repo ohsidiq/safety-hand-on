@@ -587,3 +587,76 @@ describe("Medical (M3.5, B-27 Dokter)", () => {
     expect(canSee(["medical.read_status", "medical.read_detail", "medical.update"], "/medical")).toBe(false);
   });
 });
+
+describe("Antrean verifikasi gabungan (M3.6b)", () => {
+  const base = { worker_name: "Budi Sintetis", sho_id: "SHO-0001" };
+  const now = Date.parse("2026-11-28T00:00:00Z");
+
+  it("menggabungkan empat modul, terlama dahulu, dengan jenis, nama data, dan tanda pembuat", async () => {
+    const { mergeQueue } = await import("../lib/verifications");
+    const q = mergeQueue(
+      {
+        COMPETENCY: [
+          {
+            ...base,
+            id: "c1",
+            worker_id: "w1",
+            updated_at: "2026-11-27T08:00:00Z",
+            can_verify: true,
+            competency: { name: "Las" },
+          },
+        ] as never,
+        AUTHORIZATION: [
+          {
+            ...base,
+            id: "a1",
+            worker_id: "w2",
+            updated_at: "2026-11-20T08:00:00Z",
+            can_verify: false,
+            authorization_type: { name: "Kerja Panas" },
+          },
+        ] as never,
+        SIMPER: [
+          {
+            ...base,
+            id: "s1",
+            worker_id: "w3",
+            updated_at: "2026-11-25T08:00:00Z",
+            can_verify: true,
+            simper_type: { name: "SIMPER Tambang" },
+          },
+        ] as never,
+        MEDICAL: [
+          {
+            ...base,
+            id: "m1",
+            worker_id: "w4",
+            updated_at: "2026-11-26T08:00:00Z",
+            can_determine: true,
+            exam_type: { name: "MCU Berkala" },
+          },
+        ] as never,
+      },
+      now,
+    );
+    expect(q.map((e) => e.kind)).toEqual(["AUTHORIZATION", "SIMPER", "MEDICAL", "COMPETENCY"]);
+    expect(q[0]).toMatchObject({ itemName: "Kerja Panas", mine: true, waitingDays: 7, key: "AUTHORIZATION:a1" });
+    expect(q[3]).toMatchObject({ itemName: "Las", mine: false, waitingDays: 0 });
+    expect(mergeQueue({}, now)).toEqual([]);
+  });
+
+  it("label lama menunggu menandai lebih dari 3 hari", async () => {
+    const { waitingLabel } = await import("../lib/verifications");
+    expect(waitingLabel(0)).toEqual({ text: "hari ini", overdue: false });
+    expect(waitingLabel(3)).toEqual({ text: "3 hari", overdue: false });
+    expect(waitingLabel(4)).toEqual({ text: "4 hari", overdue: true });
+  });
+
+  it("menu Antrean Verifikasi untuk pemegang izin verifikasi mana pun; Supervisor dan pekerja tidak", async () => {
+    const { canSee } = await import("../lib/nav");
+    const { QUEUE_SOURCES } = await import("../lib/verifications");
+    for (const s of QUEUE_SOURCES) expect(canSee([s.permission], "/verifications")).toBe(true);
+    expect(canSee(["medical.read_status", "worker.read"], "/verifications")).toBe(false);
+    expect(canSee([], "/verifications")).toBe(false);
+  });
+});
