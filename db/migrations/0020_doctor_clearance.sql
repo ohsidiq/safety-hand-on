@@ -25,11 +25,17 @@ delete from role_permission where role_code = 'MEDICAL_OFFICER' and permission_c
 -- ---------------------------------------------------------------- 2. Fit to Work empat hasil + tindak lanjut
 alter table medical_record add column follow_up_note text check (length(follow_up_note) <= 300),
                            add column follow_up_due date;
-update medical_record set fitness_status = 'UNFIT' where fitness_status = 'TEMPORARILY_UNFIT';
+-- aturan lama dilepas dulu (keduanya menolak hasil konversi), lalu data lama dikonversi, lalu aturan baru dipasang.
 alter table medical_record drop constraint medical_record_fitness_status_check;
+alter table medical_record drop constraint medical_record_unfit_until_chk;
+-- konversi data lama: penjaga menolak perubahan Fit to Work di luar penetapan, jadi dimatikan hanya untuk baris ini
+-- (di dalam transaksi migrasi). Pemicu audit tetap aktif sehingga konversi tercatat. Diubah atas izin pemilik
+-- 2026-11-27 setelah penerapan pertama di staging gagal dan dibatalkan (belum pernah berhasil diterapkan).
+alter table medical_record disable trigger medical_record_guard;
+update medical_record set fitness_status = 'UNFIT' where fitness_status = 'TEMPORARILY_UNFIT';
+alter table medical_record enable trigger medical_record_guard;
 alter table medical_record add constraint medical_record_fitness_status_check
   check (fitness_status in ('FIT', 'FIT_WITH_CONDITION', 'FIT_WITH_RESTRICTION', 'UNFIT'));
-alter table medical_record drop constraint medical_record_unfit_until_chk;
 -- unfit_until = tanggal tinjau ulang, hanya untuk UNFIT (opsional)
 alter table medical_record add constraint medical_record_unfit_until_chk
   check (unfit_until is null or fitness_status = 'UNFIT');
