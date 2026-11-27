@@ -7,7 +7,7 @@ begin;
 
 do $test$
 declare
-  org_a uuid; site_a1 uuid; site_tz text; today date;
+  org_a uuid; site_a1 uuid; team_a1 uuid; site_tz text; today date;
   u_adm uuid; u_mgr uuid; u_hseo uuid; u_spvtim uuid; u_mo uuid; u_doc uuid; u_wrk uuid; u_b uuid;
   w_a uuid; w_b uuid; w_c uuid; w_d uuid; w_e uuid; w_self uuid;
   pos uuid; cmp uuid; atype uuid; stype uuid; eclass uuid; t_mcu uuid;
@@ -16,8 +16,6 @@ declare
   i int; w uuid; wsite uuid; r record; n bigint; v int; checks int := 0;
 begin
   select id into org_a from organization order by name limit 1;
-  select id, timezone into site_a1, site_tz from site where organization_id = org_a and code = 'SITE-1';
-  today := app.site_today(site_a1);
   select id into u_adm from user_profile where organization_id = org_a and email like 'admin@%';
   select id into u_mgr from user_profile where organization_id = org_a and email like 'hsemgr@%';
   select id into u_hseo from user_profile where organization_id = org_a and email like 'hseo1@%';
@@ -28,15 +26,24 @@ begin
   select id into u_b from user_profile where organization_id = (select id from organization order by name offset 1 limit 1)
     and email like 'admin@%';
   select id into w_self from worker where user_id = u_wrk;
+  -- Site dan tim diambil dari penugasan Supervisor Tim (kode Site di staging dapat diubah pemilik)
+  select ura.scope_id, t.site_id into team_a1, site_a1 from user_role_assignment ura join team t on t.id = ura.scope_id
+   where ura.user_id = u_spvtim and ura.scope_type = 'TEAM' and ura.revoked_at is null limit 1;
+  select timezone into site_tz from site where id = site_a1;
+  today := app.site_today(site_a1);
   -- empat pekerja dalam tim Supervisor Tim (Site 1), satu pekerja Site 1 di luar tim
   select array_agg(x.worker_id) into workers from (
     select tm.worker_id from team_member tm join team t on t.id = tm.team_id join worker wk on wk.id = tm.worker_id
-     where t.site_id = site_a1 and t.code = 'TIM-PROD' and wk.worker_status = 'ACTIVE' and wk.user_id is null
+     where t.id = team_a1 and wk.worker_status = 'ACTIVE' and wk.user_id is null
      order by tm.worker_id limit 4) x;
   w_a := workers[1]; w_b := workers[2]; w_c := workers[3]; w_d := workers[4];
   select wk.id into w_e from worker wk where wk.site_id = site_a1 and wk.worker_status = 'ACTIVE' and wk.user_id is null
-    and not exists (select 1 from team_member tm join team t on t.id = tm.team_id where tm.worker_id = wk.id and t.code = 'TIM-PROD')
+    and not exists (select 1 from team_member tm where tm.worker_id = wk.id and tm.team_id = team_a1)
     order by wk.id limit 1;
+  if (select scope_id from user_role_assignment where user_id = u_hseo and scope_type = 'SITE' and revoked_at is null limit 1)
+       is distinct from site_a1 or (select site_id from worker where id = w_self) = site_a1 then
+    raise exception 'PRASYARAT GAGAL: HSE Officer 1 harus di Site tim dan pekerja1 di Site lain';
+  end if;
   if w_d is null or w_e is null or w_self is null then raise exception 'PRASYARAT GAGAL: pekerja uji tidak lengkap'; end if;
 
   insert into job_position (organization_id, name, code, job_family) values (org_a, 'Uji Readiness', 'UJI-RE', 'Umum')
