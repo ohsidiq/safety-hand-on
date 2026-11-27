@@ -85,7 +85,7 @@ describe.skipIf(!url)("Worker pengingat kedaluwarsa (integrasi)", () => {
       if (!row) throw new Error("seed tidak lengkap");
       const cmp = (
         await db.query<{ id: string }>(
-          "insert into competency (organization_id, name, code) values ($1, 'Uji Worker Pengingat', 'UJI-WRK-' || substr(md5(random()::text), 1, 6)) returning id",
+          "insert into competency (organization_id, name, code) values ($1, 'Uji Worker Pengingat', 'UJI-WRK-' || upper(substr(md5(random()::text), 1, 6))) returning id",
           [row.org],
         )
       ).rows[0]?.id;
