@@ -70,6 +70,7 @@ export interface MedicalClearanceType {
   validity_hours: number;
   blocking_restriction_codes: string[];
   status: "ACTIVE" | "INACTIVE";
+  version: number;
 }
 
 /** Pemeriksaan kesiapan kerja khusus (tingkat status, tanpa checklist). */
@@ -206,6 +207,8 @@ export function medicalErrorMessage(e: ApiError): string {
       return "Status record sudah berubah. Muat ulang.";
     case "VERSION_CONFLICT":
       return "Data diubah orang lain. Muat ulang lalu coba lagi.";
+    case "DUPLICATE":
+      return "Kode sudah dipakai jenis lain yang aktif.";
     case "REASON_REQUIRED":
       return "Alasan wajib diisi.";
     case "FILE_NOT_CLEAN":
@@ -221,4 +224,22 @@ export function medicalErrorMessage(e: ApiError): string {
     default:
       return "Permintaan gagal. Coba lagi.";
   }
+}
+
+/** Nilai formulir jenis kerja khusus (tambah dan ubah). */
+export interface ClearanceTypeFormValue {
+  name: string;
+  code: string;
+  hours: string;
+  blocking: string[];
+}
+
+/** Validasi sisi klien (sama dengan server): nama 2-150, kode huruf besar/angka/tanda hubung, 1-24 jam. */
+export function validateClearanceType(v: ClearanceTypeFormValue): string | null {
+  if (v.name.trim().length < 2) return "Nama minimal 2 karakter.";
+  if (!/^[A-Z0-9][A-Z0-9-]{1,29}$/.test(v.code.trim().toUpperCase()))
+    return "Kode: huruf besar, angka, tanda hubung; 2-30 karakter.";
+  const hours = Number(v.hours);
+  if (!Number.isInteger(hours) || hours < 1 || hours > 24) return "Masa berlaku 1-24 jam.";
+  return null;
 }
