@@ -101,7 +101,11 @@ begin
 
   -- W5 penempatan: menutup penempatan lama, memperbarui proyeksi, data turunan ikut pindah Site; tumpang tindih ditolak
   select w.id into w_notteam from worker w where w.organization_id = org_a and w.site_id = site_a1 and w.employment_status = 'PERMANENT'
-    and exists (select 1 from competency_record c where c.worker_id = w.id) limit 1;
+    and w.department_id = dep_a1_maint and w.id <> w_new order by w.id limit 1;  -- di luar team_a1 (dipakai W9)
+  insert into competency (organization_id, name, code) values (org_a, 'Uji Mutasi', 'UJI-MUTASI');
+  insert into worker_competency (organization_id, site_id, worker_id, competency_id, valid_from, created_by)
+  select org_a, site_a1, w_notteam, c.id, current_date - 10, u_adm_a from competency c
+   where c.organization_id = org_a and c.code = 'UJI-MUTASI';
   insert into worker_assignment (organization_id, worker_id, site_id, department_id, job_position_id, effective_from, reason)
   values (org_a, w_notteam, site_a2, dep_a2_prod, pos_helper, current_date + 10, 'MUTASI');
   select * into r from worker where id = w_notteam;
@@ -111,7 +115,7 @@ begin
   if not exists (select 1 from worker_assignment where worker_id = w_notteam and effective_until = current_date + 9) then
     raise exception 'W5 GAGAL: penempatan lama tidak ditutup sehari sebelum tanggal berlaku';
   end if;
-  if exists (select 1 from competency_record where worker_id = w_notteam and site_id <> site_a2) then
+  if exists (select 1 from worker_competency where worker_id = w_notteam and site_id <> site_a2) then
     raise exception 'W5 GAGAL: data turunan tidak ikut pindah Site';
   end if;
   begin

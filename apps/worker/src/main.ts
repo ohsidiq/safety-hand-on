@@ -3,6 +3,7 @@ import { drainAudit, ensureAuditPartitions } from "./audit.js";
 import { handlers } from "./handlers.js";
 import { enqueueExpiryReminders, processNotifications } from "./notifications.js";
 import { processBatch } from "./outbox.js";
+import { evaluateDueReadiness, processReadiness } from "./readiness.js";
 
 const db = createPool();
 const batchSize = Number(process.env.WORKER_BATCH_SIZE ?? 50);
@@ -18,6 +19,7 @@ for (const sig of ["SIGINT", "SIGTERM"] as const) {
 
 let lastPartitionCheck = 0;
 let lastReminderRun = 0;
+let lastReadinessDue = 0;
 
 async function tick() {
   if (Date.now() - lastPartitionCheck > 6 * 60 * 60 * 1000) {
@@ -30,6 +32,18 @@ async function tick() {
     const queued = await enqueueExpiryReminders(db);
     if (queued > 0) console.log(JSON.stringify({ level: "info", msg: "expiry reminders queued", queued }));
     lastReminderRun = Date.now();
+  }
+  if (Date.now() - lastReadinessDue > 60 * 60 * 1000) {
+    // Tiap jam: hanya pekerja yang jatuh tempo (next_evaluation_at) atau belum pernah dievaluasi (SRS-RE 7.3).
+    const evaluated = await evaluateDueReadiness(db);
+    if (evaluated > 0) console.log(JSON.stringify({ level: "info", msg: "readiness due evaluated", evaluated }));
+    lastReadinessDue = Date.now();
+  }
+  const readiness = await processReadiness(db);
+  if (readiness.events > 0) console.log(JSON.stringify({ level: "info", msg: "readiness batch", ...readiness }));
+  if (readiness.failed > 0) {
+    // FR-RE-012/BR-RE-014: kegagalan evaluasi dicatat, peristiwa tetap di antrean untuk dicoba ulang
+    console.error(JSON.stringify({ level: "error", msg: "readiness evaluation failed", failed: readiness.failed }));
   }
   const audit = await drainAudit(db);
   if (audit.moved > 0) console.log(JSON.stringify({ level: "info", msg: "audit batch", ...audit }));

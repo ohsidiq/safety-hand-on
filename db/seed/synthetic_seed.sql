@@ -16,7 +16,6 @@ language plpgsql set search_path = public, pg_temp as $$
 declare
   v_org uuid;
   v_admin uuid;
-  v_req text[] := array['K3 Umum','Induksi Site','Sertifikat Posisi','Otorisasi Kerja'];
   v_pos text[] := array['Operator Alat Berat','Welder','Helper'];
 begin
   insert into organization(name, code) values (p_name, upper(regexp_replace(p_name, '[^A-Za-z0-9]', '', 'g')))
@@ -81,9 +80,6 @@ begin
   from user_profile u
   where u.organization_id = v_org and (u.email like 'spv%' or u.email like 'hseo%');
 
-  insert into requirement_item(organization_id, job_position, requirement_name)
-  select v_org, p, r from unnest(v_pos) p, unnest(v_req) r;
-
   -- pekerja: ~30% Site 1 berstatus CONTRACTOR (kontraktor A, terhubung Site 1), ~10% Site 2 kontraktor B
   -- (terhubung Site 2, ER-012/ER-013), sebagian CONTRACT, sisanya PERMANENT. SHO ID dibuat trigger.
   insert into worker(organization_id, site_id, full_name, employee_number, employment_status, contractor_id, join_date,
@@ -106,28 +102,7 @@ begin
   from worker w join team t on t.department_id = w.department_id
   where w.organization_id = v_org;
 
-  -- kompetensi: ~5% kosong, ~10% kedaluwarsa, ~15% segera berakhir (<30 hari), sisanya valid
-  insert into competency_record(organization_id, site_id, worker_id, requirement_name, expires_on, verified_at)
-  select w.organization_id, w.site_id, w.id, r.name,
-         case when x.p < 0.15 then current_date - (1 + floor(random() * 60))::int
-              when x.p < 0.30 then current_date + (1 + floor(random() * 28))::int
-              else current_date + (31 + floor(random() * 360))::int end,
-         case when random() < 0.95 then now() else null end
-  from worker w
-  cross join unnest(v_req) as r(name)
-  cross join lateral (select random() as p) x
-  where w.organization_id = v_org and random() >= 0.05;
-
-  insert into medical_status(worker_id, organization_id, site_id, status, expires_on)
-  select w.id, w.organization_id, w.site_id,
-         case when random() < 0.97 then 'FIT' else 'UNFIT' end,
-         case when random() < 0.08 then current_date - (1 + floor(random() * 30))::int
-              else current_date + (30 + floor(random() * 330))::int end
-  from worker w where w.organization_id = v_org;
-
-  insert into medical_detail(worker_id, organization_id, site_id, detail)
-  select w.id, w.organization_id, w.site_id, 'Catatan medis sintetis ' || w.full_name
-  from worker w where w.organization_id = v_org;
+  -- data kesiapan (kompetensi, otorisasi, SIMPER, medis) dibuat lewat modulnya masing-masing; tabel spike M0 dihapus di 0023
 
   -- satu akun pekerja lapangan sintetis (role WORKER, scope SELF) yang terhubung lewat worker.user_id (B-18)
   insert into user_profile(organization_id, email, full_name, status)

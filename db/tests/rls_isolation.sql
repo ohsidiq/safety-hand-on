@@ -99,29 +99,12 @@ begin
   if n <> 0 then raise exception 'T4 GAGAL: Supervisor melihat % pekerja Site lain', n; end if;
   select count(*) into n from worker;
   if n = 0 then raise exception 'T4 GAGAL: Supervisor tidak melihat pekerja Site-nya'; end if;
-  select count(*) into n from competency_record where site_id <> site_a1;
+  select count(*) into n from worker_competency where site_id <> site_a1;
   if n <> 0 then raise exception 'T4 GAGAL: Supervisor melihat kompetensi Site lain'; end if;
   checks := checks + 3;
 
-  -- T5 pemisahan Medical (PB-009): Supervisor hanya STATUS di Site-nya (T), tanpa detail;
-  -- HSE Manager status saja (detail LIMITED ditolak bawaan); detail hanya Medical Officer (FULL)
-  select count(*) into n from medical_status where site_id <> site_a1;
-  if n <> 0 then raise exception 'T5 GAGAL: Supervisor melihat status Medical Site lain'; end if;
-  select count(*) into n from medical_status;
-  if n = 0 then raise exception 'T5 GAGAL: Supervisor tidak melihat status Medical Site-nya (PB-009 T)'; end if;
-  select count(*) into n from medical_detail;
-  if n <> 0 then raise exception 'T5 GAGAL: Supervisor melihat detail Medical'; end if;
-  perform set_config('app.user_id', u_mgr_a::text, true);
-  select count(*) into n from medical_status;
-  if n = 0 then raise exception 'T5 GAGAL: HSE Manager tidak melihat status Medical'; end if;
-  select count(*) into n from medical_detail;
-  if n <> 0 then raise exception 'T5 GAGAL: HSE Manager melihat detail Medical'; end if;
-  perform set_config('app.user_id', u_med_a::text, true);
-  select count(*) into n from medical_detail;
-  if n = 0 then raise exception 'T5 GAGAL: peran Medical tidak melihat detail'; end if;
-  select count(*) into n from medical_detail where organization_id <> org_a;
-  if n <> 0 then raise exception 'T5 GAGAL: detail Medical lintas tenant'; end if;
-  checks := checks + 7;
+  -- T5 pemisahan Medical (PB-009) diuji pada modul aslinya: medical.sql / medical_clearance.sql (record, status, detail)
+  -- dan readiness_engine.sql (penyamaran item medis). Tabel spike M0 medical_status/medical_detail dihapus di 0023.
 
   -- T10 profil pengguna: pengguna biasa hanya melihat profilnya sendiri; Company Admin melihat seluruh organisasinya
   perform set_config('app.user_id', u_spv_a::text, true);
