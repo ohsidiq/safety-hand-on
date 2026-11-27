@@ -3,7 +3,7 @@
  * WAJIB dinaikkan di PR yang menambah migrasi; uji `schema-version.test.ts` gagal bila tidak sama.
  * Dipakai /health/ready untuk melaporkan apakah database tertinggal dari kode yang ter-deploy.
  */
-export const EXPECTED_SCHEMA = "0021";
+export const EXPECTED_SCHEMA = "0022";
 
 export type SchemaState = "IN_SYNC" | "BEHIND" | "AHEAD" | "UNKNOWN";
 

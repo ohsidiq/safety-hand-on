@@ -25,10 +25,16 @@ begin
   perform app.notification_process(100000);
   reset role;
 
-  -- N1 katalog: 24 tipe (DB-007), hanya SYSTEM_ALERT aktif pada P0, Critical tidak dapat dinonaktifkan
+  -- N1 katalog: 24 tipe (DB-007). Aktif: SYSTEM_ALERT (P0) dan tipe P1 yang modulnya sudah ada (M3.6a, 0022);
+  -- tipe aktif wajib punya template (FR-PLT02-016). Critical tidak dapat dinonaktifkan
   if (select count(*) from notification_type) <> 24 then raise exception 'N1 GAGAL: katalog bukan 24 tipe'; end if;
-  if (select array_agg(code) from notification_type where is_active) <> array['SYSTEM_ALERT'] then
-    raise exception 'N1 GAGAL: tipe aktif selain SYSTEM_ALERT';
+  if (select array_agg(code order by code) from notification_type where is_active) <> array['AUTHORIZATION_EXPIRY',
+       'COMPETENCY_EXPIRY', 'MEDICAL_EXPIRY', 'SIMPER_EXPIRY', 'SYSTEM_ALERT', 'VERIFICATION_APPROVED', 'VERIFICATION_REJECTED'] then
+    raise exception 'N1 GAGAL: tipe aktif tidak sesuai';
+  end if;
+  if exists (select 1 from notification_type t where t.is_active
+             and not exists (select 1 from notification_template x where x.notification_type = t.code)) then
+    raise exception 'N1 GAGAL: tipe aktif tanpa template';
   end if;
   if exists (select 1 from notification_type where default_priority = 'CRITICAL' and can_be_disabled) then
     raise exception 'N1 GAGAL: tipe Critical dapat dinonaktifkan';

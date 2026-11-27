@@ -1,7 +1,7 @@
 import { createPool } from "@soh/db";
 import { drainAudit, ensureAuditPartitions } from "./audit.js";
 import { handlers } from "./handlers.js";
-import { processNotifications } from "./notifications.js";
+import { enqueueExpiryReminders, processNotifications } from "./notifications.js";
 import { processBatch } from "./outbox.js";
 
 const db = createPool();
@@ -17,12 +17,19 @@ for (const sig of ["SIGINT", "SIGTERM"] as const) {
 }
 
 let lastPartitionCheck = 0;
+let lastReminderRun = 0;
 
 async function tick() {
   if (Date.now() - lastPartitionCheck > 6 * 60 * 60 * 1000) {
     const created = await ensureAuditPartitions(db);
     if (created > 0) console.log(JSON.stringify({ level: "info", msg: "audit partitions created", created }));
     lastPartitionCheck = Date.now();
+  }
+  if (Date.now() - lastReminderRun > 60 * 60 * 1000) {
+    // Tiap jam: hari dihitung per zona waktu Site, kunci dedup mencegah pengingat ganda (BR-PLT02-004).
+    const queued = await enqueueExpiryReminders(db);
+    if (queued > 0) console.log(JSON.stringify({ level: "info", msg: "expiry reminders queued", queued }));
+    lastReminderRun = Date.now();
   }
   const audit = await drainAudit(db);
   if (audit.moved > 0) console.log(JSON.stringify({ level: "info", msg: "audit batch", ...audit }));
