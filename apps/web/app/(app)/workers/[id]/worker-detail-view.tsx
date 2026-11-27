@@ -198,13 +198,17 @@ export function WorkerDetailView({ id }: { id: string }) {
       {can("simper.read") ? (
         <SimperSection workerId={worker.id} canEdit={can("simper.update")} canVerify={can("simper.verify")} />
       ) : null}
-      {can("medical.read_status") || canLimited("medical.update") || canLimited("medical.read_detail") ? (
+      {can("medical.read_status") ||
+      can("medical.clearance") ||
+      canLimited("medical.update") ||
+      canLimited("medical.read_detail") ? (
         <MedicalSection
           workerId={worker.id}
           canStatus={can("medical.read_status")}
           canRecord={can("medical.update") || canLimited("medical.update")}
           canDetail={can("medical.read_detail") || canLimited("medical.read_detail")}
           canDetermine={can("medical.verify")}
+          canClearance={can("medical.clearance")}
         />
       ) : null}
     </>

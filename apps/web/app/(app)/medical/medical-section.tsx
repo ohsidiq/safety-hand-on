@@ -4,16 +4,22 @@ import { type FormEvent, useCallback, useEffect, useId, useState } from "react";
 import { apiGet, apiSend } from "@/lib/api";
 import { uploadFile } from "@/lib/files";
 import {
+  CLEARANCE_CHECKLIST,
+  type ClearanceChecklistKey,
   FITNESS_LABEL,
+  FITNESS_OPTIONS,
   type Fitness,
   MEDICAL_VALIDITY_BADGE,
   MEDICAL_VALIDITY_LABEL,
+  type MedicalClearance,
+  type MedicalClearanceType,
   type MedicalExamType,
   type MedicalRecord,
   type MedicalStatus,
   MIN_ACCESS_REASON,
   medicalErrorMessage,
   RESTRICTION_CODES,
+  validateClearance,
   validateDetermination,
 } from "@/lib/medical";
 import { useSession } from "@/lib/session";
@@ -36,7 +42,8 @@ export function MedicalStatusView({ status }: { status: MedicalStatus }) {
         <span className={MEDICAL_VALIDITY_BADGE[status.validity_status]}>{MEDICAL_VALIDITY_LABEL[status.validity_status]}</span>
         {status.fitness_status ? ` · ${FITNESS_LABEL[status.fitness_status]}` : ""}
         {status.expiry_date ? ` · berlaku s.d. ${status.expiry_date}` : ""}
-        {status.unfit_until ? ` · tidak fit s.d. ${status.unfit_until}` : ""}
+        {status.unfit_until ? ` · tinjau ulang ${status.unfit_until}` : ""}
+        {status.follow_up_due ? ` · tindak lanjut s.d. ${status.follow_up_due}` : ""}
       </p>
       {status.restrictions.length > 0 ? (
         <>
@@ -51,7 +58,7 @@ export function MedicalStatusView({ status }: { status: MedicalStatus }) {
           </ul>
         </>
       ) : null}
-      {status.has_pending ? <p className="muted small-text">Ada MCU yang menunggu penetapan Medical Officer.</p> : null}
+      {status.has_pending ? <p className="muted small-text">Ada MCU yang menunggu penetapan Dokter.</p> : null}
     </div>
   );
 }
@@ -60,7 +67,8 @@ export function MedicalStatusView({ status }: { status: MedicalStatus }) {
  * Bagian Medical di detail pekerja / profil (UIUX WF004).
  * - canStatus: medical.read_status (status + pembatasan operasional saja).
  * - canRecord: medical.update penuh atau LIMITED (pencatatan administratif, tanpa penetapan).
- * - canDetail: medical.read_detail (Medical Officer; HSE Manager hanya bila ada otorisasi tercatat, server menegakkan).
+ * - canDetail: medical.read_detail (Dokter, Medical Officer; HSE Manager hanya bila ada otorisasi tercatat).
+ * - canDetermine: medical.verify (Dokter). canClearance: medical.clearance (Dokter, pemeriksaan kesiapan kerja khusus).
  * - self: pekerja membaca miliknya (tanpa alasan akses).
  */
 export function MedicalSection({
@@ -69,6 +77,7 @@ export function MedicalSection({
   canRecord,
   canDetail,
   canDetermine,
+  canClearance = false,
   self = false,
   title = "Medical",
 }: {
@@ -77,6 +86,7 @@ export function MedicalSection({
   canRecord: boolean;
   canDetail: boolean;
   canDetermine: boolean;
+  canClearance?: boolean;
   self?: boolean;
   title?: string;
 }) {
@@ -137,6 +147,9 @@ export function MedicalSection({
       <h2 id={`medis-${workerId}`}>{title}</h2>
       {message ? <p role="status">{message}</p> : null}
       {status ? <MedicalStatusView status={status} /> : canStatus ? <p role="status">Memuat…</p> : null}
+      {canStatus || canClearance ? (
+        <ClearancePanel workerId={workerId} canIssue={canClearance} onChanged={(t) => setMessage(t)} />
+      ) : null}
       {canDetail && !self && records === null ? (
         <form
           className="form"
@@ -228,12 +241,13 @@ export function MedicalRecordItem({
       {record.verification_status === "VERIFIED" && record.fitness_status ? (
         <>
           {FITNESS_LABEL[record.fitness_status]} (ditetapkan {record.verified_by_name ?? "-"})
-          {record.unfit_until ? ` · tidak fit s.d. ${record.unfit_until}` : ""}
+          {record.unfit_until ? ` · tinjau ulang ${record.unfit_until}` : ""}
+          {record.follow_up_note ? ` · tindak lanjut: ${record.follow_up_note} (s.d. ${record.follow_up_due})` : ""}
         </>
       ) : record.verification_status === "REJECTED" ? (
         <>Ditolak: {record.rejection_reason}</>
       ) : (
-        <span className="muted">Menunggu penetapan Medical Officer</span>
+        <span className="muted">Menunggu penetapan Dokter</span>
       )}
       {record.restrictions.filter((x) => x.status === "ACTIVE").length > 0 ? (
         <ul>
@@ -265,7 +279,7 @@ export function MedicalRecordItem({
         </button>
       ) : null}
       {canDetermine && record.verification_status === "PENDING" && !record.can_determine ? (
-        <p className="muted small-text">Record yang Anda catat ditetapkan Medical Officer lain.</p>
+        <p className="muted small-text">Record yang Anda catat ditetapkan Dokter lain.</p>
       ) : null}
       {error ? (
         <p role="alert" className="error">
@@ -295,6 +309,8 @@ export function DeterminationForm({
   const [form, setForm] = useState({
     fitness: "" as Fitness | "",
     unfit_until: "",
+    follow_up_note: "",
+    follow_up_due: "",
     restriction_code: "",
     restriction_until: "",
     comment: "",
@@ -315,7 +331,10 @@ export function DeterminationForm({
       token,
       {
         fitness_status: form.fitness,
-        unfit_until: form.fitness === "TEMPORARILY_UNFIT" ? form.unfit_until : null,
+        unfit_until: form.fitness === "UNFIT" && form.unfit_until ? form.unfit_until : null,
+        ...(form.fitness === "FIT_WITH_CONDITION"
+          ? { follow_up_note: form.follow_up_note.trim(), follow_up_due: form.follow_up_due }
+          : {}),
         restrictions:
           form.fitness === "FIT_WITH_RESTRICTION" && code
             ? [
@@ -337,22 +356,45 @@ export function DeterminationForm({
   };
   return (
     <form className="form" onSubmit={submit} aria-label="Penetapan Fit to Work">
-      <label htmlFor={`${id}-fit`}>
-        Fit to Work (wajib)
-        <select
-          id={`${id}-fit`}
-          required
-          value={form.fitness}
-          onChange={(e) => setForm({ ...form, fitness: e.target.value as Fitness })}
-        >
-          <option value="">Pilih…</option>
-          {(Object.keys(FITNESS_LABEL) as Fitness[]).map((f) => (
-            <option key={f} value={f}>
-              {FITNESS_LABEL[f]}
-            </option>
-          ))}
-        </select>
-      </label>
+      <fieldset>
+        <legend>Hasil penetapan Dokter (wajib)</legend>
+        {FITNESS_OPTIONS.map((o) => (
+          <label key={o.value} htmlFor={`${id}-fit-${o.value}`} className="check">
+            <input
+              id={`${id}-fit-${o.value}`}
+              type="radio"
+              name={`${id}-fit`}
+              value={o.value}
+              checked={form.fitness === o.value}
+              onChange={() => setForm({ ...form, fitness: o.value })}
+            />{" "}
+            {FITNESS_LABEL[o.value]} <span className="muted small-text">· {o.hint}</span>
+          </label>
+        ))}
+      </fieldset>
+      {form.fitness === "FIT_WITH_CONDITION" ? (
+        <>
+          <label htmlFor={`${id}-fn`}>
+            Tindak lanjut ringan (wajib, tanpa diagnosis)
+            <input
+              id={`${id}-fn`}
+              maxLength={300}
+              placeholder="Contoh: kontrol ulang ke klinik site"
+              value={form.follow_up_note}
+              onChange={(e) => setForm({ ...form, follow_up_note: e.target.value })}
+            />
+          </label>
+          <label htmlFor={`${id}-fd`}>
+            Tindak lanjut paling lambat (wajib)
+            <input
+              id={`${id}-fd`}
+              type="date"
+              value={form.follow_up_due}
+              onChange={(e) => setForm({ ...form, follow_up_due: e.target.value })}
+            />
+          </label>
+        </>
+      ) : null}
       {form.fitness === "FIT_WITH_RESTRICTION" ? (
         <>
           <label htmlFor={`${id}-code`}>
@@ -381,9 +423,9 @@ export function DeterminationForm({
           </label>
         </>
       ) : null}
-      {form.fitness === "TEMPORARILY_UNFIT" ? (
+      {form.fitness === "UNFIT" ? (
         <label htmlFor={`${id}-uu`}>
-          Tidak fit sampai (wajib)
+          Tanggal tinjau ulang (opsional)
           <input
             id={`${id}-uu`}
             type="date"
@@ -521,7 +563,7 @@ function AddMedicalRecord({
     });
     setBusy(false);
     if (!r.ok) return setError(medicalErrorMessage(r.error));
-    onDone("MCU dicatat. Fit to Work ditetapkan oleh Medical Officer.");
+    onDone("MCU dicatat. Fit to Work ditetapkan oleh Dokter.");
   };
   return (
     <form className="form card entity-form" onSubmit={submit} aria-label="Catat MCU">
@@ -594,7 +636,7 @@ function AddMedicalRecord({
   );
 }
 
-/** Otorisasi akses detail berbatas waktu (<= 24 jam) untuk HSE Manager, oleh Medical Officer (API-005 §7). */
+/** Otorisasi akses detail berbatas waktu (<= 24 jam) untuk HSE Manager, oleh Dokter (API-005 §7). */
 function GrantForm({ recordId, onDone, onCancel }: { recordId: string; onDone: (t: string) => void; onCancel: () => void }) {
   const { getToken } = useSession();
   const id = useId();
@@ -664,6 +706,249 @@ function GrantForm({ recordId, onDone, onCancel }: { recordId: string; onDone: (
       ) : null}
       <span className="row-actions">
         <button type="submit">Beri akses</button>
+        <button type="button" className="secondary" onClick={onCancel}>
+          Batal
+        </button>
+      </span>
+    </form>
+  );
+}
+
+const CHECKS_EMPTY: Record<ClearanceChecklistKey, boolean> = {
+  history_reviewed: false,
+  blood_pressure_checked: false,
+  vital_signs_checked: false,
+  vitals_within_limits: false,
+};
+
+const fmtTime = (iso: string) =>
+  new Date(iso).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+
+/**
+ * Kesiapan kerja khusus (B-27): daftar hasil 7 hari terakhir (tingkat status, tanpa checklist) dan, untuk Dokter,
+ * formulir pemeriksaan pra-tugas. Angka tensi/tanda vital tidak dimasukkan ke aplikasi.
+ */
+export function ClearancePanel({
+  workerId,
+  canIssue,
+  onChanged,
+}: {
+  workerId: string;
+  canIssue: boolean;
+  onChanged: (t: string) => void;
+}) {
+  const { getToken } = useSession();
+  const [items, setItems] = useState<MedicalClearance[] | null>(null);
+  const [adding, setAdding] = useState(false);
+  const [revoking, setRevoking] = useState<string | null>(null);
+  const [revokeReason, setRevokeReason] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const load = useCallback(async () => {
+    const token = await getToken();
+    if (!token) return;
+    const r = await apiGet<MedicalClearance[]>(`/workers/${workerId}/medical-clearances`, token);
+    if (r.ok) setItems(r.data);
+  }, [getToken, workerId]);
+  useEffect(() => {
+    void load();
+  }, [load]);
+  const revoke = async (e: FormEvent, clearanceId: string) => {
+    e.preventDefault();
+    if (!revokeReason.trim()) return setError("Alasan pencabutan wajib diisi.");
+    const token = await getToken();
+    if (!token) return;
+    const r = await apiSend("POST", `/medical-clearances/${clearanceId}/revoke`, token, { reason: revokeReason.trim() });
+    if (!r.ok) return setError(medicalErrorMessage(r.error));
+    setRevoking(null);
+    setRevokeReason("");
+    onChanged("Kesiapan kerja khusus dicabut.");
+    void load();
+  };
+  return (
+    <div className="stack">
+      <h3>Kesiapan kerja khusus</h3>
+      {items && items.length === 0 ? <p className="muted small-text">Belum ada pemeriksaan kesiapan 7 hari terakhir.</p> : null}
+      {items && items.length > 0 ? (
+        <ul>
+          {items.map((c) => (
+            <li key={c.id}>
+              <span className={c.active ? "badge badge-success" : "badge badge-neutral"}>
+                {c.result === "CLEARED" ? (c.active ? "Siap" : "Siap (berakhir)") : "Tidak siap"}
+              </span>{" "}
+              {c.type_name} · diperiksa {fmtTime(c.examined_at)}
+              {c.valid_until ? ` · berlaku s.d. ${fmtTime(c.valid_until)}` : ""}
+              {canIssue && c.active && revoking !== c.id ? (
+                <>
+                  {" "}
+                  <button type="button" className="secondary" onClick={() => setRevoking(c.id)}>
+                    Cabut
+                  </button>
+                </>
+              ) : null}
+              {revoking === c.id ? (
+                <form className="form" onSubmit={(e) => void revoke(e, c.id)} aria-label="Cabut kesiapan">
+                  <label htmlFor={`cabut-${c.id}`}>
+                    Alasan pencabutan (wajib, tanpa diagnosis)
+                    <input
+                      id={`cabut-${c.id}`}
+                      maxLength={300}
+                      value={revokeReason}
+                      onChange={(e) => setRevokeReason(e.target.value)}
+                    />
+                  </label>
+                  <span className="row-actions">
+                    <button type="submit">Cabut kesiapan</button>
+                    <button type="button" className="secondary" onClick={() => setRevoking(null)}>
+                      Batal
+                    </button>
+                  </span>
+                </form>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {error ? (
+        <p role="alert" className="error">
+          {error}
+        </p>
+      ) : null}
+      {canIssue && !adding ? (
+        <p>
+          <button type="button" onClick={() => setAdding(true)}>
+            Periksa kesiapan kerja khusus
+          </button>
+        </p>
+      ) : null}
+      {adding ? (
+        <ClearanceForm
+          workerId={workerId}
+          onDone={(t) => {
+            setAdding(false);
+            onChanged(t);
+            void load();
+          }}
+          onCancel={() => setAdding(false)}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+export function ClearanceForm({
+  workerId,
+  onDone,
+  onCancel,
+}: {
+  workerId: string;
+  onDone: (t: string) => void;
+  onCancel: () => void;
+}) {
+  const { getToken } = useSession();
+  const id = useId();
+  const [types, setTypes] = useState<MedicalClearanceType[]>([]);
+  const [form, setForm] = useState({
+    clearance_type_id: "",
+    result: "" as "CLEARED" | "NOT_CLEARED" | "",
+    checks: CHECKS_EMPTY,
+    note: "",
+  });
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    void (async () => {
+      const token = await getToken();
+      if (!token) return;
+      const r = await apiGet<MedicalClearanceType[]>("/medical-clearance-types", token);
+      if (r.ok) setTypes(r.data.filter((t) => t.status === "ACTIVE"));
+    })();
+  }, [getToken]);
+  const type = types.find((t) => t.id === form.clearance_type_id);
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    const bad = validateClearance(form);
+    if (bad) return setError(bad);
+    setBusy(true);
+    const token = await getToken();
+    if (!token) return;
+    const r = await apiSend("POST", `/workers/${workerId}/medical-clearances`, token, {
+      clearance_type_id: form.clearance_type_id,
+      result: form.result,
+      ...form.checks,
+      ...(form.note.trim() ? { note: form.note.trim() } : {}),
+    });
+    setBusy(false);
+    if (!r.ok) return setError(medicalErrorMessage(r.error));
+    onDone(form.result === "CLEARED" ? "Pekerja dinyatakan siap untuk pekerjaan khusus." : "Hasil tidak siap dicatat.");
+  };
+  return (
+    <form className="form" onSubmit={submit} aria-label="Pemeriksaan kesiapan kerja khusus">
+      <label htmlFor={`${id}-type`}>
+        Jenis pekerjaan khusus (wajib)
+        <select
+          id={`${id}-type`}
+          value={form.clearance_type_id}
+          onChange={(e) => setForm({ ...form, clearance_type_id: e.target.value })}
+        >
+          <option value="">Pilih…</option>
+          {types.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      {type ? <p className="muted small-text">Hasil siap berlaku {type.validity_hours} jam (satu shift).</p> : null}
+      <fieldset>
+        <legend>Checklist pemeriksaan (angka tensi dan tanda vital dicatat di rekam medis klinik, bukan di sini)</legend>
+        {CLEARANCE_CHECKLIST.map((c) => (
+          <label key={c.key} htmlFor={`${id}-${c.key}`} className="check">
+            <input
+              id={`${id}-${c.key}`}
+              type="checkbox"
+              checked={form.checks[c.key]}
+              onChange={(e) => setForm({ ...form, checks: { ...form.checks, [c.key]: e.target.checked } })}
+            />{" "}
+            {c.label}
+          </label>
+        ))}
+      </fieldset>
+      <fieldset>
+        <legend>Hasil (wajib)</legend>
+        <label htmlFor={`${id}-ok`} className="check">
+          <input
+            id={`${id}-ok`}
+            type="radio"
+            name={`${id}-result`}
+            checked={form.result === "CLEARED"}
+            onChange={() => setForm({ ...form, result: "CLEARED" })}
+          />{" "}
+          Siap bekerja
+        </label>
+        <label htmlFor={`${id}-no`} className="check">
+          <input
+            id={`${id}-no`}
+            type="radio"
+            name={`${id}-result`}
+            checked={form.result === "NOT_CLEARED"}
+            onChange={() => setForm({ ...form, result: "NOT_CLEARED" })}
+          />{" "}
+          Tidak siap
+        </label>
+      </fieldset>
+      <label htmlFor={`${id}-note`}>
+        Catatan batasan kerja / tindak lanjut{form.result === "NOT_CLEARED" ? " (wajib)" : ""} (tanpa diagnosis)
+        <input id={`${id}-note`} maxLength={300} value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} />
+      </label>
+      {error ? (
+        <p role="alert" className="error">
+          {error}
+        </p>
+      ) : null}
+      <span className="row-actions">
+        <button type="submit" disabled={busy}>
+          Simpan hasil
+        </button>
         <button type="button" className="secondary" onClick={onCancel}>
           Batal
         </button>

@@ -31,11 +31,11 @@ describe.skipIf(!url)("Matriks RBAC PB-009 (integrasi)", () => {
     expect(rows).toEqual(expected.map(({ code, scope_levels, is_active }) => ({ code, scope_levels, is_active })));
   });
 
-  it("katalog permission sama dengan PB-009 (56 permission)", async () => {
+  it("katalog permission sama dengan PB-009 (57 permission)", async () => {
     const { rows } = await db.query<{ code: string; is_sensitive: boolean }>(
       'select code, is_sensitive from permission order by code collate "C"',
     );
-    expect(rows.length).toBe(56);
+    expect(rows.length).toBe(57);
     expect(rows).toEqual(
       [...matrix.permissions]
         .sort((a, b) => (a.code < b.code ? -1 : a.code > b.code ? 1 : 0))

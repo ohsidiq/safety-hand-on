@@ -500,20 +500,51 @@ describe("SIMPER (M3.4)", () => {
   });
 });
 
-describe("Medical (M3.5)", () => {
-  it("aturan penetapan: pembatasan untuk FIT_WITH_RESTRICTION, tanggal untuk tidak fit sementara", async () => {
-    const { validateDetermination } = await import("../lib/medical");
-    const base = { fitness: "" as const, unfit_until: "", restriction_code: "", restriction_until: "" };
-    expect(validateDetermination(base, "2026-11-26")).toMatch(/Pilih status/);
-    expect(validateDetermination({ ...base, fitness: "FIT" }, "2026-11-26")).toBeNull();
-    expect(validateDetermination({ ...base, fitness: "FIT_WITH_RESTRICTION" }, "2026-11-26")).toMatch(/pembatasan/);
+describe("Medical (M3.5, B-27 Dokter)", () => {
+  it("aturan penetapan Dokter: 4 hasil, pembatasan, tindak lanjut wajib, tinjau ulang opsional (B-27)", async () => {
+    const { validateDetermination, FITNESS_OPTIONS } = await import("../lib/medical");
+    expect(FITNESS_OPTIONS.map((o) => o.value)).toEqual(["FIT", "FIT_WITH_CONDITION", "FIT_WITH_RESTRICTION", "UNFIT"]);
+    const base = {
+      fitness: "" as const,
+      unfit_until: "",
+      follow_up_note: "",
+      follow_up_due: "",
+      restriction_code: "",
+      restriction_until: "",
+    };
+    const t = "2026-11-26";
+    expect(validateDetermination(base, t)).toMatch(/Pilih status/);
+    expect(validateDetermination({ ...base, fitness: "FIT" }, t)).toBeNull();
+    expect(validateDetermination({ ...base, fitness: "FIT_WITH_RESTRICTION" }, t)).toMatch(/pembatasan/);
     expect(
-      validateDetermination({ ...base, fitness: "FIT_WITH_RESTRICTION", restriction_code: "NO_WORK_AT_HEIGHT" }, "2026-11-26"),
+      validateDetermination({ ...base, fitness: "FIT_WITH_RESTRICTION", restriction_code: "NO_WORK_AT_HEIGHT" }, t),
     ).toBeNull();
-    expect(validateDetermination({ ...base, fitness: "TEMPORARILY_UNFIT" }, "2026-11-26")).toMatch(/tidak fit sampai/);
-    expect(validateDetermination({ ...base, fitness: "TEMPORARILY_UNFIT", unfit_until: "2026-11-01" }, "2026-11-26")).toMatch(
-      /lewat/,
+    expect(validateDetermination({ ...base, fitness: "FIT_WITH_CONDITION" }, t)).toMatch(/tindak lanjut/);
+    expect(validateDetermination({ ...base, fitness: "FIT_WITH_CONDITION", follow_up_note: "Kontrol ulang" }, t)).toMatch(
+      /tanggal/,
     );
+    expect(
+      validateDetermination(
+        { ...base, fitness: "FIT_WITH_CONDITION", follow_up_note: "Kontrol", follow_up_due: "2026-12-10" },
+        t,
+      ),
+    ).toBeNull();
+    expect(validateDetermination({ ...base, fitness: "UNFIT" }, t)).toBeNull();
+    expect(validateDetermination({ ...base, fitness: "UNFIT", unfit_until: "2026-11-01" }, t)).toMatch(/lewat/);
+  });
+
+  it("pemeriksaan kesiapan: checklist lengkap untuk siap, catatan untuk tidak siap, tanpa angka tanda vital", async () => {
+    const { validateClearance, CLEARANCE_CHECKLIST, medicalErrorMessage } = await import("../lib/medical");
+    const all = { history_reviewed: true, blood_pressure_checked: true, vital_signs_checked: true, vitals_within_limits: true };
+    const base = { clearance_type_id: "t1", result: "CLEARED" as const, checks: all, note: "" };
+    expect(validateClearance(base)).toBeNull();
+    expect(validateClearance({ ...base, clearance_type_id: "" })).toMatch(/jenis/);
+    expect(validateClearance({ ...base, checks: { ...all, blood_pressure_checked: false } })).toMatch(/checklist/);
+    expect(validateClearance({ ...base, result: "NOT_CLEARED", checks: { ...all, vitals_within_limits: false } })).toMatch(
+      /catatan/,
+    );
+    expect(CLEARANCE_CHECKLIST.map((c) => c.label).join(" ")).not.toMatch(/\d/);
+    expect(medicalErrorMessage({ status: 422, code: "RESTRICTION_CONFLICT", details: [], extra: {} })).toMatch(/pembatasan/);
   });
 
   it("kode pembatasan hanya batasan kerja (tanpa istilah diagnosis) dan pesan galat akses", async () => {
@@ -526,9 +557,10 @@ describe("Medical (M3.5)", () => {
     expect(MEDICAL_VALIDITY_LABEL.SUSPENDED).toBe("Tidak fit");
   });
 
-  it("menu Medical hanya untuk Medical Officer atau pengelola jenis; Supervisor tidak", async () => {
+  it("menu Medical hanya untuk Dokter atau pengelola jenis; Medical Officer dan Supervisor tidak", async () => {
     const { canSee } = await import("../lib/nav");
     expect(canSee(["medical.verify"], "/medical")).toBe(true);
     expect(canSee(["medical.read_status"], "/medical")).toBe(false);
+    expect(canSee(["medical.read_status", "medical.read_detail", "medical.update"], "/medical")).toBe(false);
   });
 });

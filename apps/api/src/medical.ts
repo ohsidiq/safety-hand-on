@@ -27,10 +27,13 @@ import { type FileStorage, StorageError } from "./storage.js";
  * Medical (API-005, SRS-WF004, DB-003 §4, DB-008). Data Sensitif, sintetis saja (B-24).
  * - Tingkat status (`medical.read_status`): /workers/{id}/medical-status dan /medical-restrictions, lewat app.medical_status.
  *   Tanpa dokumen, penyedia, jenis pemeriksaan, komentar.
- * - Tingkat detail (`medical.read_detail`): Medical Officer, pekerja sendiri, HSE Manager dengan otorisasi tercatat.
+ * - Tingkat detail (`medical.read_detail`): Dokter, Medical Officer, pekerja sendiri, HSE Manager dengan otorisasi tercatat.
  *   `X-Access-Reason` wajib (>= 10 karakter) kecuali pekerja membaca miliknya; setiap baca dicatat audit sensitif.
- * - Pencatatan administratif: medical.update penuh atau LIMITED (HSE Officer, Site Admin). Penetapan Fit to Work hanya
- *   Medical Officer (`medical.verify`), bukan pembuat record (403 SEPARATION_OF_DUTIES).
+ * - Pencatatan administratif: medical.update penuh atau LIMITED (Medical Officer/petugas medis, HSE Officer, Site Admin).
+ *   Penetapan Fit to Work hanya Dokter (`medical.verify`, B-27), bukan pembuat record (403 SEPARATION_OF_DUTIES).
+ *   Hasil: FIT, FIT_WITH_CONDITION (tindak lanjut ringan, catatan non-diagnostik + tanggal), FIT_WITH_RESTRICTION
+ *   (pembatasan operasional), UNFIT (tanggal tinjau ulang opsional).
+ * - Pemeriksaan kesiapan kerja khusus (pra-tugas) ada di medical-clearance.ts.
  * - Dokumen MCU: bucket soh-medical, signed URL 60 detik, teraudit sensitif.
  * - Respons detail tidak ditulis ke log aplikasi (logger hanya mencatat metode, jalur, status).
  * Belum di M3.5: evaluasi readiness (M4), notifikasi (M3.6), Idempotency-Key.
@@ -39,7 +42,7 @@ import { type FileStorage, StorageError } from "./storage.js";
 export type MedicalDeps = Deps & { storage?: FileStorage | undefined };
 
 const IsoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
-const Fitness = z.enum(["FIT", "FIT_WITH_RESTRICTION", "TEMPORARILY_UNFIT", "UNFIT"]);
+export const Fitness = z.enum(["FIT", "FIT_WITH_CONDITION", "FIT_WITH_RESTRICTION", "UNFIT"]);
 const DOC_TTL = 60;
 const MIN_REASON = 10;
 
@@ -67,7 +70,8 @@ const MedicalStatus = z
     fitness_status: Fitness.nullable(),
     validity_status: z.enum(["VALID", "EXPIRING_SOON", "EXPIRED", "MISSING", "PENDING_VERIFICATION", "SUSPENDED"]),
     expiry_date: z.string().nullable(),
-    unfit_until: z.string().nullable(),
+    unfit_until: z.string().nullable().openapi({ description: "Tanggal tinjau ulang (hanya UNFIT)" }),
+    follow_up_due: z.string().nullable().openapi({ description: "Tanggal tindak lanjut (FIT_WITH_CONDITION), tanpa catatan" }),
     restrictions: z.array(Restriction),
     has_pending: z.boolean(),
   })
@@ -87,6 +91,8 @@ const MedicalRecord = z
     has_document: z.boolean(),
     fitness_status: Fitness.nullable(),
     unfit_until: z.string().nullable(),
+    follow_up_note: z.string().nullable(),
+    follow_up_due: z.string().nullable(),
     verification_status: z.enum(["PENDING", "VERIFIED", "REJECTED"]),
     verified_by_name: z.string().nullable(),
     verified_at: z.string().nullable(),
@@ -106,7 +112,8 @@ const MedicalRecord = z
 const SELECT = `select m.id, m.worker_id, m.site_id, w.full_name as worker_name, w.sho_id,
     json_build_object('id', m.exam_type_id, 'name', t.name, 'code', t.code) as exam_type,
     m.examination_date::text as examination_date, m.expiry_date::text as expiry_date, m.provider,
-    (m.file_id is not null) as has_document, m.fitness_status, m.unfit_until::text as unfit_until, m.verification_status,
+    (m.file_id is not null) as has_document, m.fitness_status, m.unfit_until::text as unfit_until,
+    m.follow_up_note, m.follow_up_due::text as follow_up_due, m.verification_status,
     vb.full_name as verified_by_name, m.verified_at, m.determination_comment, m.rejection_reason,
     m.created_by, cb.full_name as created_by_name, m.created_at, m.updated_at, m.version,
     coalesce((select json_agg(json_build_object('id', r.id, 'restriction_code', r.restriction_code,
@@ -137,7 +144,9 @@ function mapMedicalError(e: { code?: string; message?: string; constraint?: stri
       return new ApiFailure("SEPARATION_OF_DUTIES");
     if (e.constraint === "medical_record_rejected_chk" || e.constraint === "medical_restriction_lift_chk")
       return new ApiFailure("REASON_REQUIRED", [{ field: "reason", issue: "required" }]);
-    if (e.constraint === "medical_record_unfit_until_chk") return new ApiFailure("UNFIT_UNTIL_REQUIRED");
+    if (e.constraint === "medical_record_unfit_until_chk")
+      return new ApiFailure("VALIDATION_ERROR", [{ field: "unfit_until", issue: "only_for_unfit" }]);
+    if (e.constraint === "medical_record_follow_up_chk") return new ApiFailure("FOLLOW_UP_REQUIRED");
     if (e.constraint === "medical_access_grant_window_chk")
       return new ApiFailure("VALIDATION_ERROR", [{ field: "hours", issue: "max_24_hours" }]);
     if (e.constraint === "medical_restriction_range_chk")
@@ -202,7 +211,7 @@ export function registerMedical(v1: V1, deps: MedicalDeps) {
     412: json(ErrorResponse, "VERSION_CONFLICT"),
     422: json(
       ErrorResponse,
-      "VALIDATION_ERROR, INVALID_DATE_RANGE, RESTRICTION_REQUIRED, RESTRICTION_NOT_ALLOWED, UNFIT_UNTIL_REQUIRED, REASON_REQUIRED, FILE_NOT_CLEAN",
+      "VALIDATION_ERROR, INVALID_DATE_RANGE, RESTRICTION_REQUIRED, RESTRICTION_NOT_ALLOWED, FOLLOW_UP_REQUIRED, REASON_REQUIRED, FILE_NOT_CLEAN",
     ),
   };
 
@@ -211,7 +220,7 @@ export function registerMedical(v1: V1, deps: MedicalDeps) {
     method: "get",
     path: "/medical-records/pending-determination",
     tags: tag,
-    summary: "Antrean penetapan Fit to Work (Medical Officer)",
+    summary: "Antrean penetapan Fit to Work (Dokter)",
     security,
     middleware: guard(deps, "medical.verify"),
     request: { query: z.object({ site_id: z.uuid().optional(), limit: z.coerce.number().int().min(1).max(200).default(50) }) },
@@ -248,7 +257,7 @@ export function registerMedical(v1: V1, deps: MedicalDeps) {
     const r = await run(c, deps, async (tx) => {
       const res = await tx.query(
         `select worker_id, fitness_status, validity_status, expiry_date::text as expiry_date, unfit_until::text as unfit_until,
-                restrictions, has_pending from app.medical_status($1)`,
+                follow_up_due::text as follow_up_due, restrictions, has_pending from app.medical_status($1)`,
         [worker_id],
       );
       if (!res.rows[0]) throw new ApiFailure("NOT_FOUND");
@@ -406,7 +415,7 @@ export function registerMedical(v1: V1, deps: MedicalDeps) {
     method: "post",
     path: "/workers/{worker_id}/medical-records",
     tags: tag,
-    summary: "Mencatat MCU (administratif; Fit to Work kosong sampai ditetapkan Medical Officer)",
+    summary: "Mencatat MCU (administratif; Fit to Work kosong sampai ditetapkan Dokter)",
     security,
     middleware: guardScoped(deps, "medical.update"),
     request: {
@@ -542,7 +551,7 @@ export function registerMedical(v1: V1, deps: MedicalDeps) {
     method: "post",
     path: "/medical-records/{id}/determination",
     tags: tag,
-    summary: "Penetapan Fit to Work (Medical Officer, bukan pembuat record)",
+    summary: "Penetapan Fit to Work (Dokter, bukan pembuat record)",
     security,
     middleware: guard(deps, "medical.verify"),
     request: {
@@ -554,7 +563,14 @@ export function registerMedical(v1: V1, deps: MedicalDeps) {
             schema: z
               .object({
                 fitness_status: Fitness,
-                unfit_until: IsoDate.nullable().optional(),
+                unfit_until: IsoDate.nullable().optional().openapi({ description: "Tanggal tinjau ulang, hanya UNFIT" }),
+                follow_up_note: z
+                  .string()
+                  .trim()
+                  .max(300)
+                  .optional()
+                  .openapi({ description: "Tindak lanjut ringan non-diagnostik, wajib untuk FIT_WITH_CONDITION" }),
+                follow_up_due: IsoDate.optional(),
                 restrictions: z.array(RestrictionInput).max(10).default([]),
                 comment: z.string().trim().max(500).optional(),
               })
@@ -579,8 +595,19 @@ export function registerMedical(v1: V1, deps: MedicalDeps) {
       return respondFailure(c, new ApiFailure("RESTRICTION_REQUIRED", [{ field: "restrictions", issue: "required" }]));
     if (b.fitness_status !== "FIT_WITH_RESTRICTION" && b.restrictions.length > 0)
       return respondFailure(c, new ApiFailure("RESTRICTION_NOT_ALLOWED", [{ field: "restrictions", issue: "not_allowed" }]));
-    if (b.fitness_status === "TEMPORARILY_UNFIT" && !b.unfit_until)
-      return respondFailure(c, new ApiFailure("UNFIT_UNTIL_REQUIRED", [{ field: "unfit_until", issue: "required" }]));
+    const conditional = b.fitness_status === "FIT_WITH_CONDITION";
+    if (conditional && (!b.follow_up_note || !b.follow_up_due))
+      return respondFailure(
+        c,
+        new ApiFailure("FOLLOW_UP_REQUIRED", [
+          ...(b.follow_up_note ? [] : [{ field: "follow_up_note", issue: "required" }]),
+          ...(b.follow_up_due ? [] : [{ field: "follow_up_due", issue: "required" }]),
+        ]),
+      );
+    if (!conditional && (b.follow_up_note || b.follow_up_due))
+      return respondFailure(c, new ApiFailure("VALIDATION_ERROR", [{ field: "follow_up_note", issue: "only_for_condition" }]));
+    if (b.fitness_status !== "UNFIT" && b.unfit_until)
+      return respondFailure(c, new ApiFailure("VALIDATION_ERROR", [{ field: "unfit_until", issue: "only_for_unfit" }]));
     for (const [i, rs] of b.restrictions.entries())
       if (rs.valid_until && rs.valid_until < rs.valid_from)
         return respondFailure(
@@ -603,14 +630,17 @@ export function registerMedical(v1: V1, deps: MedicalDeps) {
         if (row.created_by === me) throw new ApiFailure("SEPARATION_OF_DUTIES");
         const res = await tx.query(
           `update medical_record set verification_status = 'VERIFIED', fitness_status = $3, unfit_until = $4, verified_by = $5,
-             verified_at = now(), determination_comment = $6, rejection_reason = null where id = $1 and version = $2`,
+             verified_at = now(), determination_comment = $6, rejection_reason = null, follow_up_note = $7, follow_up_due = $8
+           where id = $1 and version = $2`,
           [
             id,
             row.version,
             b.fitness_status,
-            b.fitness_status === "TEMPORARILY_UNFIT" ? b.unfit_until : null,
+            b.unfit_until ?? null,
             me,
             b.comment || null,
+            conditional ? b.follow_up_note : null,
+            conditional ? b.follow_up_due : null,
           ],
         );
         if (res.rowCount === 0) throw new ApiFailure("SCOPE_DENIED");
@@ -633,7 +663,7 @@ export function registerMedical(v1: V1, deps: MedicalDeps) {
     method: "post",
     path: "/medical-records/{id}/reject",
     tags: tag,
-    summary: "Menolak record MCU (Medical Officer, alasan wajib)",
+    summary: "Menolak record MCU (Dokter, alasan wajib)",
     security,
     middleware: guard(deps, "medical.verify"),
     request: {
@@ -685,7 +715,7 @@ export function registerMedical(v1: V1, deps: MedicalDeps) {
     method: "post",
     path: "/medical-restrictions/{id}/lift",
     tags: tag,
-    summary: "Mengakhiri pembatasan operasional lebih awal (Medical Officer, alasan wajib)",
+    summary: "Mengakhiri pembatasan operasional lebih awal (Dokter, alasan wajib)",
     security,
     middleware: guard(deps, "medical.verify"),
     request: {

@@ -52,7 +52,7 @@ export const NAV: NavItem[] = [
     phase: "P0",
     built: true,
   },
-  // SRS-WF004: penetapan Fit to Work (Medical Officer) dan jenis pemeriksaan
+  // SRS-WF004 v1.4: penetapan Fit to Work (Dokter, B-27), jenis pemeriksaan dan jenis kerja khusus
   {
     href: "/medical",
     label: "Medical",
@@ -99,6 +99,7 @@ export const ROLE_LABEL: Record<string, string> = {
   SITE_ADMIN: "Site Admin",
   SUPERVISOR: "Supervisor",
   MEDICAL_OFFICER: "Medical Officer",
+  DOCTOR: "Dokter",
   TRAINER: "Trainer",
   AUDITOR: "Auditor",
   WORKER: "Worker",
@@ -215,6 +216,12 @@ export const ACTION_LABEL: Record<string, string> = {
   "medical.document_access": "Dokumen MCU dibuka",
   "medical.access_grant": "Akses detail medis diberikan",
   "medical.access_grant_revoke": "Akses detail medis dicabut",
+  "medical.clearance_issue": "Pemeriksaan kesiapan kerja khusus dicatat",
+  "medical.clearance_revoke": "Kesiapan kerja khusus dicabut",
+  "medical_clearance_type.create": "Jenis kerja khusus dibuat",
+  "medical_clearance_type.update": "Jenis kerja khusus diubah",
+  "medical_clearance_type.deactivate": "Jenis kerja khusus dinonaktifkan",
+  "medical_clearance_type.reactivate": "Jenis kerja khusus diaktifkan kembali",
   "medical_exam_type.create": "Jenis pemeriksaan dibuat",
   "medical_exam_type.update": "Jenis pemeriksaan diubah",
   "medical_exam_type.deactivate": "Jenis pemeriksaan dinonaktifkan",

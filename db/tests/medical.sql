@@ -1,18 +1,19 @@
--- medical.sql: uji migrasi 0019 (API-005, SRS-WF004, DB-003 §4, DB-008). Data sintetis. Semua perubahan dibatalkan.
+-- medical.sql: uji migrasi 0019 + 0020 (B-27 Dokter; API-005, SRS-WF004, DB-003 §4, DB-008). Data sintetis. Semua perubahan dibatalkan.
 \set ON_ERROR_STOP on
 
 begin;
 
 do $test$
 declare
-  org_a uuid; u_hseo uuid; u_mgr uuid; u_mo uuid; u_spv uuid; u_wrk uuid; u_b uuid;
+  org_a uuid; u_hseo uuid; u_mgr uuid; u_mo uuid; u_doc uuid; u_spv uuid; u_wrk uuid; u_b uuid;
   site_a1 uuid; site_other uuid; w_team uuid; w_nonteam uuid; w_self uuid; w_other uuid; t_mcu uuid;
   rec uuid; rec2 uuid; f_med uuid; g uuid; r record; n bigint; checks int := 0;
 begin
   select id into org_a from organization order by name limit 1;
   select id into u_hseo from user_profile where organization_id = org_a and email like 'hseo1@%';
   select id into u_mgr from user_profile where organization_id = org_a and email like 'hsemgr@%';
-  select id into u_mo from user_profile where organization_id = org_a and email like 'medis@%';
+  select id into u_mo from user_profile where organization_id = org_a and email like 'medis@%';   -- petugas medis
+  select id into u_doc from user_profile where organization_id = org_a and email like 'dokter@%'; -- Dokter (B-27)
   select id into u_spv from user_profile where organization_id = org_a and email like 'spvtim1@%';  -- Supervisor scope Tim
   select id into u_wrk from user_profile where organization_id = org_a and email like 'pekerja1@%';
   select id into u_b from user_profile where organization_id = (select id from organization order by name offset 1 limit 1)
@@ -36,7 +37,8 @@ begin
   values (org_a, 'soh-medical', 'uji/m-clean-' || gen_random_uuid(), 'mcu.pdf', 'application/pdf', 100, 'SENSITIVE',
           'MEDICAL_DOCUMENT', u_hseo, 'CLEAN', now(), repeat('e', 64)) returning id into f_med;
 
-  -- M1 constraint: fitness hanya saat VERIFIED; TEMPORARILY_UNFIT wajib unfit_until; pemisahan tugas; rentang tanggal
+  -- M1 constraint: fitness hanya saat VERIFIED; FIT_WITH_CONDITION wajib tindak lanjut; tinjau ulang hanya UNFIT;
+  -- TEMPORARILY_UNFIT dihapus (B-27); pemisahan tugas; rentang tanggal
   begin
     insert into medical_record (organization_id, site_id, worker_id, exam_type_id, examination_date, expiry_date, fitness_status, created_by)
     values (org_a, site_a1, w_team, t_mcu, current_date, current_date + 365, 'FIT', u_hseo);
@@ -46,14 +48,28 @@ begin
   begin
     insert into medical_record (organization_id, site_id, worker_id, exam_type_id, examination_date, expiry_date, fitness_status,
                                 verification_status, verified_by, verified_at, created_by)
-    values (org_a, site_a1, w_team, t_mcu, current_date, current_date + 365, 'TEMPORARILY_UNFIT', 'VERIFIED', u_mo, now(), u_hseo);
-    raise exception 'M1 GAGAL: TEMPORARILY_UNFIT tanpa unfit_until diterima';
+    values (org_a, site_a1, w_team, t_mcu, current_date, current_date + 365, 'FIT_WITH_CONDITION', 'VERIFIED', u_doc, now(), u_hseo);
+    raise exception 'M1 GAGAL: FIT_WITH_CONDITION tanpa tindak lanjut diterima';
+  exception when check_violation then null;
+  end;
+  begin
+    insert into medical_record (organization_id, site_id, worker_id, exam_type_id, examination_date, expiry_date, fitness_status,
+                                unfit_until, verification_status, verified_by, verified_at, created_by)
+    values (org_a, site_a1, w_team, t_mcu, current_date, current_date + 365, 'FIT', current_date + 30, 'VERIFIED', u_doc, now(), u_hseo);
+    raise exception 'M1 GAGAL: tanggal tinjau ulang pada FIT diterima';
   exception when check_violation then null;
   end;
   begin
     insert into medical_record (organization_id, site_id, worker_id, exam_type_id, examination_date, expiry_date, fitness_status,
                                 verification_status, verified_by, verified_at, created_by)
-    values (org_a, site_a1, w_team, t_mcu, current_date, current_date + 365, 'FIT', 'VERIFIED', u_mo, now(), u_mo);
+    values (org_a, site_a1, w_team, t_mcu, current_date, current_date + 365, 'TEMPORARILY_UNFIT', 'VERIFIED', u_doc, now(), u_hseo);
+    raise exception 'M1 GAGAL: TEMPORARILY_UNFIT masih diterima';
+  exception when check_violation then null;
+  end;
+  begin
+    insert into medical_record (organization_id, site_id, worker_id, exam_type_id, examination_date, expiry_date, fitness_status,
+                                verification_status, verified_by, verified_at, created_by)
+    values (org_a, site_a1, w_team, t_mcu, current_date, current_date + 365, 'FIT', 'VERIFIED', u_doc, now(), u_doc);
     raise exception 'M1 GAGAL: pembuat menetapkan sendiri diterima';
   exception when check_violation then null;
   end;
@@ -63,7 +79,7 @@ begin
     raise exception 'M1 GAGAL: expiry sebelum pemeriksaan diterima';
   exception when check_violation then null;
   end;
-  checks := checks + 4;
+  checks := checks + 6;
 
   -- M2 HSE Officer (medical.update LIMITED): mencatat administratif di Site-nya, tidak menetapkan, tidak Site lain
   set local role app_authenticated;
@@ -88,14 +104,22 @@ begin
   end if;
   checks := checks + 4;
 
-  -- M3 Medical Officer menetapkan FIT_WITH_RESTRICTION + pembatasan; HSE Officer tidak menambah pembatasan
+  -- M3 petugas medis (Medical Officer) tidak lagi menetapkan; Dokter menetapkan FIT_WITH_RESTRICTION + pembatasan;
+  -- HSE Officer tidak menambah pembatasan
   perform set_config('app.user_id', u_mo::text, true);
-  update medical_record set verification_status = 'VERIFIED', fitness_status = 'FIT_WITH_RESTRICTION', verified_by = u_mo,
+  begin
+    update medical_record set verification_status = 'VERIFIED', fitness_status = 'FIT', verified_by = u_mo, verified_at = now()
+     where id = rec;
+    raise exception 'M3 GAGAL: Medical Officer menetapkan Fit to Work';
+  exception when insufficient_privilege then null;
+  end;
+  perform set_config('app.user_id', u_doc::text, true);
+  update medical_record set verification_status = 'VERIFIED', fitness_status = 'FIT_WITH_RESTRICTION', verified_by = u_doc,
          verified_at = now(), determination_comment = 'Evaluasi ulang 6 bulan' where id = rec;
   insert into medical_restriction (organization_id, medical_record_id, restriction_code, operational_description, valid_from, valid_until, created_by)
-  values (org_a, rec, 'NO_WORK_AT_HEIGHT', 'Tidak bekerja di ketinggian di atas 2 meter', current_date - 2, current_date + 180, u_mo);
+  values (org_a, rec, 'NO_WORK_AT_HEIGHT', 'Tidak bekerja di ketinggian di atas 2 meter', current_date - 2, current_date + 180, u_doc);
   begin
-    update medical_record set verification_status = 'REJECTED', verified_by = u_mo, rejection_reason = 'x' where id = rec;
+    update medical_record set verification_status = 'REJECTED', verified_by = u_doc, rejection_reason = 'x' where id = rec;
     raise exception 'M3 GAGAL: penetapan diubah langsung menjadi penolakan';
   exception when check_violation then null;
   end;
@@ -108,7 +132,7 @@ begin
   end;
   if exists (select 1 from medical_record where id = rec) then raise exception 'M3 GAGAL: pencatat masih melihat detail setelah ditetapkan'; end if;
   if exists (select 1 from file_object where id = f_med and uploaded_by <> u_hseo) then raise exception 'M3 GAGAL: setup berkas'; end if;
-  checks := checks + 3;
+  checks := checks + 4;
 
   -- M4 tingkat status: Supervisor tim melihat status + pembatasan operasional, bukan detail; bukan pekerja luar tim
   perform set_config('app.user_id', u_spv::text, true);
@@ -137,24 +161,24 @@ begin
   if exists (select 1 from medical_record where worker_id <> w_self) then raise exception 'M5 GAGAL: pekerja melihat detail orang lain'; end if;
   checks := checks + 3;
 
-  -- M6 HSE Manager: tanpa otorisasi tidak melihat detail; otorisasi dari Medical Officer (<= 24 jam) membuka satu record
+  -- M6 HSE Manager: tanpa otorisasi tidak melihat detail; otorisasi dari Dokter (<= 24 jam) membuka satu record
   perform set_config('app.user_id', u_mgr::text, true);
   if exists (select 1 from medical_record) then raise exception 'M6 GAGAL: HSE Manager melihat detail tanpa otorisasi'; end if;
-  perform set_config('app.user_id', u_mo::text, true);
+  perform set_config('app.user_id', u_doc::text, true);
   begin
     insert into medical_access_grant (organization_id, medical_record_id, grantee_user_id, granted_by, reason, expires_at)
-    values (org_a, rec, u_mgr, u_mo, 'Investigasi sintetis', now() + interval '25 hours');
+    values (org_a, rec, u_mgr, u_doc, 'Investigasi sintetis', now() + interval '25 hours');
     raise exception 'M6 GAGAL: otorisasi > 24 jam diterima';
   exception when check_violation then null;
   end;
   begin
     insert into medical_access_grant (organization_id, medical_record_id, grantee_user_id, granted_by, reason, expires_at)
-    values (org_a, rec, u_spv, u_mo, 'Bukan HSE Manager', now() + interval '1 hour');
+    values (org_a, rec, u_spv, u_doc, 'Bukan HSE Manager', now() + interval '1 hour');
     raise exception 'M6 GAGAL: penerima tidak berhak diterima';
   exception when check_violation then null;
   end;
   insert into medical_access_grant (organization_id, medical_record_id, grantee_user_id, granted_by, reason, expires_at)
-  values (org_a, rec, u_mgr, u_mo, 'Investigasi insiden sintetis', now() + interval '2 hours') returning id into g;
+  values (org_a, rec, u_mgr, u_doc, 'Investigasi insiden sintetis', now() + interval '2 hours') returning id into g;
   perform set_config('app.user_id', u_hseo::text, true);
   begin
     insert into medical_access_grant (organization_id, medical_record_id, grantee_user_id, granted_by, reason, expires_at)
@@ -166,7 +190,7 @@ begin
   select count(*) into n from medical_record;
   if n <> 1 or not exists (select 1 from medical_record where id = rec) then raise exception 'M6 GAGAL: otorisasi tidak membuka tepat satu record'; end if;
   if not exists (select 1 from file_object where id = f_med) then raise exception 'M6 GAGAL: dokumen tidak terbuka dengan otorisasi'; end if;
-  perform set_config('app.user_id', u_mo::text, true);
+  perform set_config('app.user_id', u_doc::text, true);
   update medical_access_grant set revoked_at = now() where id = g;
   perform set_config('app.user_id', u_mgr::text, true);
   if exists (select 1 from medical_record) then raise exception 'M6 GAGAL: otorisasi dicabut masih membuka detail'; end if;
