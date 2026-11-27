@@ -36,6 +36,32 @@ components:
             - UP
             - DOWN
           example: UP
+        schema:
+          type: object
+          properties:
+            state:
+              type: string
+              enum:
+                - IN_SYNC
+                - BEHIND
+                - AHEAD
+                - UNKNOWN
+              description: "BEHIND: database belum menerima migrasi yang dibutuhkan kode
+                ter-deploy"
+            expected:
+              type: string
+              example: "0021"
+            applied:
+              type:
+                - string
+                - "null"
+              example: "0021"
+          required:
+            - state
+            - expected
+            - applied
+          description: Hanya di /health/ready. Nomor migrasi saja, tanpa detail internal
+            lain
       required:
         - status
     MeResponse:

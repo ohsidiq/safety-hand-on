@@ -1,0 +1,35 @@
+name: Tanda migrasi pada PR
+
+# PR yang menambah berkas db/migrations/NNNN_*.sql wajib memuat [MIGRASI NNNN] di judul, agar pemilik tahu
+# database staging harus diperbarui segera setelah merge.
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  title:
+    name: Judul PR memuat [MIGRASI NNNN]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Periksa judul
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          added="$(git diff --name-only --diff-filter=A "$BASE_SHA"...HEAD -- db/migrations | grep -oE '[0-9]{4}' || true)"
+          if [ -z "$added" ]; then echo "Tidak ada migrasi baru."; exit 0; fi
+          missing=""
+          for n in $added; do
+            case "$TITLE" in *"[MIGRASI $n]"*) ;; *) missing="$missing $n" ;; esac
+          done
+          if [ -n "$missing" ]; then
+            echo "::error title=Tanda migrasi::PR menambah migrasi$missing. Tambahkan [MIGRASI NNNN] ke judul PR."
+            exit 1
+          fi
+          echo "Judul memuat tanda migrasi:" $added

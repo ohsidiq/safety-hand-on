@@ -112,9 +112,14 @@ export function withWorker<T>(db: Db, fn: (tx: Tx) => Promise<T>): Promise<T> {
   );
 }
 
-/** Pemeriksaan kesiapan: database dapat dijangkau dan migrasi sudah diterapkan. */
-export async function checkDatabase(db: Db): Promise<{ ok: boolean; migrations: number }> {
-  const res = await db.query<{ n: string }>("select count(*)::text as n from schema_migrations");
+/**
+ * Pemeriksaan kesiapan: database dapat dijangkau dan migrasi sudah diterapkan.
+ * `latest` = nomor migrasi terakhir yang diterapkan (empat digit awal nama berkas, mis. "0021").
+ */
+export async function checkDatabase(db: Db): Promise<{ ok: boolean; migrations: number; latest: string | null }> {
+  const res = await db.query<{ n: string; latest: string | null }>(
+    "select count(*)::text as n, max(substring(version from '^[0-9]{4}')) as latest from schema_migrations",
+  );
   const migrations = Number(res.rows[0]?.n ?? 0);
-  return { ok: migrations > 0, migrations };
+  return { ok: migrations > 0, migrations, latest: res.rows[0]?.latest ?? null };
 }

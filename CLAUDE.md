@@ -9,5 +9,8 @@
 - Data sintetis saja (B-24). Jangan pernah memasukkan data pekerja nyata, NIK, atau detail medis nyata.
 - Rahasia tidak pernah masuk repo. Hanya nama variabel di `.env.example`.
 - Setelah mengubah rute API: `pnpm --filter @soh/api openapi`.
+- PR yang menambah migrasi: judul memuat `[MIGRASI NNNN]` (dicek workflow) dan `EXPECTED_SCHEMA` di
+  `apps/api/src/schema-version.ts` dinaikkan (dicek uji). Setelah merge, terapkan ke staging segera; workflow
+  `staging-schema.yml` menandai merah bila database tertinggal dari kode ter-deploy.
 - Sebelum menyatakan selesai: `pnpm lint && pnpm typecheck && pnpm test` dan `bash scripts/test-db.sh` + uji integrasi
   dengan `DATABASE_URL`. Status TESTED hanya bila uji benar-benar dijalankan.

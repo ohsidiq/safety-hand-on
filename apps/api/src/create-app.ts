@@ -16,6 +16,7 @@ import { registerMedicalClearance } from "./medical-clearance.js";
 import type { NationalIdCrypto } from "./national-id.js";
 import { registerNotifications } from "./notifications.js";
 import { registerOrgStructure } from "./org-structure.js";
+import { EXPECTED_SCHEMA, schemaState } from "./schema-version.js";
 import { registerSimpers } from "./simpers.js";
 import { type PushSender, registerSpikePush } from "./spike-push.js";
 import type { FileStorage } from "./storage.js";
@@ -51,6 +52,16 @@ const REQUEST_ID_RE = /^[A-Za-z0-9._-]{1,128}$/;
 const HealthData = z
   .object({
     status: z.enum(["UP", "DOWN"]).openapi({ example: "UP" }),
+    schema: z
+      .object({
+        state: z.enum(["IN_SYNC", "BEHIND", "AHEAD", "UNKNOWN"]).openapi({
+          description: "BEHIND: database belum menerima migrasi yang dibutuhkan kode ter-deploy",
+        }),
+        expected: z.string().openapi({ example: "0021" }),
+        applied: z.string().nullable().openapi({ example: "0021" }),
+      })
+      .optional()
+      .openapi({ description: "Hanya di /health/ready. Nomor migrasi saja, tanpa detail internal lain" }),
   })
   .openapi("HealthStatus");
 
@@ -122,9 +133,12 @@ export function createApp(deps: AppDeps = {}) {
 
   v1.openapi(readyRoute, async (c) => {
     let up = false;
+    let applied: string | null = null;
     if (deps.db) {
       try {
-        up = (await checkDatabase(deps.db)).ok;
+        const check = await checkDatabase(deps.db);
+        up = check.ok;
+        applied = check.latest;
       } catch (err) {
         up = false; // respons tanpa detail internal (API-000 bagian 18)
         // Log hanya kode galat (mis. 28P01, ECONNREFUSED, SELF_SIGNED_CERT_IN_CHAIN), tanpa pesan/URL/kredensial.
@@ -140,7 +154,14 @@ export function createApp(deps: AppDeps = {}) {
         );
       }
     }
-    const body = { success: up, data: { status: up ? ("UP" as const) : ("DOWN" as const) }, request_id: c.get("requestId") };
+    // Database tertinggal dari kode tidak membuat API DOWN (fitur lama tetap jalan), tetapi dilaporkan agar
+    // pemeriksaan otomatis (.github/workflows/staging-schema.yml) menandai merah.
+    const schema = { state: schemaState(applied), expected: EXPECTED_SCHEMA, applied };
+    const body = {
+      success: up,
+      data: { status: up ? ("UP" as const) : ("DOWN" as const), schema },
+      request_id: c.get("requestId"),
+    };
     return up ? c.json(body, 200) : c.json(body, 503);
   });
 
