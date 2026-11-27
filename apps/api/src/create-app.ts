@@ -16,6 +16,7 @@ import { registerMedicalClearance } from "./medical-clearance.js";
 import type { NationalIdCrypto } from "./national-id.js";
 import { registerNotifications } from "./notifications.js";
 import { registerOrgStructure } from "./org-structure.js";
+import { registerReadiness } from "./readiness.js";
 import { EXPECTED_SCHEMA, schemaState } from "./schema-version.js";
 import { registerSimpers } from "./simpers.js";
 import { type PushSender, registerSpikePush } from "./spike-push.js";
@@ -175,6 +176,7 @@ export function createApp(deps: AppDeps = {}) {
   registerSimpers(v1, deps);
   registerMedical(v1, deps);
   registerMedicalClearance(v1, deps);
+  registerReadiness(v1, deps);
   registerOrgStructure(v1, deps);
   registerFiles(v1, deps);
   registerWorkerImport(v1, deps);

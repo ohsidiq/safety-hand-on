@@ -1926,6 +1926,353 @@ components:
         reason:
           type: string
           maxLength: 300
+    WorkerReadiness:
+      type: object
+      properties:
+        worker_id:
+          type: string
+          format: uuid
+        snapshot_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+            - READY
+            - CONDITIONAL
+            - NOT_READY
+        score:
+          type: number
+          description: Informatif saja; status ditentukan syarat (B-02)
+        reason_code:
+          type:
+            - string
+            - "null"
+          enum:
+            - WORKER_INACTIVE
+            - PROFILE_NOT_SET
+            - null
+        evaluated_at:
+          type: string
+        next_evaluation_at:
+          type:
+            - string
+            - "null"
+        trigger_type:
+          type: string
+        rule_version:
+          type: string
+        profile:
+          type:
+            - object
+            - "null"
+          properties:
+            id:
+              type: string
+              format: uuid
+            version:
+              type: number
+          required:
+            - id
+            - version
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReadinessItem"
+      required:
+        - worker_id
+        - snapshot_id
+        - status
+        - score
+        - reason_code
+        - evaluated_at
+        - next_evaluation_at
+        - trigger_type
+        - rule_version
+        - profile
+        - items
+    ReadinessItem:
+      type: object
+      properties:
+        profile_item_id:
+          type: string
+          format: uuid
+        item_type:
+          type: string
+          enum:
+            - COMPETENCY
+            - MEDICAL
+            - AUTHORIZATION
+            - SIMPER
+        requirement_name:
+          type: string
+        requirement_status:
+          type: string
+          enum:
+            - VALID
+            - EXPIRING_SOON
+            - EXPIRED
+            - MISSING
+            - PENDING_VERIFICATION
+            - REJECTED
+            - SUSPENDED
+            - RESTRICTED
+            - NOT_MET
+        is_mandatory:
+          type: boolean
+        expiry_date:
+          type:
+            - string
+            - "null"
+        reason_code:
+          type: string
+        masked:
+          type: boolean
+          description: Item medis disamarkan untuk peran Anda (SRS-RE 10)
+      required:
+        - profile_item_id
+        - item_type
+        - requirement_name
+        - requirement_status
+        - is_mandatory
+        - expiry_date
+        - reason_code
+        - masked
+    ReadinessSnapshot:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+            - READY
+            - CONDITIONAL
+            - NOT_READY
+        previous_status:
+          type:
+            - string
+            - "null"
+          enum:
+            - READY
+            - CONDITIONAL
+            - NOT_READY
+            - null
+        score:
+          type: number
+        reason_code:
+          type:
+            - string
+            - "null"
+        profile_version:
+          type:
+            - number
+            - "null"
+        trigger_type:
+          type: string
+        evaluated_at:
+          type: string
+      required:
+        - id
+        - status
+        - previous_status
+        - score
+        - reason_code
+        - profile_version
+        - trigger_type
+        - evaluated_at
+    RequirementProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        job_position:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            name:
+              type: string
+            code:
+              type: string
+          required:
+            - id
+            - name
+            - code
+        profile_version:
+          type: number
+        status:
+          type: string
+          enum:
+            - DRAFT
+            - ACTIVE
+            - ARCHIVED
+        effective_from:
+          type:
+            - string
+            - "null"
+        notes:
+          type:
+            - string
+            - "null"
+        activated_at:
+          type:
+            - string
+            - "null"
+        item_count:
+          type: number
+        version:
+          type: number
+          description: Versi baris untuk If-Match (bukan nomor versi profile)
+        created_at:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RequirementProfileItem"
+      required:
+        - id
+        - job_position
+        - profile_version
+        - status
+        - effective_from
+        - notes
+        - activated_at
+        - item_count
+        - version
+        - created_at
+    RequirementProfileItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        item_type:
+          type: string
+          enum:
+            - COMPETENCY
+            - MEDICAL
+            - AUTHORIZATION
+            - SIMPER
+        requirement_name:
+          type: string
+        competency_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        medical_exam_type_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        authorization_type_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        simper_type_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        equipment_class_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        is_mandatory:
+          type: boolean
+        warning_days:
+          type: number
+        display_order:
+          type: number
+      required:
+        - id
+        - item_type
+        - requirement_name
+        - competency_id
+        - medical_exam_type_id
+        - authorization_type_id
+        - simper_type_id
+        - equipment_class_id
+        - is_mandatory
+        - warning_days
+        - display_order
+    RequirementProfileCreate:
+      type: object
+      properties:
+        notes:
+          type: string
+          maxLength: 1000
+        effective_from:
+          type: string
+          format: date
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RequirementProfileItemInput"
+          maxItems: 50
+        job_position_id:
+          type: string
+          format: uuid
+      required:
+        - items
+        - job_position_id
+      additionalProperties: false
+    RequirementProfileItemInput:
+      type: object
+      properties:
+        item_type:
+          type: string
+          description: COMPETENCY, MEDICAL, AUTHORIZATION, SIMPER (TRAINING menyusul P3)
+        competency_id:
+          type: string
+          format: uuid
+        medical_exam_type_id:
+          type: string
+          format: uuid
+        authorization_type_id:
+          type: string
+          format: uuid
+        simper_type_id:
+          type: string
+          format: uuid
+        equipment_class_id:
+          type: string
+          format: uuid
+          description: "Hanya untuk SIMPER: kelas alat yang disyaratkan"
+        is_mandatory:
+          type: boolean
+          default: true
+        warning_days:
+          type: integer
+          minimum: 0
+          maximum: 365
+          default: 30
+      required:
+        - item_type
+      additionalProperties: false
+    RequirementProfileUpdate:
+      type: object
+      properties:
+        notes:
+          type: string
+          maxLength: 1000
+        effective_from:
+          type: string
+          format: date
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RequirementProfileItemInput"
+          maxItems: 50
+      required:
+        - items
+      additionalProperties: false
     Organization:
       type: object
       properties:
@@ -8560,6 +8907,767 @@ paths:
         "422":
           description: VALIDATION_ERROR, CHECKLIST_INCOMPLETE, MCU_NOT_VALID,
             RESTRICTION_CONFLICT, REASON_REQUIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/workers/{worker_id}/readiness:
+    get:
+      tags:
+        - Readiness
+      summary: Status kesiapan pekerja dan alasan per syarat (item medis disamarkan
+        sesuai peran)
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: worker_id
+          in: path
+      responses:
+        "200":
+          description: Kesiapan
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/WorkerReadiness"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND (belum dievaluasi, tidak ada, atau di luar scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/workers/{worker_id}/readiness/history:
+    get:
+      tags:
+        - Readiness
+      summary: Riwayat perubahan status kesiapan (snapshot terbaru dahulu)
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: worker_id
+          in: path
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+          required: false
+          name: limit
+          in: query
+      responses:
+        "200":
+          description: Riwayat
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ReadinessSnapshot"
+                  pagination:
+                    type: object
+                    properties:
+                      limit:
+                        type: number
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      has_more:
+                        type: boolean
+                    required:
+                      - limit
+                      - next_cursor
+                      - has_more
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - pagination
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/readiness/snapshots/{id}:
+    get:
+      tags:
+        - Readiness
+      summary: Rincian satu snapshot (penyamaran yang sama)
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Snapshot
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    allOf:
+                      - $ref: "#/components/schemas/ReadinessSnapshot"
+                      - type: object
+                        properties:
+                          worker_id:
+                            type: string
+                            format: uuid
+                          items:
+                            type: array
+                            items:
+                              $ref: "#/components/schemas/ReadinessItem"
+                        required:
+                          - worker_id
+                          - items
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND (belum dievaluasi, tidak ada, atau di luar scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/workers/{worker_id}/readiness/evaluate:
+    post:
+      tags:
+        - Readiness
+      summary: Evaluasi ulang manual satu pekerja (readiness.evaluate pada Site
+        pekerja, teraudit)
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: worker_id
+          in: path
+      responses:
+        "200":
+          description: Hasil evaluasi
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/WorkerReadiness"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND (belum dievaluasi, tidak ada, atau di luar scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/requirement-profiles:
+    get:
+      tags:
+        - Readiness
+      summary: Daftar Requirement Profile
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: false
+          name: job_position_id
+          in: query
+        - schema:
+            type: string
+            enum:
+              - DRAFT
+              - ACTIVE
+              - ARCHIVED
+          required: false
+          name: status
+          in: query
+      responses:
+        "200":
+          description: Daftar (maksimum 500)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/RequirementProfile"
+                  pagination:
+                    type: object
+                    properties:
+                      limit:
+                        type: number
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      has_more:
+                        type: boolean
+                    required:
+                      - limit
+                      - next_cursor
+                      - has_more
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - pagination
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    post:
+      tags:
+        - Readiness
+      summary: Membuat draf Requirement Profile untuk posisi yang belum memiliki profile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RequirementProfileCreate"
+      responses:
+        "201":
+          description: Draf dibuat
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/RequirementProfile"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: PROFILE_NOT_DRAFT, PROFILE_EMPTY, POSITION_HAS_ACTIVE_PROFILE,
+            CONFLICT (DRAFT_EXISTS), DUPLICATE
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "412":
+          description: VERSION_CONFLICT
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: VALIDATION_ERROR, ITEM_TYPE_NOT_AVAILABLE,
+            INVALID_REQUIREMENT_REFERENCE
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/requirement-profiles/{id}:
+    get:
+      tags:
+        - Readiness
+      summary: Detail Requirement Profile beserta syarat
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/RequirementProfile"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    put:
+      tags:
+        - Readiness
+      summary: Mengganti isi draf (catatan, tanggal berlaku, seluruh syarat). Hanya
+        DRAFT
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+        - schema:
+            type: string
+            pattern: ^(?:W\/)?"?\d{1,9}"?$
+            description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+            example: '"3"'
+          required: true
+          description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+          name: if-match
+          in: header
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RequirementProfileUpdate"
+      responses:
+        "200":
+          description: Draf diperbarui
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/RequirementProfile"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: PROFILE_NOT_DRAFT, PROFILE_EMPTY, POSITION_HAS_ACTIVE_PROFILE,
+            CONFLICT (DRAFT_EXISTS), DUPLICATE
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "412":
+          description: VERSION_CONFLICT
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: VALIDATION_ERROR, ITEM_TYPE_NOT_AVAILABLE,
+            INVALID_REQUIREMENT_REFERENCE
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    delete:
+      tags:
+        - Readiness
+      summary: Menghapus draf (profile ACTIVE/ARCHIVED tidak dapat dihapus)
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Dihapus
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      deleted:
+                        type: boolean
+                        enum:
+                          - true
+                    required:
+                      - id
+                      - deleted
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: PROFILE_NOT_DRAFT, PROFILE_EMPTY, POSITION_HAS_ACTIVE_PROFILE,
+            CONFLICT (DRAFT_EXISTS), DUPLICATE
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "412":
+          description: VERSION_CONFLICT
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: VALIDATION_ERROR, ITEM_TYPE_NOT_AVAILABLE,
+            INVALID_REQUIREMENT_REFERENCE
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/requirement-profiles/{id}/new-version:
+    post:
+      tags:
+        - Readiness
+      summary: Menyalin profile ACTIVE/ARCHIVED menjadi draf versi berikutnya
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+      responses:
+        "201":
+          description: Draf versi baru
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/RequirementProfile"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: PROFILE_NOT_DRAFT, PROFILE_EMPTY, POSITION_HAS_ACTIVE_PROFILE,
+            CONFLICT (DRAFT_EXISTS), DUPLICATE
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "412":
+          description: VERSION_CONFLICT
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: VALIDATION_ERROR, ITEM_TYPE_NOT_AVAILABLE,
+            INVALID_REQUIREMENT_REFERENCE
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/requirement-profiles/{id}/activate:
+    post:
+      tags:
+        - Readiness
+      summary: Mengaktifkan draf; versi aktif sebelumnya diarsipkan; pekerja posisi
+        itu dievaluasi ulang lewat antrean
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+        - schema:
+            type: string
+            pattern: ^(?:W\/)?"?\d{1,9}"?$
+            description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+            example: '"3"'
+          required: true
+          description: Versi terakhir yang dibaca (API-000 §10). Tidak ada/rusak -> 422
+          name: if-match
+          in: header
+      responses:
+        "200":
+          description: Aktif
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/RequirementProfile"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: PROFILE_NOT_DRAFT, PROFILE_EMPTY, POSITION_HAS_ACTIVE_PROFILE,
+            CONFLICT (DRAFT_EXISTS), DUPLICATE
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "412":
+          description: VERSION_CONFLICT
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: VALIDATION_ERROR, ITEM_TYPE_NOT_AVAILABLE,
+            INVALID_REQUIREMENT_REFERENCE
           content:
             application/json:
               schema:

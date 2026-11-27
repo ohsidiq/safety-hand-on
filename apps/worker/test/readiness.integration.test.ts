@@ -25,15 +25,23 @@ describe.skipIf(!url)("Worker Readiness Engine (integrasi)", () => {
   });
 
   it("evaluasi terjadwal mengisi hasil untuk setiap pekerja dan idempoten", async () => {
+    // hanya pekerja yang sudah ada sebelum uji: paket lain (uji API) dapat menambah pekerja secara paralel
+    const ids = (await db.query<{ id: string }>("select id from worker where deleted_at is null")).rows.map((r) => r.id);
     await evaluateDueReadiness(db, 100000);
     const missing = await db.query<{ n: number }>(
-      `select count(*)::int as n from worker w
-        where w.deleted_at is null and not exists (select 1 from readiness_current rc where rc.worker_id = w.id)`,
+      `select count(*)::int as n from unnest($1::uuid[]) w(id)
+        where not exists (select 1 from readiness_current rc where rc.worker_id = w.id)`,
+      [ids],
     );
     expect(missing.rows[0]?.n).toBe(0);
-    const before = await db.query<{ n: number }>("select count(*)::int as n from readiness_snapshot");
+    const count = async () =>
+      (
+        await db.query<{ n: number }>("select count(*)::int as n from readiness_snapshot where worker_id = any ($1::uuid[])", [
+          ids,
+        ])
+      ).rows[0]?.n;
+    const before = await count();
     await evaluateDueReadiness(db, 100000);
-    const after = await db.query<{ n: number }>("select count(*)::int as n from readiness_snapshot");
-    expect(after.rows[0]?.n).toBe(before.rows[0]?.n);
+    expect(await count()).toBe(before);
   });
 });

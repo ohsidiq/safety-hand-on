@@ -645,3 +645,12 @@ a.button-link {
 .card .facts {
   width: 100%;
 }
+
+/* M4.2 Syarat Jabatan: satu kotak per syarat pada formulir draf */
+.form fieldset {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  display: grid;
+  gap: 0.5rem;
+}
