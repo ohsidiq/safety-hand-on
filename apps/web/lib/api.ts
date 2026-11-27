@@ -196,7 +196,7 @@ export type SendResult<T> = { ok: true; data: T; etag: string | null } | { ok: f
 
 /** Permintaan tulis (POST/PATCH) dengan rincian galat API-000 §7 untuk pesan di UI. */
 export async function apiSend<T>(
-  method: "POST" | "PATCH",
+  method: "POST" | "PATCH" | "DELETE",
   path: string,
   accessToken: string,
   body?: unknown,

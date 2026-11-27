@@ -559,6 +559,17 @@ describe("Medical (M3.5, B-27 Dokter)", () => {
     expect(medicalErrorMessage({ status: 409, code: "DUPLICATE", details: [], extra: {} })).toMatch(/Kode sudah dipakai/);
   });
 
+  it("jenis pemeriksaan MCU: validasi tambah/ubah dan pesan master terpakai (B-28)", async () => {
+    const { validateExamType, medicalErrorMessage } = await import("../lib/medical");
+    const ok = { name: "MCU Berkala", code: "mcu-periodic", months: "12" };
+    expect(validateExamType(ok)).toBeNull();
+    expect(validateExamType({ ...ok, months: "" })).toBeNull();
+    expect(validateExamType({ ...ok, name: "a" })).toMatch(/Nama/);
+    expect(validateExamType({ ...ok, code: "MCU PERIODIK" })).toMatch(/Kode/);
+    expect(validateExamType({ ...ok, months: "601" })).toMatch(/1-600/);
+    expect(medicalErrorMessage({ status: 409, code: "MASTER_IN_USE", details: [], extra: {} })).toMatch(/Nonaktifkan/);
+  });
+
   it("kode pembatasan hanya batasan kerja (tanpa istilah diagnosis) dan pesan galat akses", async () => {
     const { RESTRICTION_CODES, medicalErrorMessage, MEDICAL_VALIDITY_LABEL } = await import("../lib/medical");
     for (const r of RESTRICTION_CODES) {

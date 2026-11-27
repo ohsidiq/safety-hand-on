@@ -5,12 +5,14 @@ import { type FormEvent, useCallback, useEffect, useId, useState } from "react";
 import { apiGet, apiSend } from "@/lib/api";
 import {
   type ClearanceTypeFormValue,
+  type ExamTypeFormValue,
   type MedicalClearanceType,
   type MedicalExamType,
   type MedicalRecord,
   medicalErrorMessage,
   RESTRICTION_CODES,
   validateClearanceType,
+  validateExamType,
 } from "@/lib/medical";
 import { useMe, useSession } from "@/lib/session";
 import { DeterminationForm } from "./medical-section";
@@ -132,11 +134,84 @@ function QueueRow({
   );
 }
 
+/** Konfirmasi hapus di tempat (tanpa dialog peramban). */
+function DeleteButton({ name, onConfirm }: { name: string; onConfirm: () => Promise<void> }) {
+  const [asking, setAsking] = useState(false);
+  const [busy, setBusy] = useState(false);
+  if (!asking)
+    return (
+      <button type="button" className="secondary" onClick={() => setAsking(true)}>
+        Hapus
+      </button>
+    );
+  return (
+    <span role="status">
+      Hapus &quot;{name}&quot;?{" "}
+      <button
+        type="button"
+        className="danger"
+        disabled={busy}
+        onClick={async () => {
+          setBusy(true);
+          await onConfirm();
+          setBusy(false);
+          setAsking(false);
+        }}
+      >
+        Ya, hapus
+      </button>{" "}
+      <button type="button" className="secondary" onClick={() => setAsking(false)}>
+        Batal
+      </button>
+    </span>
+  );
+}
+
+/** Aksi baku master: nonaktifkan/aktifkan (POST + If-Match) dan hapus bila belum dipakai (DELETE, B-28). */
+function useMasterActions(
+  base: string,
+  reload: () => void,
+  setError: (e: string | null) => void,
+  setMessage: (m: string) => void,
+) {
+  const { getToken } = useSession();
+  const transition = async (t: { id: string; name: string; status: string; version: number }) => {
+    const token = await getToken();
+    if (!token) return;
+    const action = t.status === "ACTIVE" ? "deactivate" : "reactivate";
+    const r = await apiSend("POST", `${base}/${t.id}/${action}`, token, undefined, { ifMatch: t.version });
+    if (!r.ok) {
+      setError(medicalErrorMessage(r.error));
+      if (r.error.code === "VERSION_CONFLICT") reload();
+      return;
+    }
+    setError(null);
+    setMessage(action === "deactivate" ? `"${t.name}" dinonaktifkan.` : `"${t.name}" diaktifkan kembali.`);
+    reload();
+  };
+  const remove = async (t: { id: string; name: string; version: number }) => {
+    const token = await getToken();
+    if (!token) return;
+    const r = await apiSend("DELETE", `${base}/${t.id}`, token, undefined, { ifMatch: t.version });
+    if (!r.ok) {
+      setError(medicalErrorMessage(r.error));
+      if (r.error.code === "VERSION_CONFLICT") reload();
+      return;
+    }
+    setError(null);
+    setMessage(`"${t.name}" dihapus.`);
+    reload();
+  };
+  return { transition, remove };
+}
+
+const EMPTY_EXAM_TYPE: ExamTypeFormValue = { name: "", code: "", months: "12" };
+
+/** Jenis pemeriksaan MCU: tambah, ubah, nonaktifkan/aktifkan, hapus bila belum dipakai (B-28). */
 function ExamTypes() {
   const { getToken } = useSession();
-  const id = useId();
   const [items, setItems] = useState<MedicalExamType[]>([]);
-  const [form, setForm] = useState({ name: "", code: "", months: "12" });
+  const [editing, setEditing] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const load = useCallback(async () => {
@@ -148,76 +223,160 @@ function ExamTypes() {
   useEffect(() => {
     void load();
   }, [load]);
-  const submit = async (e: FormEvent) => {
-    e.preventDefault();
-    const code = form.code.trim().toUpperCase();
-    if (form.name.trim().length < 2) return setError("Nama minimal 2 karakter.");
-    if (!/^[A-Z0-9][A-Z0-9-]{1,29}$/.test(code)) return setError("Kode: huruf besar, angka, tanda hubung; 2-30 karakter.");
+  const { transition, remove } = useMasterActions("/medical-exam-types", () => void load(), setError, setMessage);
+  const body = (v: ExamTypeFormValue) => ({
+    name: v.name.trim(),
+    code: v.code.trim().toUpperCase(),
+    default_validity_months: v.months.trim() ? Number(v.months) : null,
+  });
+  const save = async (v: ExamTypeFormValue, t?: MedicalExamType): Promise<boolean> => {
     const token = await getToken();
-    if (!token) return;
-    const r = await apiSend("POST", "/medical-exam-types", token, {
-      name: form.name.trim(),
-      code,
-      default_validity_months: form.months ? Number(form.months) : null,
-    });
-    if (!r.ok) return setError(medicalErrorMessage(r.error));
+    if (!token) return false;
+    const r = t
+      ? await apiSend("PATCH", `/medical-exam-types/${t.id}`, token, body(v), { ifMatch: t.version })
+      : await apiSend("POST", "/medical-exam-types", token, body(v));
+    if (!r.ok) {
+      setError(medicalErrorMessage(r.error));
+      if (r.error.code === "VERSION_CONFLICT") void load();
+      return false;
+    }
     setError(null);
-    setForm({ name: "", code: "", months: "12" });
-    setMessage("Jenis pemeriksaan ditambahkan.");
+    setEditing(null);
+    setMessage(t ? `Jenis pemeriksaan "${v.name.trim()}" diubah.` : "Jenis pemeriksaan ditambahkan.");
     void load();
+    return true;
   };
   return (
     <section className="card panel" aria-labelledby="jenis-mcu">
       <h2 id="jenis-mcu">Jenis pemeriksaan</h2>
       {message ? <p role="status">{message}</p> : null}
+      {error ? (
+        <p role="alert" className="error">
+          {error}
+        </p>
+      ) : null}
       <ul>
         {items.map((t) => (
           <li key={t.id}>
             {t.name} ({t.code}) · {t.default_validity_months ? `${t.default_validity_months} bulan` : "-"} ·{" "}
-            {t.status === "ACTIVE" ? "Aktif" : "Nonaktif"}
+            {t.status === "ACTIVE" ? "Aktif" : "Nonaktif"}{" "}
+            {editing !== t.id ? (
+              <span className="row-actions">
+                <button type="button" className="secondary" onClick={() => setEditing(t.id)}>
+                  Ubah
+                </button>
+                <button type="button" className="secondary" onClick={() => void transition(t)}>
+                  {t.status === "ACTIVE" ? "Nonaktifkan" : "Aktifkan"}
+                </button>
+                <DeleteButton name={t.name} onConfirm={() => remove(t)} />
+              </span>
+            ) : (
+              <ExamTypeForm
+                label={`Ubah jenis pemeriksaan ${t.name}`}
+                submitText="Simpan perubahan"
+                initial={{
+                  name: t.name,
+                  code: t.code,
+                  months: t.default_validity_months ? String(t.default_validity_months) : "",
+                }}
+                onSubmit={(v) => save(v, t)}
+                onCancel={() => setEditing(null)}
+              />
+            )}
           </li>
         ))}
       </ul>
-      <form className="form" onSubmit={submit} aria-label="Tambah jenis pemeriksaan">
-        <label htmlFor={`${id}-n`}>
-          Nama (wajib)
-          <input
-            id={`${id}-n`}
-            required
-            maxLength={150}
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-          />
-        </label>
-        <label htmlFor={`${id}-c`}>
-          Kode (wajib)
-          <input
-            id={`${id}-c`}
-            required
-            maxLength={30}
-            value={form.code}
-            onChange={(e) => setForm({ ...form, code: e.target.value })}
-          />
-        </label>
-        <label htmlFor={`${id}-m`}>
-          Masa berlaku bawaan (bulan)
-          <input
-            id={`${id}-m`}
-            type="number"
-            min={1}
-            max={600}
-            value={form.months}
-            onChange={(e) => setForm({ ...form, months: e.target.value })}
-          />
-        </label>
-        {error ? (
-          <p role="alert" className="error">
-            {error}
-          </p>
-        ) : null}
-        <button type="submit">Tambah</button>
-      </form>
+      {editing === null ? (
+        <ExamTypeForm
+          label="Tambah jenis pemeriksaan"
+          submitText="Tambah"
+          initial={EMPTY_EXAM_TYPE}
+          resetOnSuccess
+          onSubmit={(v) => save(v)}
+        />
+      ) : null}
     </section>
+  );
+}
+
+function ExamTypeForm({
+  label,
+  submitText,
+  initial,
+  resetOnSuccess = false,
+  onSubmit,
+  onCancel,
+}: {
+  label: string;
+  submitText: string;
+  initial: ExamTypeFormValue;
+  resetOnSuccess?: boolean;
+  onSubmit: (v: ExamTypeFormValue) => Promise<boolean>;
+  onCancel?: () => void;
+}) {
+  const id = useId();
+  const [form, setForm] = useState<ExamTypeFormValue>(initial);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    const bad = validateExamType(form);
+    if (bad) return setError(bad);
+    setError(null);
+    setBusy(true);
+    const done = await onSubmit(form);
+    setBusy(false);
+    if (done && resetOnSuccess) setForm(EMPTY_EXAM_TYPE);
+  };
+  return (
+    <form className="form" onSubmit={submit} aria-label={label}>
+      <label htmlFor={`${id}-n`}>
+        Nama (wajib)
+        <input
+          id={`${id}-n`}
+          required
+          maxLength={150}
+          value={form.name}
+          onChange={(e) => setForm({ ...form, name: e.target.value })}
+        />
+      </label>
+      <label htmlFor={`${id}-c`}>
+        Kode (wajib)
+        <input
+          id={`${id}-c`}
+          required
+          maxLength={30}
+          value={form.code}
+          onChange={(e) => setForm({ ...form, code: e.target.value })}
+        />
+      </label>
+      <label htmlFor={`${id}-m`}>
+        Masa berlaku bawaan (bulan, boleh kosong)
+        <input
+          id={`${id}-m`}
+          type="number"
+          min={1}
+          max={600}
+          value={form.months}
+          onChange={(e) => setForm({ ...form, months: e.target.value })}
+        />
+      </label>
+      {error ? (
+        <p role="alert" className="error">
+          {error}
+        </p>
+      ) : null}
+      <span className="row-actions">
+        <button type="submit" disabled={busy}>
+          {submitText}
+        </button>
+        {onCancel ? (
+          <button type="button" className="secondary" onClick={onCancel}>
+            Batal
+          </button>
+        ) : null}
+      </span>
+    </form>
   );
 }
 
@@ -277,24 +436,7 @@ function ClearanceTypes() {
     void load();
     return true;
   };
-  const transition = async (t: MedicalClearanceType) => {
-    const token = await getToken();
-    if (!token) return;
-    const action = t.status === "ACTIVE" ? "deactivate" : "reactivate";
-    const r = await apiSend("POST", `/medical-clearance-types/${t.id}/${action}`, token, undefined, { ifMatch: t.version });
-    if (!r.ok) {
-      setError(medicalErrorMessage(r.error));
-      if (r.error.code === "VERSION_CONFLICT") void load();
-      return;
-    }
-    setError(null);
-    setMessage(
-      action === "deactivate"
-        ? `"${t.name}" dinonaktifkan. Tidak muncul lagi di pilihan pemeriksaan.`
-        : `"${t.name}" diaktifkan kembali.`,
-    );
-    void load();
-  };
+  const { transition, remove } = useMasterActions("/medical-clearance-types", () => void load(), setError, setMessage);
   return (
     <section className="card panel" aria-labelledby="jenis-kerja-khusus">
       <h2 id="jenis-kerja-khusus">Jenis kerja khusus (pemeriksaan kesiapan Dokter)</h2>
@@ -318,6 +460,7 @@ function ClearanceTypes() {
                 <button type="button" className="secondary" onClick={() => void transition(t)}>
                   {t.status === "ACTIVE" ? "Nonaktifkan" : "Aktifkan"}
                 </button>
+                <DeleteButton name={t.name} onConfirm={() => remove(t)} />
               </span>
             ) : (
               <ClearanceTypeForm

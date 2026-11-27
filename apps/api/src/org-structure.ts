@@ -29,7 +29,8 @@ import {
  * Struktur organisasi (API-002 §3-§6, §8-§11): organisasi sendiri, Site, Department, Division, Team (dan anggota),
  * Job Position, Equipment Class.
  * - Organisasi pemanggil dari token; tidak ada id organisasi pada URL (§3). Objek di luar organisasi/scope -> 404 (ORG-API-007).
- * - Tidak ada penghapusan; penonaktifan lewat aksi deactivate (ORG-API-003). Struktur berpekerja aktif ditolak (ORG-API-004).
+ * - Tidak ada penghapusan; penonaktifan lewat aksi deactivate (ORG-API-003). Pengecualian B-28: master yang ditandai
+ *   `deletable` (jenis pemeriksaan MCU, jenis kerja khusus) boleh dihapus selama belum pernah dipakai (409 MASTER_IN_USE). Struktur berpekerja aktif ditolak (ORG-API-004).
  * - PATCH wajib If-Match: <version> (API-000 §10). Audit dicatat pemicu database (ORG-API-010).
  * - Semua kueri lewat withUser (ARCH-002); RLS menegakkan scope Site.
  * Belum di M2.3: area platform /platform/tenants, /organization/settings (configuration.manage), evaluasi ulang readiness
@@ -89,6 +90,8 @@ interface ResourceDef {
   readSelfAlso?: string[];
   /** Permission FULL/TEAM lain yang juga boleh membaca (mis. medical.verify membaca jenis pemeriksaan). */
   readAlso?: string[];
+  /** B-28: boleh dihapus selama belum dirujuk data lain (kunci asing menolak -> 409 MASTER_IN_USE). */
+  deletable?: boolean;
 }
 
 const META_COLS = "status, version, created_at, updated_at";
@@ -408,6 +411,7 @@ const RESOURCES: ResourceDef[] = [
     readPerm: "organization.read",
     readAlso: ["medical.verify"],
     managePerm: "readiness_profile.manage",
+    deletable: true,
   },
   {
     // B-27: jenis kerja khusus yang mensyaratkan pemeriksaan kesiapan Dokter (mis. kerja di ketinggian)
@@ -442,6 +446,7 @@ const RESOURCES: ResourceDef[] = [
     readPerm: "organization.read",
     readAlso: ["medical.clearance"],
     managePerm: "readiness_profile.manage",
+    deletable: true,
   },
 ];
 
@@ -733,6 +738,48 @@ function registerResource(v1: V1, deps: Deps, def: ResourceDef) {
       if (r instanceof ApiFailure) return respondFailure(c, r);
       c.header("ETag", `"${r.version}"`);
       return c.json({ success: true, data: serialize(r), request_id: c.get("requestId") }, 200);
+    });
+  }
+
+  if (def.deletable) {
+    const deleteRoute = createRoute({
+      method: "delete",
+      path: itemPath,
+      tags: [def.tag],
+      summary: `Menghapus ${def.label} yang belum pernah dipakai (B-28)`,
+      security,
+      middleware: manageGuard,
+      request: { params: IdParam, headers: z.object({ "if-match": IfMatchValue.optional() }) },
+      responses: {
+        200: json(ok(z.object({ id: z.uuid(), deleted: z.literal(true) })), "Terhapus"),
+        ...baseErrors,
+        404: json(ErrorResponse, "NOT_FOUND"),
+        409: json(ErrorResponse, "MASTER_IN_USE (sudah dipakai; nonaktifkan saja)"),
+        412: json(ErrorResponse, "VERSION_CONFLICT"),
+      },
+    });
+    v1.openapi(deleteRoute, async (c) => {
+      const { id } = c.req.valid("param");
+      const expected = parseIfMatch(c.req.valid("header")["if-match"]);
+      const r = await run(
+        c,
+        deps,
+        async (tx) => {
+          const cur = await tx.query<{ version: number }>(`select version from ${def.table} where id = $1`, [id]);
+          const row = cur.rows[0];
+          if (!row) throw new ApiFailure("NOT_FOUND");
+          if (expected !== null && expected !== row.version)
+            throw new ApiFailure("VERSION_CONFLICT", undefined, { current_version: row.version });
+          const del = await tx.query(`delete from ${def.table} where id = $1`, [id]);
+          if (del.rowCount === 0) throw new ApiFailure("SCOPE_DENIED");
+          return { id, deleted: true as const };
+        },
+        {
+          map: (e: { code?: string }) => (e.code === "23503" ? new ApiFailure("MASTER_IN_USE") : undefined),
+        },
+      );
+      if (r instanceof ApiFailure) return respondFailure(c, r);
+      return c.json({ success: true, data: r, request_id: c.get("requestId") }, 200);
     });
   }
 }
