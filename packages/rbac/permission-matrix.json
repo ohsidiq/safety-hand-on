@@ -1,5 +1,5 @@
 {
-  "source": "PB-009 v3.5 dan PB-008 v3.5 (vault docs/01_Product_Bible), disalin 2026-11-23",
+  "source": "PB-009 v3.6 dan PB-008 v3.6 (vault docs/01_Product_Bible), disalin 2026-11-27 (B-27 Dokter)",
   "levels": {
     "FULL": "✔",
     "LIMITED": "◐",
@@ -59,6 +59,13 @@
     {
       "code": "MEDICAL_OFFICER",
       "name": "Medical Officer",
+      "scope_levels": ["ORGANIZATION", "SITE"],
+      "phase": "P1",
+      "is_active": true
+    },
+    {
+      "code": "DOCTOR",
+      "name": "Dokter",
       "scope_levels": ["ORGANIZATION", "SITE"],
       "phase": "P1",
       "is_active": true
@@ -251,6 +258,14 @@
       "action": "verify",
       "domain": "Readiness",
       "description": "Menetapkan Fit to Work",
+      "is_sensitive": false
+    },
+    {
+      "code": "medical.clearance",
+      "module": "medical",
+      "action": "clearance",
+      "domain": "Readiness",
+      "description": "Menerbitkan pemeriksaan kesiapan kerja khusus (pra-tugas)",
       "is_sensitive": false
     },
     {
@@ -926,11 +941,6 @@
     {
       "role": "MEDICAL_OFFICER",
       "permission": "medical.update",
-      "level": "FULL"
-    },
-    {
-      "role": "MEDICAL_OFFICER",
-      "permission": "medical.verify",
       "level": "FULL"
     },
     {
@@ -1681,6 +1691,71 @@
     {
       "role": "MEDICAL_OFFICER",
       "permission": "notification.read",
+      "level": "FULL"
+    },
+    {
+      "role": "DOCTOR",
+      "permission": "organization.read",
+      "level": "FULL"
+    },
+    {
+      "role": "DOCTOR",
+      "permission": "worker.read",
+      "level": "FULL"
+    },
+    {
+      "role": "DOCTOR",
+      "permission": "medical.read_status",
+      "level": "FULL"
+    },
+    {
+      "role": "DOCTOR",
+      "permission": "medical.read_detail",
+      "level": "FULL"
+    },
+    {
+      "role": "DOCTOR",
+      "permission": "medical.update",
+      "level": "FULL"
+    },
+    {
+      "role": "DOCTOR",
+      "permission": "medical.verify",
+      "level": "FULL"
+    },
+    {
+      "role": "DOCTOR",
+      "permission": "readiness.read",
+      "level": "FULL"
+    },
+    {
+      "role": "DOCTOR",
+      "permission": "observation.create",
+      "level": "FULL"
+    },
+    {
+      "role": "DOCTOR",
+      "permission": "corrective_action.update",
+      "level": "LIMITED"
+    },
+    {
+      "role": "DOCTOR",
+      "permission": "dashboard.view",
+      "level": "LIMITED"
+    },
+    {
+      "role": "DOCTOR",
+      "permission": "ai_recommendation.read",
+      "level": "LIMITED"
+    },
+    {
+      "role": "DOCTOR",
+      "permission": "notification.read",
+      "level": "FULL"
+    },
+    {
+      "role": "DOCTOR",
+      "permission": "medical.clearance",
       "level": "FULL"
     },
     {

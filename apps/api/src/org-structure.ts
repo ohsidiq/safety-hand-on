@@ -162,6 +162,19 @@ const SimperType = z
   })
   .openapi("SimperType");
 
+const RestrictionCode = z.string().regex(/^[A-Z][A-Z0-9_]{2,49}$/);
+const MedicalClearanceType = z
+  .object({
+    id: z.uuid(),
+    name: z.string(),
+    code: z.string(),
+    description: z.string().nullable(),
+    validity_hours: z.number().int(),
+    blocking_restriction_codes: z.array(z.string()),
+    ...Meta,
+  })
+  .openapi("MedicalClearanceType");
+const ValidityHours = z.number().int().min(1).max(24);
 const MedicalExamType = z
   .object({
     id: z.uuid(),
@@ -394,6 +407,40 @@ const RESOURCES: ResourceDef[] = [
     inUseIssue: "MEDICAL_EXAM_TYPE_IN_USE",
     readPerm: "organization.read",
     readAlso: ["medical.verify"],
+    managePerm: "readiness_profile.manage",
+  },
+  {
+    // B-27: jenis kerja khusus yang mensyaratkan pemeriksaan kesiapan Dokter (mis. kerja di ketinggian)
+    entity: "medical_clearance_type",
+    tag: "Medical",
+    label: "Jenis kerja khusus",
+    table: "medical_clearance_type",
+    itemBase: "/medical-clearance-types",
+    collectionPath: "/medical-clearance-types",
+    columns: `id, name, code, description, validity_hours, blocking_restriction_codes, ${META_COLS}`,
+    item: MedicalClearanceType,
+    create: z
+      .object({
+        name: Name,
+        code: Code,
+        description: OptText(1000),
+        validity_hours: ValidityHours.default(12),
+        blocking_restriction_codes: z.array(RestrictionCode).max(20).default([]),
+      })
+      .openapi("MedicalClearanceTypeCreate"),
+    patch: z
+      .object({
+        name: Name.optional(),
+        code: Code.optional(),
+        description: OptText(1000),
+        validity_hours: ValidityHours.optional(),
+        blocking_restriction_codes: z.array(RestrictionCode).max(20).optional(),
+      })
+      .openapi("MedicalClearanceTypePatch"),
+    writable: ["name", "code", "description", "validity_hours", "blocking_restriction_codes"],
+    inUseIssue: "MEDICAL_CLEARANCE_TYPE_IN_USE",
+    readPerm: "organization.read",
+    readAlso: ["medical.clearance"],
     managePerm: "readiness_profile.manage",
   },
 ];

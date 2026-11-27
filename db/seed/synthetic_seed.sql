@@ -56,11 +56,12 @@ begin
   -- penugasan lain diberikan oleh Company Admin.
   insert into user_profile(organization_id, email, full_name, status)
   select v_org, r || '@' || replace(lower(p_name), ' ', '-') || '.contoh', initcap(r) || ' ' || p_name, 'ACTIVE'
-  from unnest(array['admin','hsemgr','medis']) r;
+  from unnest(array['admin','hsemgr','medis','dokter']) r;
   select id into v_admin from user_profile where organization_id = v_org and email like 'admin@%';
   insert into user_role_assignment(user_id, organization_id, role_code, scope_type, scope_id, granted_by)
   select u.id, v_org,
-         case split_part(u.email, '@', 1) when 'admin' then 'COMPANY_ADMIN' when 'hsemgr' then 'HSE_MANAGER' else 'MEDICAL_OFFICER' end,
+         case split_part(u.email, '@', 1) when 'admin' then 'COMPANY_ADMIN' when 'hsemgr' then 'HSE_MANAGER'
+              when 'dokter' then 'DOCTOR' else 'MEDICAL_OFFICER' end,
          'ORGANIZATION', null,
          case when u.id = v_admin then null else v_admin end
   from user_profile u where u.organization_id = v_org;
@@ -229,9 +230,9 @@ begin
     from _seed_simper_status t where t.id = s.id and t.verification_status <> 'PENDING';
   drop table _seed_simper_status;
 
-  -- Medical sintetis (WF004): TANPA diagnosis. Dicatat HSE Officer (administratif), ditetapkan Medical Officer.
-  -- Sebaran: sebagian besar FIT, beberapa FIT_WITH_RESTRICTION (pembatasan operasional), satu TEMPORARILY_UNFIT,
-  -- satu UNFIT, sebagian belum ditetapkan.
+  -- Medical sintetis (WF004): TANPA diagnosis. Dicatat HSE Officer (administratif), ditetapkan Dokter (B-27).
+  -- Sebaran: sebagian besar FIT, satu FIT_WITH_CONDITION (tindak lanjut ringan), beberapa FIT_WITH_RESTRICTION
+  -- (pembatasan operasional), dua UNFIT (satu dengan tanggal tinjau ulang), sebagian belum ditetapkan.
   insert into medical_exam_type(organization_id, name, code, default_validity_months)
   values (v_org, 'MCU Awal', 'MCU-PRE', 12), (v_org, 'MCU Berkala', 'MCU-PERIODIC', 12);
   insert into medical_record(organization_id, site_id, worker_id, exam_type_id, examination_date, expiry_date, provider, created_by)
@@ -249,16 +250,30 @@ begin
   )
   update medical_record m set
     verification_status = 'VERIFIED', verified_at = now(),
-    verified_by = (select id from user_profile where organization_id = v_org and email like 'medis@%'),
-    fitness_status = case when r.rn = 1 then 'UNFIT' when r.rn = 2 then 'TEMPORARILY_UNFIT'
-                          when r.rn in (3, 4) then 'FIT_WITH_RESTRICTION' else 'FIT' end,
-    unfit_until = case when r.rn = 2 then current_date + 30 end
+    verified_by = (select id from user_profile where organization_id = v_org and email like 'dokter@%'),
+    fitness_status = case when r.rn in (1, 2) then 'UNFIT' when r.rn in (3, 4) then 'FIT_WITH_RESTRICTION'
+                          when r.rn = 5 then 'FIT_WITH_CONDITION' else 'FIT' end,
+    unfit_until = case when r.rn = 2 then current_date + 30 end,
+    follow_up_note = case when r.rn = 5 then 'Kontrol ulang ke klinik site' end,
+    follow_up_due = case when r.rn = 5 then current_date + 30 end
   from ranked r where r.id = m.id and r.rn <= r.n - 2;  -- dua terakhir belum ditetapkan
   insert into medical_restriction(organization_id, medical_record_id, restriction_code, operational_description, valid_from,
                                   valid_until, created_by)
   select m.organization_id, m.id, 'NO_WORK_AT_HEIGHT', 'Tidak bekerja di ketinggian di atas 2 meter', m.examination_date,
-         m.examination_date + 180, m.verified_by
+         m.expiry_date, m.verified_by
   from medical_record m where m.organization_id = v_org and m.fitness_status = 'FIT_WITH_RESTRICTION';
+  -- jenis kerja khusus dan satu pemeriksaan kesiapan SIAP (tanpa angka tanda vital)
+  insert into medical_clearance_type(organization_id, name, code, validity_hours, blocking_restriction_codes)
+  values (v_org, 'Kerja di Ketinggian', 'WORK-AT-HEIGHT', 12, array['NO_WORK_AT_HEIGHT']),
+         (v_org, 'Ruang Terbatas', 'CONFINED-SPACE', 12, '{}'::text[]);
+  insert into medical_clearance(organization_id, site_id, worker_id, clearance_type_id, result, history_reviewed,
+                                blood_pressure_checked, vital_signs_checked, vitals_within_limits, examined_by, valid_until)
+  select m.organization_id, m.site_id, m.worker_id, t.id, 'CLEARED', true, true, true, true, m.verified_by,
+         now() + interval '12 hours'
+  from medical_record m
+  join medical_clearance_type t on t.organization_id = v_org and t.code = 'WORK-AT-HEIGHT'
+  where m.organization_id = v_org and m.fitness_status = 'FIT' and m.expiry_date >= current_date
+  order by m.worker_id limit 1;
 
   return v_org;
 end $$;

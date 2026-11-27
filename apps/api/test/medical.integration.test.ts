@@ -4,7 +4,7 @@ import { createApp } from "../src/create-app.js";
 import { createMemoryStorage } from "../src/storage.js";
 import { makeIssuer } from "./jwt-helper.js";
 
-/** Medical (API-005, SRS-WF004). Data SINTETIS saja (B-24): tanpa diagnosis. Butuh DATABASE_URL. */
+/** Medical (API-005 v2.1, SRS-WF004 v1.4, B-27 Dokter). Data SINTETIS saja (B-24): tanpa diagnosis. Butuh DATABASE_URL. */
 
 const PDF = Buffer.from("%PDF-1.4\n%mcu sintetis\n%%EOF\n");
 const url = process.env.DATABASE_URL;
@@ -72,6 +72,7 @@ describe.skipIf(!url)("Medical (integrasi)", () => {
     u.hseo = await newUser("HSE_OFFICER", "SITE", site, "HSE Officer Medis");
     u.mgr = await newUser("HSE_MANAGER", "ORGANIZATION", null, "HSE Manager Medis");
     u.mo = await newUser("MEDICAL_OFFICER", "ORGANIZATION", null, "Medical Officer Uji");
+    u.doc = await newUser("DOCTOR", "ORGANIZATION", null, "Dokter Uji");
     selfWorkerId = await one("select id from worker where user_id = $1", [u.pekerja1]);
     teamWorker = await one(
       `select tm.worker_id as id from user_role_assignment ura join team_member tm on tm.team_id = ura.scope_id
@@ -92,7 +93,7 @@ describe.skipIf(!url)("Medical (integrasi)", () => {
     await db?.end();
   });
 
-  it("pencatatan administratif -> penetapan Medical Officer -> status untuk Supervisor tanpa detail", async () => {
+  it("pencatatan administratif -> penetapan Dokter -> status untuk Supervisor tanpa detail", async () => {
     // HSE Officer (medical.update LIMITED) mengunggah dokumen MCU ke bucket terbatas dan mencatat
     const up = await call("hseo", "/files", "POST", {
       original_name: "mcu.pdf",
@@ -121,31 +122,44 @@ describe.skipIf(!url)("Medical (integrasi)", () => {
     expect(rec.body.data).toMatchObject({ verification_status: "PENDING", fitness_status: null, has_document: true });
     const id = rec.body.data.id;
 
-    // HSE Officer tidak dapat menetapkan; Medical Officer wajib pembatasan untuk FIT_WITH_RESTRICTION
+    // HSE Officer dan Medical Officer (petugas medis) tidak dapat menetapkan; Dokter wajib pembatasan untuk
+    // FIT_WITH_RESTRICTION dan tindak lanjut untuk FIT_WITH_CONDITION
     expect(
       (await call("hseo", `/medical-records/${id}/determination`, "POST", { fitness_status: "FIT" }, { "If-Match": '"1"' }))
         .status,
     ).toBe(403);
+    expect(
+      (await call("mo", `/medical-records/${id}/determination`, "POST", { fitness_status: "FIT" }, { "If-Match": '"1"' })).status,
+    ).toBe(403);
     const noR = await call(
-      "mo",
+      "doc",
       `/medical-records/${id}/determination`,
       "POST",
       { fitness_status: "FIT_WITH_RESTRICTION" },
       { "If-Match": '"1"' },
     );
     expect(noR.body.error.code).toBe("RESTRICTION_REQUIRED");
-    const noU = await call(
-      "mo",
+    const noF = await call(
+      "doc",
       `/medical-records/${id}/determination`,
       "POST",
-      { fitness_status: "TEMPORARILY_UNFIT" },
+      { fitness_status: "FIT_WITH_CONDITION", follow_up_note: "Kontrol tensi ulang" },
       { "If-Match": '"1"' },
     );
-    expect(noU.body.error.code).toBe("UNFIT_UNTIL_REQUIRED");
-    const queue = await call("mo", `/medical-records/pending-determination?site_id=${site}&limit=200`);
+    expect(noF.body.error.code).toBe("FOLLOW_UP_REQUIRED");
+    const badU = await call(
+      "doc",
+      `/medical-records/${id}/determination`,
+      "POST",
+      { fitness_status: "FIT", unfit_until: plusDays(10) },
+      { "If-Match": '"1"' },
+    );
+    expect(badU.body.error.code).toBe("VALIDATION_ERROR");
+    expect((await call("mo", "/medical-records/pending-determination")).status).toBe(403);
+    const queue = await call("doc", `/medical-records/pending-determination?site_id=${site}&limit=200`);
     expect(queue.body.data.some((x: { id: string }) => x.id === id)).toBe(true);
     const det = await call(
-      "mo",
+      "doc",
       `/medical-records/${id}/determination`,
       "POST",
       {
@@ -191,20 +205,20 @@ describe.skipIf(!url)("Medical (integrasi)", () => {
     expect(audit.rows.length).toBe(2);
     expect(audit.rows.every((r) => r.sensitive && r.reason === REASON)).toBe(true);
 
-    // HSE Manager: tanpa otorisasi ditolak; dengan otorisasi Medical Officer terbuka; dicabut tertutup lagi
+    // HSE Manager: tanpa otorisasi ditolak; dengan otorisasi Dokter terbuka; dicabut tertutup lagi
     expect((await call("mgr", `/medical-records/${id}`, "GET", undefined, { "X-Access-Reason": REASON })).status).toBe(404);
-    const gr = await call("mo", "/medical-access-grantees");
+    const gr = await call("doc", "/medical-access-grantees");
     expect(gr.body.data.some((x: { id: string }) => x.id === u.mgr)).toBe(true);
-    const g = await call("mo", `/medical-records/${id}/access-grants`, "POST", {
+    const g = await call("doc", `/medical-records/${id}/access-grants`, "POST", {
       grantee_user_id: u.mgr,
       reason: "Investigasi insiden sintetis",
       hours: 2,
     });
     expect(g.status).toBe(201);
     expect((await call("mgr", `/medical-records/${id}`, "GET", undefined, { "X-Access-Reason": REASON })).status).toBe(200);
-    expect((await call("mo", `/medical-access-grants/${g.body.data.id}/revoke`, "POST")).body.data.active).toBe(false);
+    expect((await call("doc", `/medical-access-grants/${g.body.data.id}/revoke`, "POST")).body.data.active).toBe(false);
     expect((await call("mgr", `/medical-records/${id}`, "GET", undefined, { "X-Access-Reason": REASON })).status).toBe(404);
-    const bad = await call("mo", `/medical-records/${id}/access-grants`, "POST", {
+    const bad = await call("doc", `/medical-records/${id}/access-grants`, "POST", {
       grantee_user_id: u.spvtim1,
       reason: "Bukan HSE Manager sintetis",
       hours: 1,
@@ -233,14 +247,14 @@ describe.skipIf(!url)("Medical (integrasi)", () => {
   });
 
   it("pemisahan tugas, penolakan beralasan, pekerja melihat miliknya tanpa alasan", async () => {
-    const own = await call("mo", `/workers/${teamWorker}/medical-records`, "POST", {
+    const own = await call("doc", `/workers/${teamWorker}/medical-records`, "POST", {
       exam_type_id: examType,
       examination_date: plusDays(-1),
       expiry_date: plusDays(300),
     });
     expect(own.body).toMatchObject({ success: true });
     const sod = await call(
-      "mo",
+      "doc",
       `/medical-records/${own.body.data.id}/determination`,
       "POST",
       { fitness_status: "FIT" },
@@ -254,10 +268,10 @@ describe.skipIf(!url)("Medical (integrasi)", () => {
       expiry_date: plusDays(300),
     });
     expect(
-      (await call("mo", `/medical-records/${rec.body.data.id}/reject`, "POST", {}, { "If-Match": '"1"' })).body.error.code,
+      (await call("doc", `/medical-records/${rec.body.data.id}/reject`, "POST", {}, { "If-Match": '"1"' })).body.error.code,
     ).toBe("REASON_REQUIRED");
     const rj = await call(
-      "mo",
+      "doc",
       `/medical-records/${rec.body.data.id}/reject`,
       "POST",
       { reason: "Dokumen tidak terbaca" },
