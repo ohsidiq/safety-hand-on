@@ -25,6 +25,15 @@ export const NAV: NavItem[] = [
     phase: "P0",
     built: true,
   },
+  // M3.6b (UIUX-005 §6.2): antrean verifikasi gabungan semua modul, terlama dahulu
+  {
+    href: "/verifications",
+    label: "Antrean Verifikasi",
+    domain: "Readiness",
+    anyOf: ["competency.verify", "authorization.verify", "simper.verify", "medical.verify"],
+    phase: "P0",
+    built: true,
+  },
   // SRS-WF003: antrean verifikasi (HSE Manager) dan master kompetensi (Company Admin, HSE Manager)
   {
     href: "/competencies",
