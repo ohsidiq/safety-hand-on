@@ -1,0 +1,12 @@
+-- Jadwal pg_cron di Supabase staging (bukan migrasi: pg_cron khusus Supabase, database uji lokal/CI tidak memilikinya).
+-- Dijalankan manual di SQL Editor bila jadwal perlu dipasang ulang. Semua berjalan sebagai app_worker.
+-- Catatan 2026-11-27: job 1..3 dipasang saat M1.3/M1.5; job 4 ditambahkan M3.6a (0022).
+
+-- 1. Audit: pindahkan audit_outbox ke audit_log tiap menit
+select cron.schedule('audit-drain', '* * * * *', $$set role app_worker; select app.audit_drain(500); reset role;$$);
+-- 2. Audit: jamin partisi bulanan, harian 02:17 UTC
+select cron.schedule('audit-partitions', '17 2 * * *', $$set role app_worker; select app.audit_ensure_partitions(3); reset role;$$);
+-- 3. Notifikasi: proses notification_event tiap menit
+select cron.schedule('notification-process', '* * * * *', $$set role app_worker; select app.notification_process(200); reset role;$$);
+-- 4. Pengingat kedaluwarsa (M3.6a): tiap jam menit ke-7; hari dihitung per zona waktu Site, dedup mencegah ganda
+select cron.schedule('expiry-reminders', '7 * * * *', $$set role app_worker; select app.expiry_reminders_enqueue(); reset role;$$);

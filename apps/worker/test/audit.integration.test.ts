@@ -64,3 +64,52 @@ describe.skipIf(!url)("Worker notifikasi (integrasi)", () => {
     }
   });
 });
+
+describe.skipIf(!url)("Worker pengingat kedaluwarsa (integrasi)", () => {
+  it("membuat peristiwa sekali per hari pengingat sebagai app_worker, lalu menjadi notifikasi", async () => {
+    const { enqueueExpiryReminders, processNotifications } = await import("../src/notifications.js");
+    const db = createPool(url);
+    try {
+      const row = (
+        await db.query<{ org: string; site: string; worker: string; hseo: string; mgr: string }>(
+          `select o.id as org, ura.scope_id as site,
+                  (select w.id from worker w where w.site_id = ura.scope_id and w.user_id is null and w.worker_status = 'ACTIVE'
+                    order by w.id desc limit 1) as worker,
+                  ura.user_id as hseo,
+                  (select id from user_profile where organization_id = o.id and email like 'hsemgr@%') as mgr
+             from organization o join user_profile up on up.organization_id = o.id and up.email like 'hseo1@%'
+             join user_role_assignment ura on ura.user_id = up.id and ura.scope_type = 'SITE' and ura.revoked_at is null
+            order by o.name limit 1`,
+        )
+      ).rows[0];
+      if (!row) throw new Error("seed tidak lengkap");
+      const cmp = (
+        await db.query<{ id: string }>(
+          "insert into competency (organization_id, name, code) values ($1, 'Uji Worker Pengingat', 'UJI-WRK-' || upper(substr(md5(random()::text), 1, 6))) returning id",
+          [row.org],
+        )
+      ).rows[0]?.id;
+      const wc = (
+        await db.query<{ id: string }>(
+          `insert into worker_competency (organization_id, site_id, worker_id, competency_id, valid_from, valid_until, created_by,
+                                          verification_status, verified_by, verified_at)
+           values ($1, $2, $3, $4, app.site_today($2) - 100, app.site_today($2) + 14, $5, 'VERIFIED', $6, now()) returning id`,
+          [row.org, row.site, row.worker, cmp, row.hseo, row.mgr],
+        )
+      ).rows[0]?.id;
+      expect(await enqueueExpiryReminders(db)).toBeGreaterThanOrEqual(1);
+      await enqueueExpiryReminders(db);
+      const ev = await db.query("select id from notification_event where entity_id = $1", [wc]);
+      expect(ev.rows).toHaveLength(1);
+      await processNotifications(db, 100000);
+      const n = await db.query<{ body: string; priority: string }>(
+        "select body, priority from notification where entity_id = $1 and recipient_user_id = $2",
+        [wc, row.hseo],
+      );
+      expect(n.rows[0]?.body).toContain("berakhir dalam 14 hari");
+      expect(n.rows[0]?.priority).toBe("MEDIUM");
+    } finally {
+      await db.end();
+    }
+  });
+});
