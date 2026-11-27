@@ -547,6 +547,18 @@ describe("Medical (M3.5, B-27 Dokter)", () => {
     expect(medicalErrorMessage({ status: 422, code: "RESTRICTION_CONFLICT", details: [], extra: {} })).toMatch(/pembatasan/);
   });
 
+  it("jenis kerja khusus: validasi tambah/ubah dan pesan kode ganda", async () => {
+    const { validateClearanceType } = await import("../lib/medical");
+    const ok = { name: "Kerja di Ketinggian", code: "work-at-height", hours: "12", blocking: [] };
+    expect(validateClearanceType(ok)).toBeNull();
+    expect(validateClearanceType({ ...ok, name: "x" })).toMatch(/Nama/);
+    expect(validateClearanceType({ ...ok, code: "KERJA_TINGGI" })).toMatch(/Kode/);
+    expect(validateClearanceType({ ...ok, hours: "25" })).toMatch(/1-24/);
+    expect(validateClearanceType({ ...ok, hours: "0" })).toMatch(/1-24/);
+    const { medicalErrorMessage } = await import("../lib/medical");
+    expect(medicalErrorMessage({ status: 409, code: "DUPLICATE", details: [], extra: {} })).toMatch(/Kode sudah dipakai/);
+  });
+
   it("kode pembatasan hanya batasan kerja (tanpa istilah diagnosis) dan pesan galat akses", async () => {
     const { RESTRICTION_CODES, medicalErrorMessage, MEDICAL_VALIDITY_LABEL } = await import("../lib/medical");
     for (const r of RESTRICTION_CODES) {

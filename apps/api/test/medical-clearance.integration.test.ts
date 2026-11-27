@@ -68,7 +68,7 @@ describe.skipIf(!url)("Dokter dan kesiapan kerja khusus (integrasi)", () => {
     issuer = await makeIssuer();
     app = createApp({ db, auth: issuer.verifier });
     org = await one("select id from organization order by name limit 1");
-    for (const who of ["admin", "hseo1", "spv1"]) {
+    for (const who of ["admin", "hsemgr", "hseo1", "spv1"]) {
       u[who] = await one("select id from user_profile where organization_id = $1 and email like $2", [org, `${who}@%`]);
     }
     site = await one(
@@ -96,6 +96,40 @@ describe.skipIf(!url)("Dokter dan kesiapan kerja khusus (integrasi)", () => {
 
   afterAll(async () => {
     await db?.end();
+  });
+
+  it("jenis kerja khusus: tambah, ubah (If-Match), nonaktifkan, aktifkan kembali", async () => {
+    const code = `UJI-${tag.toUpperCase()}`;
+    const made = await call("hsemgr", "/medical-clearance-types", "POST", { name: "test", code });
+    expect(made.status).toBe(201);
+    expect(made.body.data).toMatchObject({ validity_hours: 12, blocking_restriction_codes: [], version: 1 });
+    const id = made.body.data.id;
+    expect((await call("doc", `/medical-clearance-types/${id}`, "PATCH", { name: "x y" }, { "If-Match": '"1"' })).status).toBe(
+      403,
+    );
+    const stale = await call("hsemgr", `/medical-clearance-types/${id}`, "PATCH", { name: "Lama" }, { "If-Match": '"9"' });
+    expect(stale.status).toBe(412);
+    const upd = await call(
+      "hsemgr",
+      `/medical-clearance-types/${id}`,
+      "PATCH",
+      { name: "Angkat Beban Uji", validity_hours: 8, blocking_restriction_codes: ["NO_HEAVY_LIFTING"] },
+      { "If-Match": '"1"' },
+    );
+    expect(upd.status).toBe(200);
+    expect(upd.body.data).toMatchObject({
+      name: "Angkat Beban Uji",
+      validity_hours: 8,
+      blocking_restriction_codes: ["NO_HEAVY_LIFTING"],
+      version: 2,
+    });
+    expect(
+      (await call("hsemgr", `/medical-clearance-types/${id}`, "PATCH", { validity_hours: 30 }, { "If-Match": '"2"' })).status,
+    ).toBe(422);
+    const off = await call("hsemgr", `/medical-clearance-types/${id}/deactivate`, "POST", undefined, { "If-Match": '"2"' });
+    expect(off.body.data).toMatchObject({ status: "INACTIVE", version: 3 });
+    const on = await call("hsemgr", `/medical-clearance-types/${id}/reactivate`, "POST", undefined, { "If-Match": '"3"' });
+    expect(on.body.data).toMatchObject({ status: "ACTIVE", version: 4 });
   });
 
   it("Dokter menetapkan Fit dengan kondisi; status menampilkan tanggal tindak lanjut tanpa catatan", async () => {
