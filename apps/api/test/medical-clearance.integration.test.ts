@@ -130,6 +130,31 @@ describe.skipIf(!url)("Dokter dan kesiapan kerja khusus (integrasi)", () => {
     expect(off.body.data).toMatchObject({ status: "INACTIVE", version: 3 });
     const on = await call("hsemgr", `/medical-clearance-types/${id}/reactivate`, "POST", undefined, { "If-Match": '"3"' });
     expect(on.body.data).toMatchObject({ status: "ACTIVE", version: 4 });
+    // hapus (B-28): Dokter ditolak, versi basi 412, belum dipakai terhapus, lalu 404
+    expect((await call("doc", `/medical-clearance-types/${id}`, "DELETE")).status).toBe(403);
+    expect((await call("hsemgr", `/medical-clearance-types/${id}`, "DELETE", undefined, { "If-Match": '"1"' })).status).toBe(412);
+    const del = await call("hsemgr", `/medical-clearance-types/${id}`, "DELETE", undefined, { "If-Match": '"4"' });
+    expect(del.status).toBe(200);
+    expect(del.body.data).toMatchObject({ id, deleted: true });
+    expect((await call("hsemgr", `/medical-clearance-types/${id}`, "DELETE")).status).toBe(404);
+  });
+
+  it("hapus master terpakai ditolak 409 MASTER_IN_USE; jenis pemeriksaan belum dipakai terhapus", async () => {
+    const usedClearance = await one("select clearance_type_id as id from medical_clearance where organization_id = $1 limit 1", [
+      org,
+    ]);
+    const inUse = await call("hsemgr", `/medical-clearance-types/${usedClearance}`, "DELETE");
+    expect(inUse.status).toBe(409);
+    expect(inUse.body.error.code).toBe("MASTER_IN_USE");
+    expect((await call("hsemgr", `/medical-exam-types/${examType}`, "DELETE")).body.error.code).toBe("MASTER_IN_USE");
+    const fresh = await call("hsemgr", "/medical-exam-types", "POST", { name: "Uji Hapus", code: `HAPUS-${tag.toUpperCase()}` });
+    expect(fresh.status).toBe(201);
+    expect((await call("hsemgr", `/medical-exam-types/${fresh.body.data.id}`, "DELETE")).status).toBe(200);
+    const audit = await db.query(
+      "select count(*)::int as n from audit_outbox where payload->>'entity_id' = $1 and payload->>'action' = 'medical_exam_type.delete'",
+      [fresh.body.data.id],
+    );
+    expect(audit.rows[0]?.n).toBe(1);
   });
 
   it("Dokter menetapkan Fit dengan kondisi; status menampilkan tanggal tindak lanjut tanpa catatan", async () => {

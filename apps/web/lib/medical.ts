@@ -61,6 +61,7 @@ export interface MedicalExamType {
   code: string;
   default_validity_months: number | null;
   status: "ACTIVE" | "INACTIVE";
+  version: number;
 }
 
 export interface MedicalClearanceType {
@@ -209,6 +210,8 @@ export function medicalErrorMessage(e: ApiError): string {
       return "Data diubah orang lain. Muat ulang lalu coba lagi.";
     case "DUPLICATE":
       return "Kode sudah dipakai jenis lain yang aktif.";
+    case "MASTER_IN_USE":
+      return "Sudah dipakai di data MCU atau pemeriksaan, jadi tidak dapat dihapus. Nonaktifkan saja.";
     case "REASON_REQUIRED":
       return "Alasan wajib diisi.";
     case "FILE_NOT_CLEAN":
@@ -241,5 +244,24 @@ export function validateClearanceType(v: ClearanceTypeFormValue): string | null 
     return "Kode: huruf besar, angka, tanda hubung; 2-30 karakter.";
   const hours = Number(v.hours);
   if (!Number.isInteger(hours) || hours < 1 || hours > 24) return "Masa berlaku 1-24 jam.";
+  return null;
+}
+
+/** Nilai formulir jenis pemeriksaan MCU (tambah dan ubah). */
+export interface ExamTypeFormValue {
+  name: string;
+  code: string;
+  months: string;
+}
+
+/** Validasi sisi klien (sama dengan server): nama 2-150, kode, masa berlaku kosong atau 1-600 bulan. */
+export function validateExamType(v: ExamTypeFormValue): string | null {
+  if (v.name.trim().length < 2) return "Nama minimal 2 karakter.";
+  if (!/^[A-Z0-9][A-Z0-9-]{1,29}$/.test(v.code.trim().toUpperCase()))
+    return "Kode: huruf besar, angka, tanda hubung; 2-30 karakter.";
+  if (v.months.trim()) {
+    const m = Number(v.months);
+    if (!Number.isInteger(m) || m < 1 || m > 600) return "Masa berlaku 1-600 bulan atau kosong.";
+  }
   return null;
 }
