@@ -45,6 +45,19 @@ describe("Core API: kerangka v1", () => {
     expect(res.headers.get("x-content-type-options")).toBe("nosniff");
   });
 
+  it("preflight CORS mengizinkan header yang dipakai web, termasuk X-Passport-Token (pindai QR)", async () => {
+    const res = await app.request("/api/v1/passport/verify", {
+      method: "OPTIONS",
+      headers: {
+        Origin: "http://localhost:3000",
+        "Access-Control-Request-Method": "GET",
+        "Access-Control-Request-Headers": "authorization,x-passport-token",
+      },
+    });
+    const allowed = (res.headers.get("access-control-allow-headers") ?? "").toLowerCase().split(",");
+    for (const h of ["authorization", "content-type", "if-match", "x-passport-token"]) expect(allowed).toContain(h);
+  });
+
   it("CORS hanya untuk asal yang diizinkan", async () => {
     const ok = await app.request("/api/v1/health/live", { headers: { Origin: "http://localhost:3000" } });
     expect(ok.headers.get("access-control-allow-origin")).toBe("http://localhost:3000");

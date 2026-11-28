@@ -117,7 +117,15 @@ export function createApp(deps: AppDeps = {}) {
     "*",
     cors({
       origin: deps.allowedOrigins ?? [],
-      allowHeaders: ["Authorization", "Content-Type", "X-Request-Id", "Idempotency-Key", "If-Match", "X-Access-Reason"],
+      allowHeaders: [
+        "Authorization",
+        "Content-Type",
+        "X-Request-Id",
+        "Idempotency-Key",
+        "If-Match",
+        "X-Access-Reason",
+        "X-Passport-Token",
+      ],
       exposeHeaders: ["X-Request-Id"],
     }),
   );
