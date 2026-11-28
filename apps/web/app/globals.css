@@ -654,3 +654,26 @@ a.button-link {
   display: grid;
   gap: 0.5rem;
 }
+
+/* M4.3 QR Safety Passport */
+.passport-qr {
+  margin: 0.5rem 0;
+  display: grid;
+  justify-items: start;
+  gap: 0.25rem;
+}
+.passport-qr img {
+  image-rendering: pixelated;
+  background: #fff;
+  border-radius: 0.5rem;
+}
+.scan-video {
+  width: 100%;
+  max-width: 420px;
+  border-radius: 0.5rem;
+  background: #000;
+}
+.badge-large {
+  font-size: 1.25rem;
+  padding: 0.4rem 0.9rem;
+}

@@ -736,3 +736,39 @@ describe("Readiness dan Syarat Jabatan (M4.2)", () => {
     expect(canSee(["readiness.read", "worker.read"], "/requirement-profiles")).toBe(false);
   });
 });
+
+describe("QR Safety Passport (M4.3)", () => {
+  const tok = "0123456789abcdef".repeat(4);
+
+  it("isi QR adalah tautan halaman pindai dengan token di fragmen, bukan SHO ID", async () => {
+    const { passportUrl, parseScanned } = await import("../lib/passport");
+    const url = passportUrl("https://soh.example/", tok);
+    expect(url).toBe(`https://soh.example/passport/scan#t=${tok}`);
+    expect(url).not.toMatch(/SHO-/);
+    expect(parseScanned(url)).toBe(tok);
+    expect(parseScanned(` ${tok} `)).toBe(tok);
+    expect(parseScanned(`#t=${tok}`)).toBe(tok);
+    expect(parseScanned("SHO-000001")).toBeNull();
+    expect(parseScanned(`https://lain.example/?t=${tok}`)).toBeNull();
+    expect(parseScanned(`#t=${tok}ff`)).toBeNull();
+  });
+
+  it("sisa waktu token tidak negatif", async () => {
+    const { secondsLeft } = await import("../lib/passport");
+    const now = Date.parse("2026-11-28T10:00:00Z");
+    expect(secondsLeft("2026-11-28T10:05:00Z", now)).toBe(300);
+    expect(secondsLeft("2026-11-28T09:59:00Z", now)).toBe(0);
+  });
+
+  it("pesan galat pindai", async () => {
+    const { passportErrorMessage } = await import("../lib/passport");
+    expect(passportErrorMessage({ code: "PASSPORT_TOKEN_EXPIRED" })).toMatch(/kedaluwarsa/);
+    expect(passportErrorMessage({ code: "NOT_FOUND" })).toMatch(/cakupan/);
+  });
+
+  it("menu Pindai QR untuk peran pembaca kesiapan (penuh/tim); pekerja tidak", async () => {
+    const { canSee } = await import("../lib/nav");
+    expect(canSee(["readiness.read"], "/passport/scan")).toBe(true);
+    expect(canSee(["worker.read"], "/passport/scan")).toBe(false);
+  });
+});
