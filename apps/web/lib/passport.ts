@@ -60,6 +60,9 @@ export function passportErrorMessage(e: { code?: string }): string {
     case "FORBIDDEN":
     case "SCOPE_DENIED":
       return "Anda tidak berwenang memindai QR.";
+    case "NETWORK_ERROR":
+    case "UNAVAILABLE":
+      return "Server tidak dapat dihubungi. Periksa koneksi lalu coba lagi.";
     default:
       return "Permintaan gagal. Coba lagi.";
   }
