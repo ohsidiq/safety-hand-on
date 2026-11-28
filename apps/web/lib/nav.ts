@@ -34,6 +34,15 @@ export const NAV: NavItem[] = [
     phase: "P1",
     built: true,
   },
+  // M4.3 (API-014 bagian 7): pemindai QR Safety Passport untuk peran yang membaca kesiapan pekerja lain
+  {
+    href: "/passport/scan",
+    label: "Pindai QR",
+    domain: "Readiness",
+    anyOf: ["readiness.read"],
+    phase: "P1",
+    built: true,
+  },
   // M3.6b (UIUX-005 §6.2): antrean verifikasi gabungan semua modul, terlama dahulu
   {
     href: "/verifications",
@@ -250,4 +259,5 @@ export const ACTION_LABEL: Record<string, string> = {
   "requirement_profile.item_update": "Syarat pada daftar diubah",
   "requirement_profile.item_remove": "Syarat dihapus dari daftar",
   "readiness.evaluate": "Kesiapan pekerja dinilai ulang",
+  "passport.scan": "QR Safety Passport dipindai",
 };

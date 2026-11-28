@@ -9,6 +9,8 @@ import { AuthorizationSection } from "../authorizations/authorization-section";
 import { CompetencySection } from "../competencies/competency-section";
 import { MedicalSection } from "../medical/medical-section";
 import { SimperSection } from "../simpers/simper-section";
+import { ReadinessSection } from "../workers/[id]/readiness-section";
+import { PassportCard } from "./passport-card";
 
 /** Data pekerja milik akun (B-18, PB-009 worker.read S). Hanya baca; NIK tidak pernah ditampilkan. */
 function MyWorker() {
@@ -71,6 +73,12 @@ export function AccountView() {
           <MyWorker />
           <p className="muted small-text">Perubahan data hubungi admin perusahaan.</p>
         </section>
+      ) : null}
+      {me.worker_id && (me.self_permissions ?? []).includes("readiness.read") ? (
+        <>
+          <ReadinessSection workerId={me.worker_id} canEvaluate={false} />
+          <PassportCard workerId={me.worker_id} />
+        </>
       ) : null}
       {me.worker_id && (me.self_permissions ?? []).includes("competency.read") ? (
         <CompetencySection

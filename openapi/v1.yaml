@@ -2273,6 +2273,88 @@ components:
       required:
         - items
       additionalProperties: false
+    PassportToken:
+      type: object
+      properties:
+        token:
+          type: string
+        expires_at:
+          type: string
+        refresh_after_seconds:
+          type: number
+      required:
+        - token
+        - expires_at
+        - refresh_after_seconds
+    PassportVerification:
+      type: object
+      properties:
+        worker_id:
+          type: string
+          format: uuid
+        full_name:
+          type: string
+        photo_url:
+          type:
+            - string
+            - "null"
+        job_position:
+          type:
+            - string
+            - "null"
+        site:
+          type:
+            - string
+            - "null"
+        status:
+          type:
+            - string
+            - "null"
+          enum:
+            - READY
+            - CONDITIONAL
+            - NOT_READY
+            - null
+          description: null bila belum pernah dinilai
+        categories:
+          type: array
+          items:
+            type: object
+            properties:
+              item_type:
+                type: string
+                enum:
+                  - COMPETENCY
+                  - MEDICAL
+                  - AUTHORIZATION
+                  - SIMPER
+              ok:
+                type: boolean
+              warning:
+                type:
+                  - string
+                  - "null"
+                enum:
+                  - EXPIRING_SOON
+                  - RESTRICTED
+                  - null
+            required:
+              - item_type
+              - ok
+              - warning
+        evaluated_at:
+          type:
+            - string
+            - "null"
+      required:
+        - worker_id
+        - full_name
+        - photo_url
+        - job_position
+        - site
+        - status
+        - categories
+        - evaluated_at
     Organization:
       type: object
       properties:
@@ -9668,6 +9750,119 @@ paths:
         "422":
           description: VALIDATION_ERROR, ITEM_TYPE_NOT_AVAILABLE,
             INVALID_REQUIREMENT_REFERENCE
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/workers/{worker_id}/passport/token:
+    post:
+      tags:
+        - Readiness
+      summary: Menerbitkan token QR Safety Passport (5 menit) untuk pekerja sendiri
+        atau pekerja dalam scope
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: worker_id
+          in: path
+      responses:
+        "201":
+          description: Token diterbitkan
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/PassportToken"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: WORKER_INACTIVE
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/v1/passport/verify:
+    get:
+      tags:
+        - Readiness
+      summary: Memverifikasi QR hasil pindai (pemindai terautentikasi, tercatat di
+        audit)
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            minLength: 1
+            maxLength: 200
+          required: true
+          name: x-passport-token
+          in: header
+      responses:
+        "200":
+          description: Hasil verifikasi
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  data:
+                    $ref: "#/components/schemas/PassportVerification"
+                  request_id:
+                    type: string
+                required:
+                  - success
+                  - data
+                  - request_id
+        "401":
+          description: UNAUTHORIZED atau TOKEN_EXPIRED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: FORBIDDEN, SCOPE_DENIED atau ACCOUNT_DEACTIVATED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: NOT_FOUND (pekerja di luar scope pemindai)
           content:
             application/json:
               schema:
