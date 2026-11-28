@@ -9,8 +9,9 @@ import { useSession } from "@/lib/session";
 /**
  * QR Safety Passport milik pekerja (FR-RE-013). QR berisi token 5 menit (bukan SHO ID) dan diperbarui otomatis, sehingga
  * tangkapan layar lama tidak berlaku. Pemindai harus masuk ke aplikasi dan berwenang atas pekerja ini.
+ * `forStaff`: ditampilkan petugas di detail pekerja (API-014: "pekerja untuk dirinya sendiri, atau peran berwenang").
  */
-export function PassportCard({ workerId }: { workerId: string }) {
+export function PassportCard({ workerId, forStaff = false }: { workerId: string; forStaff?: boolean }) {
   const { getToken } = useSession();
   const [qr, setQr] = useState<string | null>(null);
   const [token, setToken] = useState<PassportToken | null>(null);
@@ -66,8 +67,9 @@ export function PassportCard({ workerId }: { workerId: string }) {
     <section className="card" aria-labelledby="passport">
       <h2 id="passport">QR Safety Passport</h2>
       <p className="muted small-text">
-        Tunjukkan QR ini kepada petugas di lapangan. QR berganti otomatis dan hanya berlaku beberapa menit, jadi tangkapan layar
-        tidak dapat dipakai.
+        {forStaff
+          ? "QR pekerja ini untuk dipindai petugas lain yang berwenang (misalnya saat pekerja tidak membawa ponsel). QR berganti otomatis dan hanya berlaku beberapa menit."
+          : "Tunjukkan QR ini kepada petugas di lapangan. QR berganti otomatis dan hanya berlaku beberapa menit, jadi tangkapan layar tidak dapat dipakai."}
       </p>
       {!shown ? (
         <button type="button" onClick={() => setShown(true)}>

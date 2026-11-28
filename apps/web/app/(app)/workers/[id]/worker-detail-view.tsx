@@ -20,6 +20,7 @@ import {
 import { AuthorizationSection } from "../../authorizations/authorization-section";
 import { CompetencySection } from "../../competencies/competency-section";
 import { MedicalSection } from "../../medical/medical-section";
+import { PassportCard } from "../../profile/passport-card";
 import { SimperSection } from "../../simpers/simper-section";
 import { EMPTY_PLACEMENT, type Placement, PlacementFields } from "../placement-fields";
 import { ReadinessSection } from "./readiness-section";
@@ -157,7 +158,10 @@ export function WorkerDetailView({ id }: { id: string }) {
         />
       ) : null}
       {can("readiness.read") ? (
-        <ReadinessSection workerId={worker.id} canEvaluate={can("readiness.evaluate") || canLimited("readiness.evaluate")} />
+        <>
+          <ReadinessSection workerId={worker.id} canEvaluate={can("readiness.evaluate") || canLimited("readiness.evaluate")} />
+          {worker.worker_status === "ACTIVE" ? <PassportCard workerId={worker.id} forStaff /> : null}
+        </>
       ) : null}
       <section className="card panel" aria-labelledby="penempatan">
         <h2 id="penempatan">Riwayat penempatan</h2>

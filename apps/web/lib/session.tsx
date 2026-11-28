@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
 import { fetchMe, type Me, type MeResult } from "./api";
+import { rememberReturnTo } from "./return-to";
 import { getSupabase } from "./supabase";
 
 /**
@@ -37,6 +38,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     let active = true;
     supabase.auth.getSession().then(async ({ data }) => {
       if (!data.session) {
+        rememberReturnTo(window.sessionStorage, window.location.pathname + window.location.hash);
         router.replace("/login");
         return;
       }

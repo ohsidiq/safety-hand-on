@@ -772,3 +772,26 @@ describe("QR Safety Passport (M4.3)", () => {
     expect(canSee(["worker.read"], "/passport/scan")).toBe(false);
   });
 });
+
+describe("kembali ke halaman semula setelah login (M4.3)", () => {
+  const mem = () => {
+    const m = new Map<string, string>();
+    return {
+      getItem: (k: string) => m.get(k) ?? null,
+      setItem: (k: string, v: string) => void m.set(k, v),
+      removeItem: (k: string) => void m.delete(k),
+    };
+  };
+  it("menyimpan jalur internal beserta fragmen, menolak jalur luar, dan hanya dipakai sekali", async () => {
+    const { rememberReturnTo, takeReturnTo, safeReturnPath } = await import("../lib/return-to");
+    const s = mem();
+    rememberReturnTo(s, "/passport/scan#t=abc");
+    expect(takeReturnTo(s)).toBe("/passport/scan#t=abc");
+    expect(takeReturnTo(s)).toBe("/dashboard");
+    for (const bad of ["//jahat.example/x", "https://jahat.example", "/\\jahat", "/login", "/", ""]) {
+      expect(safeReturnPath(bad)).toBeNull();
+    }
+    rememberReturnTo(s, "//jahat.example");
+    expect(takeReturnTo(s)).toBe("/dashboard");
+  });
+});

@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { type FormEvent, useEffect, useState } from "react";
+import { takeReturnTo } from "@/lib/return-to";
 import { getSupabase, loginErrorMessage } from "@/lib/supabase";
 
 export function LoginForm() {
@@ -14,7 +15,7 @@ export function LoginForm() {
 
   useEffect(() => {
     supabase?.auth.getSession().then(({ data }) => {
-      if (data.session) router.replace("/dashboard");
+      if (data.session) router.replace(takeReturnTo(window.sessionStorage));
     });
   }, [supabase, router]);
 
@@ -37,7 +38,7 @@ export function LoginForm() {
       setError(loginErrorMessage(err));
       return;
     }
-    router.replace("/dashboard");
+    router.replace(takeReturnTo(window.sessionStorage));
   }
 
   async function onGoogle() {
