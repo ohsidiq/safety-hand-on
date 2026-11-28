@@ -107,7 +107,7 @@ describe("menu per peran (UIUX-002 §5, IA-006, IA-008)", () => {
   it("item fase yang belum dirilis tidak tampil walau permission ada", async () => {
     const { visibleNav } = await import("../lib/nav");
     const items = [
-      { href: "/x", label: "X", domain: "Readiness" as const, anyOf: ["a"], phase: "P1" as const, built: true },
+      { href: "/x", label: "X", domain: "Readiness" as const, anyOf: ["a"], phase: "P2" as const, built: true },
       { href: "/y", label: "Y", domain: "Platform" as const, anyOf: ["a"], phase: "P0" as const, built: true },
     ];
     expect(visibleNav(["a"], items).map((i) => i.href)).toEqual(["/y"]);
@@ -658,5 +658,81 @@ describe("Antrean verifikasi gabungan (M3.6b)", () => {
     for (const s of QUEUE_SOURCES) expect(canSee([s.permission], "/verifications")).toBe(true);
     expect(canSee(["medical.read_status", "worker.read"], "/verifications")).toBe(false);
     expect(canSee([], "/verifications")).toBe(false);
+  });
+});
+
+describe("Readiness dan Syarat Jabatan (M4.2)", () => {
+  it("validasi draf: rujukan wajib, hari peringatan 0..365, syarat tidak ganda", async () => {
+    const { validateDraft, emptyDraftItem } = await import("../lib/readiness");
+    const row = { ...emptyDraftItem(), ref: "c1" };
+    expect(validateDraft([])).toBeNull();
+    expect(validateDraft([emptyDraftItem()])).toMatch(/pilih kompetensi/);
+    expect(validateDraft([{ ...row, warning_days: "400" }])).toMatch(/0 sampai 365/);
+    expect(validateDraft([{ ...row, warning_days: "" }])).toMatch(/0 sampai 365/);
+    expect(validateDraft([row, { ...row, uid: "x" }])).toMatch(/sudah ada/);
+    // SIMPER sama dengan kelas alat berbeda bukan syarat ganda
+    const s = { ...emptyDraftItem(), item_type: "SIMPER" as const, ref: "s1", classId: "dt" };
+    expect(validateDraft([s, { ...s, uid: "y", classId: "exc" }])).toBeNull();
+  });
+
+  it("isi permintaan memakai kolom rujukan sesuai jenis; kelas alat hanya SIMPER", async () => {
+    const { draftPayload, draftFromProfile } = await import("../lib/readiness");
+    const payload = draftPayload([
+      { uid: "1", item_type: "MEDICAL", ref: "m1", classId: "abaikan", is_mandatory: true, warning_days: "14" },
+      { uid: "2", item_type: "SIMPER", ref: "s1", classId: "dt", is_mandatory: false, warning_days: "30" },
+    ]);
+    expect(payload).toEqual([
+      { item_type: "MEDICAL", medical_exam_type_id: "m1", is_mandatory: true, warning_days: 14 },
+      { item_type: "SIMPER", simper_type_id: "s1", equipment_class_id: "dt", is_mandatory: false, warning_days: 30 },
+    ]);
+    const back = draftFromProfile([
+      {
+        id: "i1",
+        item_type: "AUTHORIZATION",
+        requirement_name: "Kerja Panas",
+        competency_id: null,
+        medical_exam_type_id: null,
+        authorization_type_id: "a1",
+        simper_type_id: null,
+        equipment_class_id: null,
+        is_mandatory: true,
+        warning_days: 7,
+        display_order: 1,
+      },
+    ]);
+    expect(back).toEqual([
+      { uid: "i1", item_type: "AUTHORIZATION", ref: "a1", classId: "", is_mandatory: true, warning_days: "7" },
+    ]);
+  });
+
+  it("item medis tersamar tampil dengan kalimat baku tanpa rincian", async () => {
+    const { requirementText, requirementBadge } = await import("../lib/readiness");
+    const base = {
+      profile_item_id: "p",
+      item_type: "MEDICAL" as const,
+      requirement_name: "Syarat Medical",
+      is_mandatory: true,
+      expiry_date: null,
+      reason_code: "MEDICAL_REQUIREMENT_NOT_MET",
+    };
+    expect(requirementText({ ...base, requirement_status: "NOT_MET", masked: true })).toBe("Syarat Medical belum terpenuhi");
+    expect(requirementText({ ...base, requirement_status: "RESTRICTED", masked: false })).toBe("Dengan pembatasan");
+    expect(requirementBadge("VALID")).toBe("badge-success");
+    expect(requirementBadge("EXPIRING_SOON")).toBe("badge-warning");
+    expect(requirementBadge("NOT_MET")).toBe("badge-denied");
+  });
+
+  it("pesan galat Syarat Jabatan dalam bahasa Indonesia", async () => {
+    const { readinessErrorMessage } = await import("../lib/readiness");
+    const e = (code: string) => readinessErrorMessage({ status: 409, code, details: [], extra: {} });
+    expect(e("PROFILE_EMPTY")).toMatch(/minimal satu syarat/);
+    expect(e("POSITION_HAS_ACTIVE_PROFILE")).toMatch(/versi baru/);
+    expect(e("PROFILE_NOT_DRAFT")).toMatch(/versi baru/);
+  });
+
+  it("menu Syarat Jabatan untuk pengelola profile saja (fase P1 dirilis)", async () => {
+    const { canSee } = await import("../lib/nav");
+    expect(canSee(["readiness_profile.manage"], "/requirement-profiles")).toBe(true);
+    expect(canSee(["readiness.read", "worker.read"], "/requirement-profiles")).toBe(false);
   });
 });

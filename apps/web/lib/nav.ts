@@ -25,6 +25,15 @@ export const NAV: NavItem[] = [
     phase: "P0",
     built: true,
   },
+  // M4.2 (API-014 bagian 6): daftar syarat per jabatan (Requirement Profile), dikelola Company Admin dan HSE Manager
+  {
+    href: "/requirement-profiles",
+    label: "Syarat Jabatan",
+    domain: "Readiness",
+    anyOf: ["readiness_profile.manage"],
+    phase: "P1",
+    built: true,
+  },
   // M3.6b (UIUX-005 §6.2): antrean verifikasi gabungan semua modul, terlama dahulu
   {
     href: "/verifications",
@@ -84,8 +93,8 @@ export const NAV: NavItem[] = [
   { href: "/profile", label: "Profil", domain: "Akun", anyOf: [], phase: "P0", built: true },
 ];
 
-/** Fase yang sudah dirilis (B-09). Menu fase berikutnya tidak tampil. */
-export const RELEASED_PHASES: ReadonlySet<NavItem["phase"]> = new Set(["P0"]);
+/** Fase yang sudah dirilis (B-09). Menu fase berikutnya tidak tampil. P1 dibuka mulai M4.2 (Readiness, MVP = P0 + P1). */
+export const RELEASED_PHASES: ReadonlySet<NavItem["phase"]> = new Set(["P0", "P1"]);
 
 export function visibleNav(permissions: readonly string[], items: NavItem[] = NAV): NavItem[] {
   const have = new Set(permissions);
@@ -235,4 +244,10 @@ export const ACTION_LABEL: Record<string, string> = {
   "medical_exam_type.update": "Jenis pemeriksaan diubah",
   "medical_exam_type.deactivate": "Jenis pemeriksaan dinonaktifkan",
   "medical_exam_type.reactivate": "Jenis pemeriksaan diaktifkan kembali",
+  "requirement_profile.create": "Daftar syarat jabatan dibuat",
+  "requirement_profile.update": "Daftar syarat jabatan diubah atau diaktifkan",
+  "requirement_profile.item_add": "Syarat ditambahkan ke daftar",
+  "requirement_profile.item_update": "Syarat pada daftar diubah",
+  "requirement_profile.item_remove": "Syarat dihapus dari daftar",
+  "readiness.evaluate": "Kesiapan pekerja dinilai ulang",
 };

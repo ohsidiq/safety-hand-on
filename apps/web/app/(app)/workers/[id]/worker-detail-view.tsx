@@ -22,6 +22,7 @@ import { CompetencySection } from "../../competencies/competency-section";
 import { MedicalSection } from "../../medical/medical-section";
 import { SimperSection } from "../../simpers/simper-section";
 import { EMPTY_PLACEMENT, type Placement, PlacementFields } from "../placement-fields";
+import { ReadinessSection } from "./readiness-section";
 
 /** Detail pekerja (UIUX-005 §4): ringkasan, ubah data, aksi status beralasan, riwayat penempatan. */
 export function WorkerDetailView({ id }: { id: string }) {
@@ -116,7 +117,6 @@ export function WorkerDetailView({ id }: { id: string }) {
           <dt>Akun aplikasi</dt>
           <dd>{worker.has_account ? "Terhubung" : "Belum ada"}</dd>
         </dl>
-        <p className="muted small-text">Status kesiapan tampil setelah modul Readiness aktif.</p>
         {final ? <p className="muted">Pekerja sudah berhenti. Data tidak dapat diubah.</p> : null}
         {!final && mode === "view" ? (
           <span className="row-actions">
@@ -155,6 +155,9 @@ export function WorkerDetailView({ id }: { id: string }) {
           onCancel={() => setMode("view")}
           onSaved={(w) => done(w, `Status pekerja sekarang: ${WORKER_STATUS_LABEL[w.worker_status]}.`)}
         />
+      ) : null}
+      {can("readiness.read") ? (
+        <ReadinessSection workerId={worker.id} canEvaluate={can("readiness.evaluate") || canLimited("readiness.evaluate")} />
       ) : null}
       <section className="card panel" aria-labelledby="penempatan">
         <h2 id="penempatan">Riwayat penempatan</h2>

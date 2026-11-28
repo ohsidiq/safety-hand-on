@@ -194,9 +194,9 @@ export interface ApiError {
 
 export type SendResult<T> = { ok: true; data: T; etag: string | null } | { ok: false; error: ApiError };
 
-/** Permintaan tulis (POST/PATCH) dengan rincian galat API-000 §7 untuk pesan di UI. */
+/** Permintaan tulis (POST/PATCH/PUT/DELETE) dengan rincian galat API-000 §7 untuk pesan di UI. */
 export async function apiSend<T>(
-  method: "POST" | "PATCH" | "DELETE",
+  method: "POST" | "PATCH" | "PUT" | "DELETE",
   path: string,
   accessToken: string,
   body?: unknown,
