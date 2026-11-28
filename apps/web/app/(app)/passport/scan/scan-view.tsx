@@ -3,7 +3,13 @@
 import { type FormEvent, useCallback, useEffect, useId, useRef, useState } from "react";
 import { apiGet } from "@/lib/api";
 import { canSee } from "@/lib/nav";
-import { type PassportVerification, parseScanned, passportErrorMessage, WARNING_LABEL } from "@/lib/passport";
+import {
+  type PassportVerification,
+  parseScanned,
+  passportErrorMessage,
+  passportExplanation,
+  WARNING_LABEL,
+} from "@/lib/passport";
 import { ITEM_TYPE_LABEL, STATUS_BADGE, STATUS_LABEL } from "@/lib/readiness";
 import { useMe, useSession } from "@/lib/session";
 import { formatTime } from "../../time";
@@ -168,6 +174,16 @@ function ResultCard({ r }: { r: PassportVerification }) {
       ) : (
         <p>Belum dinilai.</p>
       )}
+      {passportExplanation(r).length > 0 ? (
+        <div className="callout">
+          <strong>Keterangan</strong>
+          <ul className="stack">
+            {passportExplanation(r).map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
       {r.categories.length > 0 ? (
         <ul className="stack">
           {r.categories.map((c) => (
@@ -176,6 +192,7 @@ function ResultCard({ r }: { r: PassportVerification }) {
                 {c.ok ? "Terpenuhi" : "Belum terpenuhi"}
               </span>{" "}
               {ITEM_TYPE_LABEL[c.item_type]}
+              {c.unmet > 0 ? <span className="muted small-text"> ({c.unmet} syarat wajib belum terpenuhi)</span> : null}
               {c.ok && c.warning ? <span className="muted small-text"> ({WARNING_LABEL[c.warning]})</span> : null}
             </li>
           ))}

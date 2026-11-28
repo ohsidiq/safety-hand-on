@@ -677,3 +677,10 @@ a.button-link {
   font-size: 1.25rem;
   padding: 0.4rem 0.9rem;
 }
+.callout {
+  border-left: 4px solid #d97706;
+  background: #fffbeb;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.25rem;
+  margin: 0.5rem 0;
+}

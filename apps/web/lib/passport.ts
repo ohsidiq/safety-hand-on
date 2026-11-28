@@ -18,8 +18,19 @@ export interface PassportVerification {
   job_position: string | null;
   site: string | null;
   status: ReadinessStatus | null;
-  categories: { item_type: ItemType; ok: boolean; warning: "EXPIRING_SOON" | "RESTRICTED" | null }[];
+  reason_code: "WORKER_INACTIVE" | "PROFILE_NOT_SET" | null;
+  categories: PassportCategory[];
   evaluated_at: string | null;
+}
+
+export interface PassportCategory {
+  item_type: ItemType;
+  ok: boolean;
+  warning: "EXPIRING_SOON" | "RESTRICTED" | null;
+  unmet: number;
+  total: number;
+  /** Nama syarat non-medis yang belum terpenuhi; kosong untuk MEDICAL. */
+  unmet_names: string[];
 }
 
 const TOKEN_RE = /^[0-9a-f]{64}$/;
@@ -66,4 +77,41 @@ export function passportErrorMessage(e: { code?: string }): string {
     default:
       return "Permintaan gagal. Coba lagi.";
   }
+}
+
+const CATEGORY_NAME: Record<ItemType, string> = {
+  COMPETENCY: "kompetensi",
+  MEDICAL: "Medical",
+  AUTHORIZATION: "Otorisasi Kerja",
+  SIMPER: "SIMPER",
+};
+
+/**
+ * Kalimat penjelasan status untuk pemindai (permintaan pemilik 2026-11-28). Tidak memuat detail medis: syarat Medical
+ * hanya disebut "Syarat Medical belum terpenuhi".
+ */
+export function passportExplanation(r: Pick<PassportVerification, "status" | "reason_code" | "categories">): string[] {
+  if (!r.status) return ["Pekerja belum dinilai. Penilaian berjalan otomatis dalam beberapa menit."];
+  if (r.reason_code === "WORKER_INACTIVE") return ["Pekerja tidak aktif, sehingga tidak dapat ditugaskan."];
+  if (r.reason_code === "PROFILE_NOT_SET")
+    return ["Jabatan pekerja belum memiliki daftar syarat aktif. Hubungi HSE Manager atau Company Admin untuk mengaturnya."];
+  const lines: string[] = [];
+  for (const c of r.categories) {
+    if (c.unmet > 0) {
+      if (c.item_type === "MEDICAL") lines.push("Syarat Medical belum terpenuhi. Hubungi Medical Officer.");
+      else if (c.unmet_names.length > 0)
+        lines.push(
+          `${CATEGORY_NAME[c.item_type]} belum terpenuhi: ${c.unmet_names.join(", ")}.`.replace(/^./, (x) => x.toUpperCase()),
+        );
+      else lines.push(`${c.unmet} syarat ${CATEGORY_NAME[c.item_type]} belum terpenuhi.`);
+    } else if (c.warning) {
+      lines.push(
+        c.warning === "RESTRICTED"
+          ? `${CATEGORY_NAME[c.item_type]} terpenuhi dengan pembatasan kerja.`.replace(/^./, (x) => x.toUpperCase())
+          : `${CATEGORY_NAME[c.item_type]} segera berakhir, perlu diperpanjang.`.replace(/^./, (x) => x.toUpperCase()),
+      );
+    }
+  }
+  if (lines.length === 0 && r.status === "READY") lines.push("Semua syarat wajib terpenuhi.");
+  return lines;
 }
