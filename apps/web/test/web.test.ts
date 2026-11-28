@@ -795,3 +795,47 @@ describe("kembali ke halaman semula setelah login (M4.3)", () => {
     expect(takeReturnTo(s)).toBe("/dashboard");
   });
 });
+
+describe("keterangan hasil pindai QR (permintaan pemilik)", () => {
+  const cat = (
+    item_type: "COMPETENCY" | "MEDICAL" | "AUTHORIZATION" | "SIMPER",
+    unmet: number,
+    names: string[] = [],
+    warning: "EXPIRING_SOON" | "RESTRICTED" | null = null,
+  ) => ({
+    item_type,
+    ok: unmet === 0,
+    warning,
+    unmet,
+    total: Math.max(unmet, 1),
+    unmet_names: names,
+  });
+
+  it("menjelaskan alasan tanpa daftar syarat, nonaktif, dan belum dinilai", async () => {
+    const { passportExplanation } = await import("../lib/passport");
+    expect(passportExplanation({ status: "NOT_READY", reason_code: "PROFILE_NOT_SET", categories: [] })[0]).toMatch(
+      /belum memiliki daftar syarat/,
+    );
+    expect(passportExplanation({ status: "NOT_READY", reason_code: "WORKER_INACTIVE", categories: [] })[0]).toMatch(
+      /tidak aktif/,
+    );
+    expect(passportExplanation({ status: null, reason_code: null, categories: [] })[0]).toMatch(/belum dinilai/);
+  });
+
+  it("menyebut syarat non-medis yang kurang, tetapi medis hanya kalimat baku", async () => {
+    const { passportExplanation } = await import("../lib/passport");
+    const lines = passportExplanation({
+      status: "NOT_READY",
+      reason_code: null,
+      categories: [cat("COMPETENCY", 1, ["Operator HD785"]), cat("MEDICAL", 1), cat("AUTHORIZATION", 0, [], "EXPIRING_SOON")],
+    });
+    expect(lines).toEqual([
+      "Kompetensi belum terpenuhi: Operator HD785.",
+      "Syarat Medical belum terpenuhi. Hubungi Medical Officer.",
+      "Otorisasi Kerja segera berakhir, perlu diperpanjang.",
+    ]);
+    expect(passportExplanation({ status: "READY", reason_code: null, categories: [cat("SIMPER", 0)] })).toEqual([
+      "Semua syarat wajib terpenuhi.",
+    ]);
+  });
+});

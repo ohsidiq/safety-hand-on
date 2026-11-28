@@ -71,7 +71,17 @@ describe.skipIf(!url)("QR Safety Passport API (integrasi)", () => {
     expect(v.body.data.worker_id).toBe(self);
     expect(v.body.data.photo_url).toBeNull();
     expect(Object.keys(v.body.data).sort()).toEqual(
-      ["categories", "evaluated_at", "full_name", "job_position", "photo_url", "site", "status", "worker_id"].sort(),
+      [
+        "categories",
+        "evaluated_at",
+        "full_name",
+        "job_position",
+        "photo_url",
+        "reason_code",
+        "site",
+        "status",
+        "worker_id",
+      ].sort(),
     );
     expect(JSON.stringify(v.body.data)).not.toMatch(/national_id|nik|document_number|sho_id/i);
 

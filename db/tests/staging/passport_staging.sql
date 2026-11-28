@@ -39,6 +39,11 @@ begin
                                  verification_status, verified_by, verified_at)
   values (org_a, site_w, w_self, cmp, today - 100, today + 10, u_scan, 'VERIFIED', u_mgr, now());
   perform app.readiness_evaluate(w_self, 'MANUAL', null);
+  -- pekerja pembanding pada jabatan tanpa daftar syarat aktif -> alasan PROFILE_NOT_SET
+  insert into job_position (organization_id, name, code) values (org_a, 'Uji Passport Tanpa Syarat', 'UJI-QR2')
+    returning id into pos;
+  update worker set job_position_id = pos where id = w_other;
+  perform app.readiness_evaluate(w_other, 'MANUAL', null);
 
   set local role app_authenticated;
 
@@ -79,7 +84,7 @@ begin
      or r.job_position is distinct from 'Uji Passport' or r.evaluated_at is null then
     raise exception 'P4 GAGAL: hasil pindai %', row_to_json(r);
   end if;
-  if r.categories <> '[{"ok": true, "warning": "EXPIRING_SOON", "item_type": "COMPETENCY"}, {"ok": false, "warning": null, "item_type": "MEDICAL"}]'::jsonb then
+  if r.reason_code is not null or r.categories <> '[{"ok": true, "unmet": 0, "total": 1, "warning": "EXPIRING_SOON", "item_type": "COMPETENCY", "unmet_names": []}, {"ok": false, "unmet": 1, "total": 1, "warning": null, "item_type": "MEDICAL", "unmet_names": []}]'::jsonb then
     raise exception 'P4 GAGAL: kategori %', r.categories;
   end if;
   reset role;
@@ -102,14 +107,20 @@ begin
 
   -- P6 HSE Officer menerbitkan token untuk pekerja Site-nya; Site lain ditolak
   perform set_config('app.user_id', u_scan::text, true);
-  if (select token from app.passport_issue(w_other)) is null then raise exception 'P6 GAGAL: HSE Officer tidak dapat menerbitkan'; end if;
+  select * into tok, exp from app.passport_issue(w_other);
+  if tok is null then raise exception 'P6 GAGAL: HSE Officer tidak dapat menerbitkan'; end if;
+  select * into r from app.passport_verify(tok);
+  if r.status is distinct from 'NOT_READY' or r.reason_code is distinct from 'PROFILE_NOT_SET' or r.categories <> '[]'::jsonb then
+    raise exception 'P6 GAGAL: alasan tanpa daftar syarat % / %', r.reason_code, r.categories;
+  end if;
+  -- P7 memakai token pekerja pembanding ini
   perform set_config('app.user_id', u_far::text, true);
   begin
     perform app.passport_issue(w_other);
     raise exception 'P6 GAGAL: HSE Officer Site lain menerbitkan token';
   exception when no_data_found then null;
   end;
-  checks := checks + 2;
+  checks := checks + 3;
 
   -- P7 token rusak, tidak dikenal, dan kedaluwarsa
   perform set_config('app.user_id', u_scan::text, true);

@@ -2316,6 +2316,16 @@ components:
             - NOT_READY
             - null
           description: null bila belum pernah dinilai
+        reason_code:
+          type:
+            - string
+            - "null"
+          enum:
+            - WORKER_INACTIVE
+            - PROFILE_NOT_SET
+            - null
+          description: Alasan Tidak siap tanpa penilaian syarat (pekerja tidak aktif /
+            jabatan tanpa daftar syarat)
         categories:
           type: array
           items:
@@ -2338,10 +2348,24 @@ components:
                   - EXPIRING_SOON
                   - RESTRICTED
                   - null
+              unmet:
+                type: number
+                description: Jumlah syarat wajib yang belum terpenuhi
+              total:
+                type: number
+              unmet_names:
+                type: array
+                items:
+                  type: string
+                description: Nama syarat non-medis yang belum terpenuhi; selalu kosong untuk
+                  MEDICAL (SRS-RE 10)
             required:
               - item_type
               - ok
               - warning
+              - unmet
+              - total
+              - unmet_names
         evaluated_at:
           type:
             - string
@@ -2353,6 +2377,7 @@ components:
         - job_position
         - site
         - status
+        - reason_code
         - categories
         - evaluated_at
     Organization:

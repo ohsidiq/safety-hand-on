@@ -37,6 +37,11 @@ const Category = z.object({
   item_type: z.enum(["COMPETENCY", "MEDICAL", "AUTHORIZATION", "SIMPER"]),
   ok: z.boolean(),
   warning: z.enum(["EXPIRING_SOON", "RESTRICTED"]).nullable(),
+  unmet: z.number().openapi({ description: "Jumlah syarat wajib yang belum terpenuhi" }),
+  total: z.number(),
+  unmet_names: z
+    .array(z.string())
+    .openapi({ description: "Nama syarat non-medis yang belum terpenuhi; selalu kosong untuk MEDICAL (SRS-RE 10)" }),
 });
 
 const Verified = z
@@ -47,6 +52,10 @@ const Verified = z
     job_position: z.string().nullable(),
     site: z.string().nullable(),
     status: z.enum(["READY", "CONDITIONAL", "NOT_READY"]).nullable().openapi({ description: "null bila belum pernah dinilai" }),
+    reason_code: z
+      .enum(["WORKER_INACTIVE", "PROFILE_NOT_SET"])
+      .nullable()
+      .openapi({ description: "Alasan Tidak siap tanpa penilaian syarat (pekerja tidak aktif / jabatan tanpa daftar syarat)" }),
     categories: z.array(Category),
     evaluated_at: z.string().nullable(),
   })
@@ -123,7 +132,7 @@ export function registerPassport(v1: V1, deps: Deps) {
       deps,
       async (tx) => {
         const q = await tx.query(
-          "select worker_id, full_name, job_position, site, status, categories, evaluated_at from app.passport_verify($1)",
+          "select worker_id, full_name, job_position, site, status, reason_code, categories, evaluated_at from app.passport_verify($1)",
           [token],
         );
         const row = q.rows[0];
